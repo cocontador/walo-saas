@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: walo-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: walo
+      POSTGRES_PASSWORD: walo123
+      POSTGRES_DB: walo_dev
+    ports:
+      - '5433:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
