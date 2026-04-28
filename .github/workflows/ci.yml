@@ -29,7 +29,6 @@ jobs:
       - name: Ejecutar Build
         run: npm run build
         env:
-          # Usamos una URL válida en formato, aunque sea local e inexistente en el runner
           DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/unused"
-          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'secret-provisorio-de-32-caracteres' }}
+          NEXTAUTH_SECRET: "un-secreto-temporal-de-32-caracteres-minimo"
           NEXTAUTH_URL: "http://localhost:3000"
