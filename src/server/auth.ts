@@ -1,8 +1,6 @@
-import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";         // Para comparar las contraseñas
+import bcrypt from "bcryptjs";
 import type { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
-
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
@@ -13,55 +11,34 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: 'credentials',
       credentials: {
-        email: {
-          label: 'Email',
-          type: 'email',
-        },
-        password: {
-          label: 'Contraseña',
-          type: 'password',
-        },
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Contraseña', type: 'password' },
       },
-      // Cambia la línea donde empieza el authorize por esta:
       async authorize(credentials) {
-        // 1. Verificar que existan los datos
-        if (!credentials?.email || !credentials?.password) {
-          return null;
-        }
+        const { prisma } = await import('@/lib/prisma') // ← lazy import
 
-        // Limpiar el email (Sanitización)* mejora según correción en PR
-        const email = credentials.email.trim().toLowerCase();
+        if (!credentials?.email || !credentials?.password) return null
 
+        const email = credentials.email.trim().toLowerCase()
 
-        // 2. Buscar al usuario usando el email ya limpio
         const user = await prisma.user.findUnique({
-          where: {
-            email: email, // <--- Usamos la variable 'email' que acabamos de limpiar
-          },
-        });
+          where: { email },
+        })
 
-        // 3. Si el usuario no existe o no tiene contraseña, denegar acceso
-
-        if (!user || !user.passwordHash) {
-          return null;
-        }
-
-        // 4. Comparar la contraseña ingresada con la guardada en la DB
+        if (!user || !user.passwordHash) return null
 
         const isPasswordCorrect = await bcrypt.compare(
           credentials.password,
-          user.passwordHash // <--- Cambie 'password' por 'passwordHash'
-        );
-        if (!isPasswordCorrect) {
-          return null;
-        }
+          user.passwordHash
+        )
 
-        // 5. Si todo está ok, devolvemos el usuario para la sesión
+        if (!isPasswordCorrect) return null
+
         return {
-          id: user.id.toString(), // NextAuth suele esperar que el ID sea string
+          id: user.id.toString(),
           email: user.email,
           name: user.name,
-        };
+        }
       },
     }),
   ],
@@ -69,12 +46,11 @@ export const authOptions: NextAuthOptions = {
     signIn: "/login",
   },
   callbacks: {
-    // Esto es opcional pero recomendado: permite que el ID esté disponible en el cliente
     async session({ session, token }) {
       if (token && session.user) {
-        session.user.id = token.sub as string;
+        session.user.id = token.sub as string
       }
-      return session;
+      return session
     },
   },
-};
+}
