@@ -9,30 +9,29 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      # Forzamos a que todo crea que es una simulación de build
-      SKIP_ENV_VALIDATION: "true"
-      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/postgres"
-      NEXTAUTH_SECRET: "12345678901234567890123456789012"
-      NEXTAUTH_URL: "http://localhost:3000"
-      PRISMA_CLIENT_ENGINE_TYPE: "library"
 
     steps:
       - name: Checkout del codigo
         uses: actions/checkout@v4
 
-      - name: Configurar Node.js 24
+      - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: 'npm'
 
       - name: Instalar dependencias
-        run: npm install --legacy-peer-deps
+        run: npm install
 
       - name: Generar cliente de Prisma
         run: npx prisma generate
 
-      - name: Ejecutar Build (Saltando exportacion de paginas)
-        # Este comando es el truco final: construye pero no falla si las rutas dinámicas no conectan
+      - name: Ejecutar Build
         run: npm run build
+        env:
+          # Estas variables "engañan" al sistema para que no busque la DB
+          SKIP_ENV_VALIDATION: "true"
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/postgres"
+          NEXTAUTH_SECRET: "static-secret-for-build-purposes-only-12345"
+          NEXTAUTH_URL: "http://localhost:3000"
+          PRISMA_CLIENT_ENGINE_TYPE: "library"
