@@ -26,12 +26,10 @@ jobs:
       - name: Generar cliente de Prisma
         run: npx prisma generate
 
-      - name: Ejecutar Build (Compilacion)
+      - name: Ejecutar Build
         run: npm run build
         env:
-          # Estas variables son las que evitan que el build falle por la DB
-          SKIP_ENV_VALIDATION: "true"
-          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/postgres"
-          NEXTAUTH_SECRET: "static-secret-12345678901234567890"
+          # Usamos una URL válida en formato, aunque sea local e inexistente en el runner
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/unused"
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'secret-provisorio-de-32-caracteres' }}
           NEXTAUTH_URL: "http://localhost:3000"
-          PRISMA_CLIENT_ENGINE_TYPE: "library"
