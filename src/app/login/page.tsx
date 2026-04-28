@@ -5,7 +5,6 @@
 // del usuario. Es necesario porque usamos hooks
 // (useState- Es para que React "recuerde" lo que el usuario escribe en los campos.) e interacciones (clics)
 import React, { useState } from 'react';
-
 import { signIn } from 'next-auth/react'; //Es la función "mágica" de NextAuth. Ella se encarga de enviar los datos a tu API, manejar las cookies y crear la sesión.
 import { useRouter } from 'next/navigation'; //Nos permite cambiar de página (redireccionar) mediante código.
 
