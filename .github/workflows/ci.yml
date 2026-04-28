@@ -32,7 +32,7 @@ jobs:
       - name: Ejecutar Build (Compilacion)
         run: npm run build
         env:
-          # Esto evita que el build falle por falta de variables de base de datos en GitHub
           SKIP_ENV_VALIDATION: true
           NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
           DATABASE_URL: "postgresql://johndoe:randompassword@localhost:5432/mydb?schema=public"
+          PRISMA_SKIP_POSTINSTALL_GENERATE: true
