@@ -23,32 +23,35 @@ export const authOptions: NextAuthOptions = {
         },
       },
       // Cambia la línea donde empieza el authorize por esta:
-async authorize(credentials: Record<"email" | "password", string> | undefined) {
-        // La validación real de credenciales se implementa con WALO-001/WALO-004
-
-        // 1. Verificar que el usuario envió email y password
+      async authorize(credentials) {
+        // 1. Verificar que existan los datos
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
 
-        // 2. Buscar al usuario en la base de datos PostgreSQL usando Prisma
+        // Limpiar el email (Sanitización)* mejora según correción en PR
+        const email = credentials.email.trim().toLowerCase();
+
+
+        // 2. Buscar al usuario usando el email ya limpio
         const user = await prisma.user.findUnique({
           where: {
-            email: credentials.email,
+            email: email, // <--- Usamos la variable 'email' que acabamos de limpiar
           },
         });
 
         // 3. Si el usuario no existe o no tiene contraseña, denegar acceso
-        if (!user || !user.password) {
+
+        if (!user || !user.passwordHash) {
           return null;
         }
 
         // 4. Comparar la contraseña ingresada con la guardada en la DB
+
         const isPasswordCorrect = await bcrypt.compare(
           credentials.password,
-          user.password
+          user.passwordHash // <--- Cambie 'password' por 'passwordHash'
         );
-
         if (!isPasswordCorrect) {
           return null;
         }
