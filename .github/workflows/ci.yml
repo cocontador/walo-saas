@@ -9,6 +9,22 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    
+    #  Levanta un Postgres real e idéntico al tuyo en el servidor
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: walo
+          POSTGRES_PASSWORD: walo123
+          POSTGRES_DB: walo_dev
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout del codigo
@@ -17,7 +33,7 @@ jobs:
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22' # Usamos la 22 que es la más estable ahora
+          node-version: '22'
           cache: 'npm'
 
       - name: Instalar dependencias
@@ -25,10 +41,12 @@ jobs:
 
       - name: Generar cliente de Prisma
         run: npx prisma generate
+    
+      - name: Crear archivo .env para el Build
+        run: |
+          echo "DATABASE_URL=postgresql://walo:walo123@localhost:5433/walo_dev?schema=public" >> .env
+          echo "NEXTAUTH_SECRET=un-secreto-muy-largo-y-seguro-para-build-123456" >> .env
+          echo "NEXTAUTH_URL=http://localhost:3000" >> .env
 
-      - name: Ejecutar Build
+      - name: Ejecutar Build (Compilacion)
         run: npm run build
-        env:
-          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/unused"
-          NEXTAUTH_SECRET: "un-secreto-temporal-de-32-caracteres-minimo"
-          NEXTAUTH_URL: "http://localhost:3000"
