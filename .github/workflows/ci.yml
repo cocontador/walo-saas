@@ -17,7 +17,7 @@ jobs:
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '22' # Usamos la 22 que es la más estable ahora
           cache: 'npm'
 
       - name: Instalar dependencias
@@ -26,12 +26,12 @@ jobs:
       - name: Generar cliente de Prisma
         run: npx prisma generate
 
-      - name: Ejecutar Build
+      - name: Ejecutar Build (Compilacion)
         run: npm run build
         env:
-          # Estas variables "engañan" al sistema para que no busque la DB
+          # Estas variables son las que evitan que el build falle por la DB
           SKIP_ENV_VALIDATION: "true"
           DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/postgres"
-          NEXTAUTH_SECRET: "static-secret-for-build-purposes-only-12345"
+          NEXTAUTH_SECRET: "static-secret-12345678901234567890"
           NEXTAUTH_URL: "http://localhost:3000"
           PRISMA_CLIENT_ENGINE_TYPE: "library"
