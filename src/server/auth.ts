@@ -1,3 +1,4 @@
+import bcrypt from "bcryptjs";
 import type { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 
@@ -10,22 +11,46 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: 'credentials',
       credentials: {
-        email: {
-          label: 'Email',
-          type: 'email',
-        },
-        password: {
-          label: 'Contraseña',
-          type: 'password',
-        },
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Contraseña', type: 'password' },
       },
-      async authorize() {
-        // La validación real de credenciales se implementa con WALO-001/WALO-004
-        return null
+      async authorize(credentials) {
+        const { prisma } = await import('@/lib/prisma') // ← lazy import
+
+        if (!credentials?.email || !credentials?.password) return null
+
+        const email = credentials.email.trim().toLowerCase()
+
+        const user = await prisma.user.findUnique({
+          where: { email },
+        })
+
+        if (!user || !user.passwordHash) return null
+
+        const isPasswordCorrect = await bcrypt.compare(
+          credentials.password,
+          user.passwordHash
+        )
+
+        if (!isPasswordCorrect) return null
+
+        return {
+          id: user.id.toString(),
+          email: user.email,
+          name: user.name,
+        }
       },
     }),
   ],
   pages: {
-    signIn: '/login',
+    signIn: "/login",
+  },
+  callbacks: {
+    async session({ session, token }) {
+      if (token && session.user) {
+        session.user.id = token.sub as string
+      }
+      return session
+    },
   },
 }
