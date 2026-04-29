@@ -1,49 +1,29 @@
-export default function Home() {
+import Link from 'next/link'
+
+export default function HomePage() {
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col justify-center gap-8 px-6 py-20">
-      <div className="inline-flex w-fit rounded-full border border-neutral-300 bg-white px-4 py-2 text-sm text-neutral-600">
-        Sprint 1 · Base técnica
-      </div>
-
-      <section className="space-y-4">
-        <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-neutral-950 sm:text-5xl">
-          WALO SaaS
-        </h1>
-        <p className="max-w-2xl text-lg leading-8 text-neutral-600">
-          Proyecto base del MVP multitenant para catálogos digitales con foco
-          en conversión, SEO y cierre de ventas por WhatsApp.
+    <main className="flex min-h-screen items-center justify-center bg-gray-50 px-6 py-12">
+      <section className="w-full max-w-xl rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+        <h1 className="text-3xl font-bold text-gray-900">WALO</h1>
+        <p className="mt-2 text-gray-600">
+          Acceso rápido al flujo de autenticación del Sprint 1.
         </p>
-      </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <article className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-          <h2 className="text-base font-semibold text-neutral-950">
-            Estado actual
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-neutral-600">
-            La aplicación ya está lista para conectar base de datos, Prisma y
-            autenticación.
-          </p>
-        </article>
+        <div className="mt-8 flex flex-col gap-4">
+          <Link
+            href="/login"
+            className="rounded-xl bg-gray-900 px-6 py-4 text-center text-lg font-semibold text-white transition hover:bg-gray-700"
+          >
+            Ir a Iniciar Sesión
+          </Link>
 
-        <article className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-          <h2 className="text-base font-semibold text-neutral-950">
-            Próximo paso
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-neutral-600">
-            Levantar PostgreSQL local con Docker y crear la primera migración
-            del modelo multitenant.
-          </p>
-        </article>
-
-        <article className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-          <h2 className="text-base font-semibold text-neutral-950">
-            Convención
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-neutral-600">
-            Variables en inglés, interfaz en español y código sin punto y coma.
-          </p>
-        </article>
+          <Link
+            href="/register"
+            className="rounded-xl bg-green-600 px-6 py-4 text-center text-lg font-semibold text-white transition hover:bg-green-700"
+          >
+            Ir a Registro
+          </Link>
+        </div>
       </section>
     </main>
   )

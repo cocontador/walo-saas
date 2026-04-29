@@ -1,4 +1,4 @@
-import bcrypt from "bcryptjs";
+﻿import bcrypt from 'bcryptjs'
 import type { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 
@@ -15,9 +15,11 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Contraseña', type: 'password' },
       },
       async authorize(credentials) {
-        const { prisma } = await import('@/lib/prisma') // ← lazy import
+        const { prisma } = await import('@/lib/prisma')
 
-        if (!credentials?.email || !credentials?.password) return null
+        if (!credentials?.email || !credentials?.password) {
+          return null
+        }
 
         const email = credentials.email.trim().toLowerCase()
 
@@ -25,14 +27,18 @@ export const authOptions: NextAuthOptions = {
           where: { email },
         })
 
-        if (!user || !user.passwordHash) return null
+        if (!user || !user.passwordHash) {
+          return null
+        }
 
         const isPasswordCorrect = await bcrypt.compare(
           credentials.password,
           user.passwordHash
         )
 
-        if (!isPasswordCorrect) return null
+        if (!isPasswordCorrect) {
+          return null
+        }
 
         return {
           id: user.id.toString(),
@@ -43,7 +49,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   pages: {
-    signIn: "/login",
+    signIn: '/login',
   },
   callbacks: {
     async session({ session, token }) {
