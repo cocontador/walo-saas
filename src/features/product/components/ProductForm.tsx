@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { createProduct } from '@/features/product/actions'
 
 type FieldProps = {
   label: string
@@ -105,13 +106,13 @@ export function ProductForm() {
     const errors: Record<string, string> = {}
 
     if (!name.trim()) {
-      errors.name = 'El nombre es obligatorio'
+      errors.name = 'El nombre es requerido'
     }
 
     if (!price.trim()) {
-      errors.price = 'El precio es obligatorio'
+      errors.price = 'El precio es requerido'
     } else if (isNaN(Number(price)) || Number(price) < 0) {
-      errors.price = 'El precio debe ser un número válido mayor a 0'
+      errors.price = 'El precio debe ser un número válido mayor o igual a 0'
     }
 
     setValidationErrors(errors)
@@ -130,21 +131,16 @@ export function ProductForm() {
     setLoading(true)
 
     try {
-      const response = await fetch('/api/products', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: name.trim(),
-          price: Math.round(Number(price) * 100), // Store as cents
-          description: description.trim() || null,
-        }),
+      const result = await createProduct({
+        name: name.trim(),
+        price: Math.round(Number(price)), // Store as integer (cents)
+        description: description.trim() || null,
       })
 
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.message || 'Error al crear el producto')
+      if (!result.success) {
+        setError(result.error)
+        setLoading(false)
+        return
       }
 
       setSuccess(true)
