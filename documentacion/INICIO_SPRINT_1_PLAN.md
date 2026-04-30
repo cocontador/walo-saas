@@ -39,7 +39,7 @@ Esta fase parece administrativa, pero en la práctica es crítica. Si se omite, 
 - convención de ramas definida
 - política de Pull Request acordada
 - protección de `main` configurada
-- plantilla de PR creada
+- plantilla de PR creada.
 - README técnico inicial creado
 - acuerdo explícito sobre estilo y convenciones
 
