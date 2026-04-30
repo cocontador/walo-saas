@@ -1,5 +1,6 @@
 import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 
 import { SignOutButton } from '@/features/auth/components/SignOutButton'
 import { authOptions } from '@/server/auth'
@@ -24,7 +25,14 @@ export default async function DashboardPage() {
           Sesión activa para: <span className="font-semibold">{identity}</span>
         </p>
 
-        <div className="mt-8">
+        <div className="mt-8 space-y-4">
+          <Link
+            href="/dashboard/products"
+            className="block rounded-xl bg-green-500 px-6 py-3 text-center font-semibold text-white transition-all hover:bg-green-600"
+          >
+            Crear nuevo producto
+          </Link>
+
           <SignOutButton />
         </div>
       </section>
