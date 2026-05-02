@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
 import { authOptions } from '@/server/auth'
 import { SignOutButton } from '@/features/auth/components/SignOutButton'
+import { StoreForm } from '@/features/auth/components/StoreForm'
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions)
@@ -25,14 +26,12 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navbar */}
       <nav className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
         <span className="text-xl font-bold text-gray-900">WALO</span>
         <SignOutButton />
       </nav>
 
       <main className="max-w-4xl mx-auto px-6 py-12">
-        {/* Bienvenida */}
         <div className="mb-10">
           <h1 className="text-3xl font-bold text-gray-900">
             ¡Bienvenida, {session.user.name ?? session.user.email}! 👋
@@ -42,14 +41,20 @@ export default async function DashboardPage() {
           </p>
         </div>
 
-        {/* Tarjeta tienda */}
+        {!store && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6 mb-6">
+            <h3 className="font-semibold text-yellow-800">No tienes una tienda aún</h3>
+            <p className="text-sm text-yellow-700 mt-1">Crea tu tienda para empezar a vender.</p>
+          </div>
+        )}
+
         {store && (
           <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm mb-6">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <polyline points="9 22 9 12 15 12 15 22" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <polyline points="9 22 9 12 15 12 15 22" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
               <div>
@@ -63,10 +68,17 @@ export default async function DashboardPage() {
                 walo.app/{store.slug}
               </code>
             </div>
+            <div className="mt-6 border-t border-gray-100 pt-6">
+              <h3 className="font-semibold text-gray-900 mb-4">Editar datos de tienda</h3>
+              <StoreForm
+                storeId={store.id}
+                initialName={store.name}
+                initialDescription={store.description}
+              />
+            </div>
           </div>
         )}
 
-        {/* Cards acciones */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             { title: 'Agregar producto', desc: 'Sube fotos, precios y descripciones.', icon: '📦' },
