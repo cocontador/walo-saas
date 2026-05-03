@@ -27,7 +27,65 @@ export default async function DashboardPage() {
         <div className="mt-8">
           <SignOutButton />
         </div>
+<<<<<<< Updated upstream
       </section>
     </main>
+=======
+
+        {!store && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6 mb-6">
+            <h3 className="font-semibold text-yellow-800">No tienes una tienda aún</h3>
+            <p className="text-sm text-yellow-700 mt-1">Crea tu tienda para empezar a vender.</p>
+          </div>
+        )}
+
+        {store && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm mb-6">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
+                <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <polyline points="9 22 9 12 15 12 15 22" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">{store.name}</h2>
+                <p className="text-sm text-gray-500">/{store.slug}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 mt-4">
+              <span className="text-sm text-gray-500">Link de tu tienda:</span>
+              <code className="text-sm bg-gray-100 px-3 py-1 rounded-lg text-green-700 font-mono">
+                walo.app/{store.slug}
+              </code>
+            </div>
+            <div className="mt-6 border-t border-gray-100 pt-6">
+              <h3 className="font-semibold text-gray-900 mb-4">Editar datos de tienda</h3>
+              <StoreForm
+                storeId={store.id}
+                initialName={store.name}
+                initialDescription={store.description}
+                initialSlug={store.slug}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[
+            { title: 'Agregar producto', desc: 'Sube fotos, precios y descripciones.', icon: '📦' },
+            { title: 'Compartir catálogo', desc: 'Envía el link por WhatsApp.', icon: '🔗' },
+            { title: 'Ver pedidos', desc: 'Gestiona los pedidos entrantes.', icon: '📋' },
+          ].map((card) => (
+            <div key={card.title} className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+              <div className="text-3xl mb-3">{card.icon}</div>
+              <h3 className="font-semibold text-gray-900">{card.title}</h3>
+              <p className="text-sm text-gray-500 mt-1">{card.desc}</p>
+            </div>
+          ))}
+        </div>
+      </main>
+    </div>
+>>>>>>> Stashed changes
   )
 }
