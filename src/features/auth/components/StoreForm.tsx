@@ -7,12 +7,14 @@ interface StoreFormProps {
     initialName: string
     initialDescription: string | null
     initialSlug: string
+    initialWhatsapp: string | null
 }
 
-export function StoreForm({ storeId, initialName, initialDescription, initialSlug }: StoreFormProps) {
+export function StoreForm({ storeId, initialName, initialDescription, initialSlug, initialWhatsapp }: StoreFormProps) {
     const [name, setName] = useState(initialName)
     const [description, setDescription] = useState(initialDescription ?? '')
     const [slug, setSlug] = useState(initialSlug)
+    const [whatsapp, setWhatsapp] = useState(initialWhatsapp ?? '')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState(false)
@@ -27,7 +29,7 @@ export function StoreForm({ storeId, initialName, initialDescription, initialSlu
             const res = await fetch(`/api/store/${storeId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, description, slug }),
+                body: JSON.stringify({ name, description, slug, whatsappPhone: whatsapp }),
             })
 
             const data = await res.json()
@@ -86,6 +88,23 @@ export function StoreForm({ storeId, initialName, initialDescription, initialSlu
                     placeholder="Describe tu tienda..."
                     className="w-full rounded-xl bg-gray-100 border border-transparent px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 focus:bg-white transition-all resize-none"
                 />
+            </div>
+
+            <div>
+                <label className="block text-xs font-semibold text-gray-500 tracking-widest mb-1">
+                    WHATSAPP
+                </label>
+                <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-400">+56</span>
+                    <input
+                        type="tel"
+                        value={whatsapp}
+                        onChange={(e) => setWhatsapp(e.target.value.replace(/\D/g, ''))}
+                        placeholder="912345678"
+                        maxLength={9}
+                        className="flex-1 rounded-xl bg-gray-100 border border-transparent px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 focus:bg-white transition-all"
+                    />
+                </div>
             </div>
 
             {error && (
