@@ -1,8 +1,8 @@
 import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
-
-import { SignOutButton } from '@/features/auth/components/SignOutButton'
 import { authOptions } from '@/server/auth'
+import { SignOutButton } from '@/features/auth/components/SignOutButton'
+import { StoreForm } from '@/features/auth/components/StoreForm'
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions)
@@ -11,26 +11,35 @@ export default async function DashboardPage() {
     redirect('/login')
   }
 
-  const identity = session.user.name ?? session.user.email ?? 'Usuario'
+  const { prisma } = await import('@/lib/prisma')
+
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email! },
+    include: {
+      memberships: {
+        include: { store: true },
+      },
+    },
+  })
+
+  const store = user?.memberships[0]?.store
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-50 px-6 py-12">
-      <section className="w-full max-w-2xl rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-        <h1 className="text-3xl font-bold text-gray-900">
-          Bienvenido, estás logueado en WALO
-        </h1>
+    <div className="min-h-screen bg-gray-50">
+      <nav className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+        <span className="text-xl font-bold text-gray-900">WALO</span>
+        <SignOutButton />
+      </nav>
 
-        <p className="mt-3 text-lg text-gray-700">
-          Sesión activa para: <span className="font-semibold">{identity}</span>
-        </p>
-
-        <div className="mt-8">
-          <SignOutButton />
+      <main className="max-w-4xl mx-auto px-6 py-12">
+        <div className="mb-10">
+          <h1 className="text-3xl font-bold text-gray-900">
+            ¡Bienvenida, {session.user.name ?? session.user.email}! 👋
+          </h1>
+          <p className="text-gray-500 mt-2">
+            Tu tienda está lista. Empieza a agregar productos y comparte tu catálogo.
+          </p>
         </div>
-<<<<<<< Updated upstream
-      </section>
-    </main>
-=======
 
         {!store && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6 mb-6">
@@ -86,6 +95,5 @@ export default async function DashboardPage() {
         </div>
       </main>
     </div>
->>>>>>> Stashed changes
   )
 }
