@@ -2,7 +2,7 @@
 import { prisma } from "@/lib/prisma";
 
 export async function getStoreData(userId: string) {
-    //  lógica del dashboard 
+    //  lógica del dashboard
     const store = await prisma.store.findFirst({
         where: { memberships: { some: { userId } } },
     });
