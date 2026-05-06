@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/server/auth'
+import { z } from 'zod'
+
+// 1. Definimos el esquema de Zod fuera de las funciones
+const storeUpdateSchema = z.object({
+    name: z.string().min(2, "El nombre debe tener al menos 2 caracteres."),
+    description: z.string().optional().nullable(),
+    slug: z.string().optional(),
+    whatsappPhone: z.string().optional().nullable(),
+})
 
 function generateSlug(name: string): string {
     return name
@@ -14,28 +23,28 @@ function generateSlug(name: string): string {
 
 export async function PATCH(
     req: NextRequest,
-    { params }: { params: { storeId: string } }
+    { params }: { params: Promise<{ storeId: string }> } // <-- Cambio: params ahora es Promise
 ) {
     try {
+        const { storeId } = await params // <-- Cambio: resolvemos la promesa
+
         const session = await getServerSession(authOptions)
-        if (!session?.user) {
+        // 2. Verificamos directamente el ID
+        if (!session?.user?.id) {
             return NextResponse.json({ error: 'No autorizado.' }, { status: 401 })
         }
 
         const { prisma } = await import('@/lib/prisma')
-        const { name, description, slug, whatsappPhone } = await req.json()
+        const body = await req.json()
 
-        if (!name || name.trim().length < 2) {
-            return NextResponse.json(
-                { error: 'El nombre debe tener al menos 2 caracteres.' },
-                { status: 400 }
-            )
-        }
+        // 3. Validamos el body con Zod
+        const validatedData = storeUpdateSchema.parse(body)
 
+        // 4. Usamos userId en lugar del email anidado
         const membership = await prisma.storeMember.findFirst({
             where: {
-                storeId: params.storeId,
-                user: { email: session.user.email! },
+                storeId: storeId, // <-- Cambio: usamos la variable ya resuelta
+                userId: session.user.id,
                 role: 'OWNER',
             },
         })
@@ -44,12 +53,14 @@ export async function PATCH(
             return NextResponse.json({ error: 'No tienes permiso.' }, { status: 403 })
         }
 
-        const newSlug = slug ? generateSlug(slug) : generateSlug(name)
+        const newSlug = validatedData.slug
+            ? generateSlug(validatedData.slug)
+            : generateSlug(validatedData.name)
 
         const existingStore = await prisma.store.findFirst({
             where: {
                 slug: newSlug,
-                NOT: { id: params.storeId },
+                NOT: { id: storeId }, // <-- Cambio: usamos la variable
             },
         })
 
@@ -61,18 +72,27 @@ export async function PATCH(
         }
 
         const store = await prisma.store.update({
-            where: { id: params.storeId },
+            where: { id: storeId }, // <-- Cambio: usamos la variable
             data: {
-                name: name.trim(),
-                description: description?.trim() ?? null,
+                name: validatedData.name.trim(),
+                description: validatedData.description?.trim() ?? null,
                 slug: newSlug,
-                whatsappPhone: whatsappPhone?.trim() ?? null,
+                whatsappPhone: validatedData.whatsappPhone?.trim() ?? null,
             },
         })
 
         return NextResponse.json({ store }, { status: 200 })
     } catch (error) {
         console.error('[STORE PATCH ERROR]', error)
+
+        // 5. Para atrapar errores específicos de validación de Zod
+        if (error instanceof z.ZodError) {
+            return NextResponse.json(
+                { error: 'Datos inválidos', detalles: error.flatten().fieldErrors },
+                { status: 400 }
+            )
+        }
+
         return NextResponse.json(
             { error: 'Error interno del servidor.' },
             { status: 500 }
@@ -82,11 +102,13 @@ export async function PATCH(
 
 export async function DELETE(
     req: NextRequest,
-    { params }: { params: { storeId: string } }
+    { params }: { params: Promise<{ storeId: string }> } // <-- Cambio: params es Promise
 ) {
     try {
+        const { storeId } = await params // <-- Cambio: resolvemos la promesa
+
         const session = await getServerSession(authOptions)
-        if (!session?.user) {
+        if (!session?.user?.id) {
             return NextResponse.json({ error: 'No autorizado.' }, { status: 401 })
         }
 
@@ -94,8 +116,8 @@ export async function DELETE(
 
         const membership = await prisma.storeMember.findFirst({
             where: {
-                storeId: params.storeId,
-                user: { email: session.user.email! },
+                storeId: storeId, // <-- Cambio: usamos la variable
+                userId: session.user.id,
                 role: 'OWNER',
             },
         })
@@ -105,7 +127,7 @@ export async function DELETE(
         }
 
         const store = await prisma.store.update({
-            where: { id: params.storeId },
+            where: { id: storeId }, // <-- Cambio: usamos la variable
             data: { isActive: false },
         })
 
@@ -121,11 +143,13 @@ export async function DELETE(
 
 export async function PUT(
     req: NextRequest,
-    { params }: { params: { storeId: string } }
+    { params }: { params: Promise<{ storeId: string }> } // <-- Cambio: params es Promise
 ) {
     try {
+        const { storeId } = await params // <-- Cambio: resolvemos la promesa
+
         const session = await getServerSession(authOptions)
-        if (!session?.user) {
+        if (!session?.user?.id) {
             return NextResponse.json({ error: 'No autorizado.' }, { status: 401 })
         }
 
@@ -133,8 +157,8 @@ export async function PUT(
 
         const membership = await prisma.storeMember.findFirst({
             where: {
-                storeId: params.storeId,
-                user: { email: session.user.email! },
+                storeId: storeId, // <-- Cambio: usamos la variable
+                userId: session.user.id,
                 role: 'OWNER',
             },
         })
@@ -144,7 +168,7 @@ export async function PUT(
         }
 
         const store = await prisma.store.update({
-            where: { id: params.storeId },
+            where: { id: storeId }, // <-- Cambio: usamos la variable
             data: { isActive: true },
         })
 

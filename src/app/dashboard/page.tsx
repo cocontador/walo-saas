@@ -71,7 +71,6 @@ export default async function DashboardPage() {
               </code>
             </div>
 
-            {/* AQUÍ ESTÁ EL CÓDIGO NUEVO DEL ESTADO DE LA TIENDA */}
             <div className="flex items-center gap-3 mt-4">
               <span className={`text-sm font-medium px-3 py-1 rounded-full ${store.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                 }`}>
@@ -79,7 +78,6 @@ export default async function DashboardPage() {
               </span>
               <StoreStatusButton storeId={store.id} isActive={store.isActive} />
             </div>
-            {/* FIN DEL CÓDIGO NUEVO */}
 
             <div className="mt-6 border-t border-gray-100 pt-6">
               <h3 className="font-semibold text-gray-900 mb-4">Editar datos de tienda</h3>
