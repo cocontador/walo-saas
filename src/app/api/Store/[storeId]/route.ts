@@ -3,7 +3,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/server/auth'
 import { z } from 'zod'
 
-// 1. Definimos el esquema de Zod fuera de las funciones
 const storeUpdateSchema = z.object({
     name: z.string().min(2, "El nombre debe tener al menos 2 caracteres."),
     description: z.string().optional().nullable(),
@@ -23,27 +22,23 @@ function generateSlug(name: string): string {
 
 export async function PATCH(
     req: NextRequest,
-    { params }: { params: Promise<{ storeId: string }> } // <-- Cambio: params ahora es Promise
+    { params }: { params: Promise<{ storeId: string }> }
 ) {
     try {
-        const { storeId } = await params // <-- Cambio: resolvemos la promesa
-
+        const { storeId } = await params
         const session = await getServerSession(authOptions)
-        // 2. Verificamos directamente el ID
+
         if (!session?.user?.id) {
             return NextResponse.json({ error: 'No autorizado.' }, { status: 401 })
         }
 
         const { prisma } = await import('@/lib/prisma')
         const body = await req.json()
-
-        // 3. Validamos el body con Zod
         const validatedData = storeUpdateSchema.parse(body)
 
-        // 4. Usamos userId en lugar del email anidado
         const membership = await prisma.storeMember.findFirst({
             where: {
-                storeId: storeId, // <-- Cambio: usamos la variable ya resuelta
+                storeId,
                 userId: session.user.id,
                 role: 'OWNER',
             },
@@ -60,7 +55,7 @@ export async function PATCH(
         const existingStore = await prisma.store.findFirst({
             where: {
                 slug: newSlug,
-                NOT: { id: storeId }, // <-- Cambio: usamos la variable
+                NOT: { id: storeId },
             },
         })
 
@@ -72,7 +67,7 @@ export async function PATCH(
         }
 
         const store = await prisma.store.update({
-            where: { id: storeId }, // <-- Cambio: usamos la variable
+            where: { id: storeId },
             data: {
                 name: validatedData.name.trim(),
                 description: validatedData.description?.trim() ?? null,
@@ -84,15 +79,12 @@ export async function PATCH(
         return NextResponse.json({ store }, { status: 200 })
     } catch (error) {
         console.error('[STORE PATCH ERROR]', error)
-
-        // 5. Para atrapar errores específicos de validación de Zod
         if (error instanceof z.ZodError) {
             return NextResponse.json(
                 { error: 'Datos inválidos', detalles: error.flatten().fieldErrors },
                 { status: 400 }
             )
         }
-
         return NextResponse.json(
             { error: 'Error interno del servidor.' },
             { status: 500 }
@@ -102,12 +94,12 @@ export async function PATCH(
 
 export async function DELETE(
     req: NextRequest,
-    { params }: { params: Promise<{ storeId: string }> } // <-- Cambio: params es Promise
+    { params }: { params: Promise<{ storeId: string }> }
 ) {
     try {
-        const { storeId } = await params // <-- Cambio: resolvemos la promesa
-
+        const { storeId } = await params
         const session = await getServerSession(authOptions)
+
         if (!session?.user?.id) {
             return NextResponse.json({ error: 'No autorizado.' }, { status: 401 })
         }
@@ -116,7 +108,7 @@ export async function DELETE(
 
         const membership = await prisma.storeMember.findFirst({
             where: {
-                storeId: storeId, // <-- Cambio: usamos la variable
+                storeId,
                 userId: session.user.id,
                 role: 'OWNER',
             },
@@ -127,7 +119,7 @@ export async function DELETE(
         }
 
         const store = await prisma.store.update({
-            where: { id: storeId }, // <-- Cambio: usamos la variable
+            where: { id: storeId },
             data: { isActive: false },
         })
 
@@ -143,12 +135,12 @@ export async function DELETE(
 
 export async function PUT(
     req: NextRequest,
-    { params }: { params: Promise<{ storeId: string }> } // <-- Cambio: params es Promise
+    { params }: { params: Promise<{ storeId: string }> }
 ) {
     try {
-        const { storeId } = await params // <-- Cambio: resolvemos la promesa
-
+        const { storeId } = await params
         const session = await getServerSession(authOptions)
+
         if (!session?.user?.id) {
             return NextResponse.json({ error: 'No autorizado.' }, { status: 401 })
         }
@@ -157,7 +149,7 @@ export async function PUT(
 
         const membership = await prisma.storeMember.findFirst({
             where: {
-                storeId: storeId, // <-- Cambio: usamos la variable
+                storeId,
                 userId: session.user.id,
                 role: 'OWNER',
             },
@@ -168,7 +160,7 @@ export async function PUT(
         }
 
         const store = await prisma.store.update({
-            where: { id: storeId }, // <-- Cambio: usamos la variable
+            where: { id: storeId },
             data: { isActive: true },
         })
 

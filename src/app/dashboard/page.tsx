@@ -35,7 +35,7 @@ export default async function DashboardPage() {
       <main className="max-w-4xl mx-auto px-6 py-12">
         <div className="mb-10">
           <h1 className="text-3xl font-bold text-gray-900">
-            ¡Bienvenida, {session.user.name ?? session.user.email}! 👋
+            ¡Bienvenido/a, {session.user.name ?? session.user.email}! 👋
           </h1>
           <p className="text-gray-500 mt-2">
             Tu tienda está lista. Empieza a agregar productos y comparte tu catálogo.
@@ -63,7 +63,6 @@ export default async function DashboardPage() {
                 <p className="text-sm text-gray-500">/{store.slug}</p>
               </div>
             </div>
-
             <div className="flex items-center gap-2 mt-4">
               <span className="text-sm text-gray-500">Link de tu tienda:</span>
               <code className="text-sm bg-gray-100 px-3 py-1 rounded-lg text-green-700 font-mono">
