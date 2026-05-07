@@ -7,17 +7,18 @@ import { getUserStoreId } from '@/server/store'
 import { prisma } from '@/lib/prisma'
 import { createProductSchema, type CreateProductInput } from './schema'
 
-export type ActionResult<T> = 
+export type ActionResult<T> =
   | { success: true; data: T }
   | { success: false; error: string }
 
 export async function createProduct(
   input: CreateProductInput
-): Promise<ActionResult<{ id: string; name: string; price: number; description: string | null }>> {
+): Promise<
+  ActionResult<{ id: string; name: string; price: number; description: string | null }>
+> {
   try {
-    // Validate input against schema
     const validatedData = createProductSchema.parse(input)
-
+    
     // Get user session
     const session = await getServerSession(authOptions)
 
@@ -27,7 +28,6 @@ export async function createProduct(
         error: 'No autenticado. Por favor inicia sesión.',
       }
     }
-
     // Get user's store
     const storeId = await getUserStoreId()
 
@@ -38,7 +38,7 @@ export async function createProduct(
       }
     }
 
-    // Create product in database
+        // Create product in database
     const product = await prisma.product.create({
       data: {
         storeId,
@@ -60,7 +60,7 @@ export async function createProduct(
       data: product,
     }
   } catch (error) {
-    // Handle validation errors from Zod
+        // Handle validation errors from Zod
     if (error instanceof z.ZodError) {
       const firstError = error.issues[0]
       return {
@@ -70,7 +70,6 @@ export async function createProduct(
     }
 
     console.error('Error creating product:', error)
-
     return {
       success: false,
       error: 'Ocurrió un error al crear el producto. Por favor intenta nuevamente.',

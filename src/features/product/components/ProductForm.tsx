@@ -119,8 +119,8 @@ export function ProductForm() {
 
     if (!price.trim()) {
       errors.price = 'El precio es requerido'
-    } else if (isNaN(Number(price)) || Number(price) < 0) {
-      errors.price = 'El precio debe ser un número válido mayor o igual a 0'
+    } else if (isNaN(Number(price)) || Number(price) <= 0) {
+      errors.price = 'El precio debe ser un número válido mayor a 0'
     }
 
     setValidationErrors(errors)
@@ -141,7 +141,7 @@ export function ProductForm() {
     try {
       const result = await createProduct({
         name: name.trim(),
-        price: Math.round(Number(price)), // Store as integer (cents)
+        price: Math.round(Number(price)),
         description: description.trim() || null,
       })
 
@@ -161,9 +161,7 @@ export function ProductForm() {
         router.push('/dashboard')
       }, 2000)
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Ocurrió un error inesperado'
-      )
+      setError(err instanceof Error ? err.message : 'Ocurrió un error inesperado')
     } finally {
       setLoading(false)
     }
@@ -188,9 +186,7 @@ export function ProductForm() {
       </button>
 
       <h2 className="mb-1 text-3xl font-bold text-gray-900">Crear producto</h2>
-      <p className="mb-8 text-gray-500">
-        Agrega un nuevo producto a tu catálogo
-      </p>
+      <p className="mb-8 text-gray-500">Agrega un nuevo producto a tu catálogo</p>
 
       {error && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
