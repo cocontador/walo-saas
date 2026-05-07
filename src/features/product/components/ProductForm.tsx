@@ -27,7 +27,10 @@ function Field({
 }: FieldProps) {
   return (
     <div>
-      <label htmlFor={id} className="mb-1 block text-xs font-semibold tracking-widest text-gray-500">
+      <label
+        htmlFor={id}
+        className="mb-1 block text-xs font-semibold tracking-widest text-gray-500"
+      >
         {label}
         {required && <span className="text-red-500">*</span>}
       </label>
@@ -70,7 +73,10 @@ function TextArea({
 }: TextAreaProps) {
   return (
     <div>
-      <label htmlFor={id} className="mb-1 block text-xs font-semibold tracking-widest text-gray-500">
+      <label
+        htmlFor={id}
+        className="mb-1 block text-xs font-semibold tracking-widest text-gray-500"
+      >
         {label}
         {required && <span className="text-red-500">*</span>}
       </label>
@@ -81,7 +87,7 @@ function TextArea({
         required={required}
         onChange={(e) => onChange(e.target.value)}
         rows={4}
-        className={`w-full rounded-xl border px-4 py-3 text-gray-900 placeholder-gray-400 transition-all focus:outline-none resize-none ${
+        className={`w-full resize-none rounded-xl border px-4 py-3 text-gray-900 placeholder-gray-400 transition-all focus:outline-none ${
           error
             ? 'border-red-300 bg-red-50 focus:border-red-500 focus:bg-white'
             : 'border-transparent bg-gray-100 focus:border-green-500 focus:bg-white'
@@ -100,7 +106,9 @@ export function ProductForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+  const [validationErrors, setValidationErrors] = useState<
+    Record<string, string>
+  >({})
 
   const validateForm = () => {
     const errors: Record<string, string> = {}
@@ -148,13 +156,14 @@ export function ProductForm() {
       setPrice('')
       setDescription('')
 
-      // Show success for 2 seconds then redirect
+      // Muestra el mensaje de éxito durante 2 segundos y luego redirige.
       setTimeout(() => {
-        router.push('/dashboard/products')
-        router.refresh()
+        router.push('/dashboard')
       }, 2000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ocurrió un error inesperado')
+      setError(
+        err instanceof Error ? err.message : 'Ocurrió un error inesperado'
+      )
     } finally {
       setLoading(false)
     }
@@ -179,7 +188,9 @@ export function ProductForm() {
       </button>
 
       <h2 className="mb-1 text-3xl font-bold text-gray-900">Crear producto</h2>
-      <p className="mb-8 text-gray-500">Agrega un nuevo producto a tu catálogo</p>
+      <p className="mb-8 text-gray-500">
+        Agrega un nuevo producto a tu catálogo
+      </p>
 
       {error && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
