@@ -14,22 +14,19 @@ function generateSlug(name: string): string {
 export async function POST(req: NextRequest) {
   try {
     const { prisma } = await import('@/lib/prisma')
-    const { name, storeName, email, password } = await req.json()
+const { registerSchema } = await import('@/features/auth/schema/register.schema')
 
-    if (!name || !storeName || !email || !password) {
+    const body = await req.json()
+    const validation = registerSchema.safeParse(body)
+
+    if (!validation.success) {
       return NextResponse.json(
-        { error: 'Todos los campos son requeridos.' },
+        { error: validation.error?.issues[0]?.message ?? 'Datos invalidos.' },
         { status: 400 }
       )
     }
 
-    if (password.length < 6) {
-      return NextResponse.json(
-        { error: 'La contrasena debe tener al menos 6 caracteres.' },
-        { status: 400 }
-      )
-    }
-
+    const { name, storeName, email, password } = validation.data
     const normalizedEmail = email.trim().toLowerCase()
 
     const existingUser = await prisma.user.findUnique({

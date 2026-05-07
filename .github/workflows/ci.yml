@@ -47,5 +47,11 @@ jobs:
           echo "NEXTAUTH_SECRET=un-secreto-muy-largo-y-seguro-para-build-123456" >> .env
           echo "NEXTAUTH_URL=http://localhost:3000" >> .env
 
+      - name: Ejecutar Lint
+        run: npm run lint
+
       - name: Ejecutar Build (Compilacion)
         run: npm run build
+
+      - name: Ejecutar Tests
+        run: npm run test
