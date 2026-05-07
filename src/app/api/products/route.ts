@@ -10,10 +10,7 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { message: 'No autorizado' },
-        { status: 401 }
-      )
+      return NextResponse.json({ message: 'No autorizado' }, { status: 401 })
     }
 
     const storeId = await getUserStoreId()
@@ -28,27 +25,32 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { name, price, description } = body
 
-    // Validate required fields
+    // Validar campos obligatorios
     if (!name || typeof name !== 'string' || !name.trim()) {
       return NextResponse.json(
-        { message: 'El nombre del producto es requerido' },
+        { message: 'El nombre del producto es obligatorio' },
         { status: 400 }
       )
     }
 
-    if (price === undefined || price === null || typeof price !== 'number' || price < 0) {
+    if (
+      price === undefined ||
+      price === null ||
+      typeof price !== 'number' ||
+      price <= 0
+    ) {
       return NextResponse.json(
-        { message: 'El precio debe ser un número válido mayor o igual a 0' },
+        { message: 'El precio debe ser mayora 0' },
         { status: 400 }
       )
     }
 
-    // Create the product
+    // Crear el producto en la base de datos
     const product = await prisma.product.create({
       data: {
         storeId,
         name: name.trim(),
-        price: Math.round(price), // Ensure it's stored as integer (in cents)
+        price: Math.round(price), // Debe guardarse como numero entero
         description: description?.trim() || null,
         visible: true,
       },
