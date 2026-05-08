@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
 import { SignOutButton } from '@/features/auth/components/SignOutButton'
+import { StoreStatusButton } from '@/features/store/components/StoreStatusButton'
 import { StoreForm } from '@/features/store/components/StoreForm'
 import { authOptions } from '@/server/auth'
 
@@ -83,6 +84,17 @@ export default async function DashboardPage() {
               <code className="text-sm bg-gray-100 px-3 py-1 rounded-lg text-green-700 font-mono">
                 walo.app/{store.slug}
               </code>
+            </div>
+
+            <div className="flex items-center gap-3 mt-4">
+              <span
+                className={`text-sm font-medium px-3 py-1 rounded-full ${
+                  store.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                }`}
+              >
+                {store.isActive ? 'Activa' : 'Inactiva'}
+              </span>
+              <StoreStatusButton storeId={store.id} isActive={store.isActive} />
             </div>
 
             <div className="mt-6">
