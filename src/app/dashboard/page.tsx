@@ -112,6 +112,7 @@ export default async function DashboardPage() {
                 storeId={store.id}
                 initialName={store.name}
                 initialDescription={store.description}
+                initialLogoUrl={store.logoUrl}
               />
             </div>
           </div>
