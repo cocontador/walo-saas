@@ -1,23 +1,39 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 import { removeLogo, replaceLogo, uploadLogo } from '@/features/store/actions'
 
 interface StoreFormProps {
   storeId: string
   initialName: string
+  initialSlug: string
   initialDescription: string | null
   initialLogoUrl: string | null
+}
+
+function sanitizeSlug(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
 }
 
 export function StoreForm({
   storeId,
   initialName,
+  initialSlug,
   initialDescription,
   initialLogoUrl,
 }: StoreFormProps) {
+  const router = useRouter()
   const [name, setName] = useState(initialName)
+  const [slug, setSlug] = useState(initialSlug)
   const [description, setDescription] = useState(initialDescription ?? '')
   const [logoUrl, setLogoUrl] = useState(initialLogoUrl)
   const [loading, setLoading] = useState(false)
@@ -36,7 +52,11 @@ export function StoreForm({
       const res = await fetch(`/api/store/${storeId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, description }),
+        body: JSON.stringify({
+          name,
+          slug,
+          description,
+        }),
       })
 
       const data = await res.json()
@@ -45,6 +65,7 @@ export function StoreForm({
         setError(data.error ?? 'Error al guardar.')
       } else {
         setSuccess('Datos guardados correctamente.')
+        router.refresh()
       }
     } catch {
       setError('Ocurrió un error inesperado.')
@@ -122,6 +143,22 @@ export function StoreForm({
           disabled={loading || isUploading}
           className="w-full rounded-xl border border-transparent bg-gray-100 px-4 py-3 text-gray-900 placeholder-gray-400 transition-all focus:border-green-500 focus:bg-white focus:outline-none disabled:cursor-not-allowed disabled:opacity-70"
         />
+      </div>
+
+      <div>
+        <label className="mb-1 block text-xs font-semibold tracking-widest text-gray-500">
+          URL DE LA TIENDA
+        </label>
+        <input
+          type="text"
+          value={slug}
+          onChange={(e) => setSlug(sanitizeSlug(e.target.value))}
+          required
+          disabled={loading || isUploading}
+          placeholder="mi-tienda"
+          className="w-full rounded-xl border border-transparent bg-gray-100 px-4 py-3 text-gray-900 placeholder-gray-400 transition-all focus:border-green-500 focus:bg-white focus:outline-none disabled:cursor-not-allowed disabled:opacity-70"
+        />
+        <p className="mt-1 text-xs text-gray-500">Se verá como: walo.app/{slug || 'mi-tienda'}</p>
       </div>
 
       <div>

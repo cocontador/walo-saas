@@ -111,6 +111,7 @@ export default async function DashboardPage() {
               <StoreForm
                 storeId={store.id}
                 initialName={store.name}
+                initialSlug={store.slug}
                 initialDescription={store.description}
                 initialLogoUrl={store.logoUrl}
               />
