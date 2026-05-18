@@ -5,7 +5,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/server/auth'
 import { getUserStoreId } from '@/server/store'
 import { prisma } from '@/lib/prisma'
-import { createProductSchema, type CreateProductInput } from './schema'
+import { createProductSchema, type CreateProductInput } from '@/features/product/schemas'
 
 export type ActionResult<T> =
   | { success: true; data: T }
