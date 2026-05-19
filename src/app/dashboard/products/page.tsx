@@ -31,6 +31,23 @@ export default async function ProductsPage() {
   return (
     <main className="flex min-h-screen flex-col bg-gray-50 px-6 py-12">
       <div className="mx-auto w-full max-w-6xl">
+        {/* Back Button */}
+        <Link
+          href="/dashboard"
+          className="mb-8 flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-gray-800"
+        >
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
+            <path
+              d="M19 12H5M5 12l7 7M5 12l7-7"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          Volver al dashboard
+        </Link>
+
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <div>

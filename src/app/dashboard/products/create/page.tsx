@@ -12,10 +12,10 @@ export default async function CreateProductPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-50 px-6 py-12">
-      <section className="w-full rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+    <main className="flex min-h-screen flex-col bg-gray-50 px-6 py-12">
+      <div className="mx-auto w-full max-w-2xl">
         <ProductForm mode="create" />
-      </section>
+      </div>
     </main>
   )
 }
