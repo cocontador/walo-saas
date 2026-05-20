@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { updateProduct } from './updateProduct'
 import { getServerSession } from 'next-auth'
@@ -144,3 +144,4 @@ describe('updateProduct - WALO-155, WALO-156, WALO-157, WALO-158', () => {
     }
   })
 })
+

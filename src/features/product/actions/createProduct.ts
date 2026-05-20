@@ -13,9 +13,7 @@ export type ActionResult<T> =
 
 export async function createProduct(
   input: CreateProductInput
-): Promise<
-  ActionResult<{ id: string; name: string; price: number; description: string | null }>
-> {
+): Promise<ActionResult<{ id: string; name: string; price: number; description: string | null }>> {
   try {
     const validatedData = createProductSchema.parse(input)
     
@@ -37,8 +35,7 @@ export async function createProduct(
         error: 'No tienes una tienda asociada. Contacta a soporte.',
       }
     }
-
-        // Create product in database
+    // Create product in database
     const product = await prisma.product.create({
       data: {
         storeId,

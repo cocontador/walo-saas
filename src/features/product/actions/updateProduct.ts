@@ -38,7 +38,7 @@ export async function updateProduct(
       }
     }
 
-    // Validate that product exists and belongs to user's store
+    // Check if the product exists and belongs to the user's store
     const existingProduct = await prisma.product.findFirst({
       where: {
         id: productId,
@@ -59,16 +59,31 @@ export async function updateProduct(
     // Validate input data
     const validatedData = updateProductSchema.parse(input)
 
-    // Update product in database
-    const product = await prisma.product.update({
+    // Update the product in the database
+    const updateResult = await prisma.product.updateMany({
       where: {
         id: productId,
+        storeId,
       },
       data: {
-        ...(validatedData.name && { name: validatedData.name }),
-        ...(validatedData.price && { price: validatedData.price }),
+        ...(validatedData.name !== undefined && { name: validatedData.name }),
+        ...(validatedData.price !== undefined && { price: validatedData.price }),
         ...(validatedData.description !== undefined && { description: validatedData.description }),
         ...(validatedData.visible !== undefined && { visible: validatedData.visible }),
+      },
+    })
+
+    if (updateResult.count === 0) {
+      return {
+        success: false,
+        error: 'Producto no encontrado o no tienes permiso para editarlo.',
+      }
+    }
+
+    const product = await prisma.product.findFirst({
+      where: {
+        id: productId,
+        storeId,
       },
       select: {
         id: true,
@@ -78,6 +93,13 @@ export async function updateProduct(
         visible: true,
       },
     })
+
+    if (!product) {
+      return {
+        success: false,
+        error: 'No se pudo recuperar el producto actualizado.',
+      }
+    }
 
     return {
       success: true,

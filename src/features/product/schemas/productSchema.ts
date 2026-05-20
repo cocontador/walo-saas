@@ -1,6 +1,5 @@
 import { z } from 'zod'
 
-// Base schema with common product validations
 const baseProductSchema = z.object({
   name: z
     .string()
@@ -17,10 +16,8 @@ const baseProductSchema = z.object({
     .optional(),
 })
 
-// Schema for creating products (visible defaults to true in the action)
 export const createProductSchema = baseProductSchema
 
-// Schema for updating products (all fields optional, can include visible)
 export const updateProductSchema = baseProductSchema
   .extend({
     visible: z.boolean().optional(),

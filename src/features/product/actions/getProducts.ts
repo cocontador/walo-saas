@@ -40,7 +40,7 @@ export async function getProducts(): Promise<ActionResult<ProductListItem[]>> {
       }
     }
 
-    // Fetch products for this store
+    // Fetch products and validate they belong to user's store
     const products = await prisma.product.findMany({
       where: {
         storeId,

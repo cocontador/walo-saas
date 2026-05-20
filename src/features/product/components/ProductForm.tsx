@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -270,3 +270,4 @@ export function ProductForm({ mode = 'create', initialValues, productId }: Produ
     </div>
   )
 }
+
