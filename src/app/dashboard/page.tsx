@@ -1,11 +1,10 @@
 import { getServerSession } from 'next-auth'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-
-import { SignOutButton } from '@/features/auth/components/SignOutButton'
 import { StoreStatusButton } from '@/features/store/components/StoreStatusButton'
 import { StoreForm } from '@/features/store/components/StoreForm'
 import { authOptions } from '@/server/auth'
+import { ShareButton } from '@/features/store/components/ShareButton'
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions)
@@ -29,10 +28,6 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <span className="text-xl font-bold text-gray-900">WALO</span>
-        <SignOutButton />
-      </nav>
 
       <main className="max-w-4xl mx-auto px-6 py-12">
         <div className="mb-10">
@@ -79,18 +74,27 @@ export default async function DashboardPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 mt-4">
+            <div className="flex items-center gap-2 mt-4 flex-wrap">
               <span className="text-sm text-gray-500">Link de tu tienda:</span>
               <code className="text-sm bg-gray-100 px-3 py-1 rounded-lg text-green-700 font-mono">
                 walo.app/{store.slug}
               </code>
+              <Link
+                href={`/${store.slug}`}
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-white bg-green-500 hover:bg-green-600 px-3 py-1 rounded-lg transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                Ver catálogo
+              </Link>
+              <ShareButton slug={store.slug} />
             </div>
 
             <div className="flex items-center gap-3 mt-4">
               <span
-                className={`text-sm font-medium px-3 py-1 rounded-full ${
-                  store.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                }`}
+                className={`text-sm font-medium px-3 py-1 rounded-full ${store.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                  }`}
               >
                 {store.isActive ? 'Activa' : 'Inactiva'}
               </span>
