@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 
 import { authOptions } from '@/server/auth'
-import { getProducts } from '@/features/product/actions'
+import { getProducts, hideProduct, reactivateProduct } from '@/features/product/actions'
 
 export default async function ProductsPage() {
   const session = await getServerSession(authOptions)
@@ -124,21 +124,36 @@ export default async function ProductsPage() {
                         )}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <Link
-                          href={`/dashboard/products/${product.id}/edit`}
-                          className="inline-flex items-center gap-2 rounded-lg bg-blue-100 px-3 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-200"
-                        >
-                          <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
-                            <path
-                              d="M3 17.25V21h3.75L17.81 9.94m-2.83-2.83l2.83-2.83a2 2 0 012.83 0l2.83 2.83a2 2 0 010 2.83l-2.83 2.83m-2.83-2.83L9.94 3.19"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                          Editar
-                        </Link>
+                        <div className="flex justify-end gap-2">
+                          <Link
+                            href={`/dashboard/products/${product.id}/edit`}
+                            className="inline-flex items-center gap-2 rounded-lg bg-blue-100 px-3 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-200"
+                          >
+                            <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
+                              <path
+                                d="M3 17.25V21h3.75L17.81 9.94m-2.83-2.83l2.83-2.83a2 2 0 012.83 0l2.83 2.83a2 2 0 010 2.83l-2.83 2.83m-2.83-2.83L9.94 3.19"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                            Editar
+                          </Link>
+                          <form action={product.visible ? hideProduct : reactivateProduct} method="post" className="inline-block">
+                            <input type="hidden" name="productId" value={product.id} />
+                            <button
+                              type="submit"
+                              className={`inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                                product.visible
+                                  ? 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+                                  : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                              }`}
+                            >
+                              {product.visible ? 'Ocultar' : 'Reactivar'}
+                            </button>
+                          </form>
+                        </div>
                       </td>
                     </tr>
                   ))}

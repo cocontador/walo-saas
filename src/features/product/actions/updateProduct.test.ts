@@ -17,7 +17,7 @@ vi.mock('@/lib/prisma', () => ({
   prisma: {
     product: {
       findFirst: vi.fn(),
-      update: vi.fn(),
+      updateMany: vi.fn(),
     },
   },
 }))
@@ -51,7 +51,8 @@ describe('updateProduct - WALO-155, WALO-156, WALO-157, WALO-158', () => {
       visible: true,
     }
 
-    vi.mocked(prisma.product.update).mockResolvedValue(updatedProduct as any)
+    vi.mocked(prisma.product.updateMany).mockResolvedValue({ count: 1 } as any)
+    vi.mocked(prisma.product.findFirst).mockResolvedValue(updatedProduct as any)
 
     // Act
     const result = await updateProduct('prod-1', updateData)
@@ -61,7 +62,7 @@ describe('updateProduct - WALO-155, WALO-156, WALO-157, WALO-158', () => {
     if (result.success) {
       expect(result.data).toEqual(updatedProduct)
     }
-    expect(prisma.product.update).toHaveBeenCalled()
+    expect(prisma.product.updateMany).toHaveBeenCalled()
   })
 
   it('WALO-157: debería mantener tenant - validar que actualiza solo productos de la tienda del usuario', async () => {
