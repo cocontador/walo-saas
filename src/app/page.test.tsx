@@ -7,7 +7,7 @@ describe('HomePage', () => {
     render(<HomePage />)
 
     expect(
-      screen.getByRole('heading', { name: 'WALO' })
+      screen.getByRole('heading', { name: /tu catálogo digital/i })
     ).toBeInTheDocument()
   })
 })
