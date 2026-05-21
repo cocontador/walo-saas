@@ -69,15 +69,15 @@ describe('Store logo actions', () => {
     mockPrisma.store.findUnique.mockResolvedValue({ id: 'store_1' })
     mockPrisma.store.update.mockResolvedValue({
       id: 'store_1',
-      logoUrl: 'https://pub-test.r2.dev/stores/store_1/logo.png',
-      logoKey: 'stores/store_1/logo.png',
+      logoUrl: 'https://pub-test.r2.dev/stores/store_1/logo',
+      logoKey: 'stores/store_1/logo',
     })
 
     const result = await uploadLogo(createLogoFormData())
 
     expect(result.ok).toBe(true)
     if (result.ok) {
-      expect(result.logoUrl).toContain('https://pub-test.r2.dev/stores/store_1/logo.png')
+      expect(result.logoUrl).toContain('https://pub-test.r2.dev/stores/store_1/logo')
     }
     expect(mockPrisma.storeMember.findFirst).toHaveBeenCalledOnce()
     expect(mockSend).toHaveBeenCalledOnce()
@@ -100,7 +100,7 @@ describe('Store logo actions', () => {
 
   it('replaceLogo ejecuta rollback en R2 si falla update de Prisma', async () => {
     mockPrisma.storeMember.findFirst.mockResolvedValue({ id: 'member_1', role: 'OWNER' })
-    mockPrisma.store.findUnique.mockResolvedValue({ id: 'store_1', logoKey: 'stores/store_1/logo.jpg' })
+    mockPrisma.store.findUnique.mockResolvedValue({ id: 'store_1', logoKey: 'stores/store_1/logo' })
     mockPrisma.store.update.mockRejectedValue(new Error('DB update failed'))
 
     await expect(replaceLogo(createLogoFormData())).rejects.toThrow('DB update failed')
