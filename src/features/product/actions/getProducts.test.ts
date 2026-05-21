@@ -150,4 +150,112 @@ describe('getProducts - WALO-147, WALO-148, WALO-149, WALO-150', () => {
       expect(result.error).toContain('No tienes una tienda asociada')
     }
   })
+
+  it('WALO-32: debería buscar productos por searchTerm en name y description', async () => {
+    // Arrange
+    vi.mocked(getServerSession).mockResolvedValue({
+      user: { id: 'user-123', email: 'test@example.com' },
+    } as any)
+
+    vi.mocked(getUserStoreId).mockResolvedValue('store-456')
+
+    const searchTerm = 'azul'
+    const mockProducts = [
+      {
+        id: 'prod-1',
+        name: 'Camiseta AZUL',
+        price: 49900,
+        description: 'Camiseta de algodón color azul',
+        visible: true,
+        createdAt: new Date(),
+      },
+      {
+        id: 'prod-2',
+        name: 'Pantalón Negro',
+        price: 79900,
+        description: 'Pantalón de mezclilla azul marino',
+        visible: true,
+        createdAt: new Date(),
+      },
+    ]
+
+    vi.mocked(prisma.product.findMany).mockResolvedValue(mockProducts as any)
+
+    // Act
+    const result = await getProducts(searchTerm)
+
+    // Assert
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data).toEqual(mockProducts)
+    }
+    expect(prisma.product.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          storeId: 'store-456',
+          OR: expect.arrayContaining([
+            expect.objectContaining({
+              name: expect.objectContaining({
+                contains: searchTerm.trim(),
+                mode: 'insensitive',
+              }),
+            }),
+            expect.objectContaining({
+              description: expect.objectContaining({
+                contains: searchTerm.trim(),
+                mode: 'insensitive',
+              }),
+            }),
+          ]),
+        }),
+      })
+    )
+  })
+
+  it('debería retornar todos los productos cuando searchTerm está vacío', async () => {
+    // Arrange
+    vi.mocked(getServerSession).mockResolvedValue({
+      user: { id: 'user-123', email: 'test@example.com' },
+    } as any)
+
+    vi.mocked(getUserStoreId).mockResolvedValue('store-456')
+
+    const mockProducts = [
+      {
+        id: 'prod-1',
+        name: 'Producto 1',
+        price: 50000,
+        description: 'Descripción 1',
+        visible: true,
+        createdAt: new Date(),
+      },
+      {
+        id: 'prod-2',
+        name: 'Producto 2',
+        price: 75000,
+        description: null,
+        visible: false,
+        createdAt: new Date(),
+      },
+    ]
+
+    vi.mocked(prisma.product.findMany).mockResolvedValue(mockProducts as any)
+
+    // Act
+    const result = await getProducts('')
+
+    // Assert
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data).toEqual(mockProducts)
+    }
+    // Verifica que NO hay OR cuando searchTerm es vacío
+    expect(prisma.product.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          storeId: 'store-456',
+        },
+      })
+    )
+  })
 })

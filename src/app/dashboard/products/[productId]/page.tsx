@@ -1,5 +1,5 @@
 import { getServerSession } from 'next-auth'
-import { redirect } from 'next/navigation'
+import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 
 import { authOptions } from '@/server/auth'
@@ -19,6 +19,11 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
   }
 
   const { productId } = await params
+
+  // Early validation: productId must exist, be non-empty, and be a valid string
+  if (!productId || typeof productId !== 'string' || productId.trim() === '') {
+    notFound()
+  }
 
   const result = await getProductById(productId)
 
