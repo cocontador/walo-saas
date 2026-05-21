@@ -5,14 +5,23 @@ import Link from 'next/link'
 import { authOptions } from '@/server/auth'
 import { getProducts } from '@/features/product/actions'
 
-export default async function ProductsPage() {
+type ProductsPageProps = {
+  searchParams: Promise<{
+    q?: string
+  }>
+}
+
+export default async function ProductsPage({ searchParams }: ProductsPageProps) {
   const session = await getServerSession(authOptions)
 
   if (!session?.user) {
     redirect('/login')
   }
 
-  const result = await getProducts()
+  const { q } = await searchParams
+  const searchTerm = q?.trim() || null
+
+  const result = await getProducts(searchTerm)
 
   if (!result.success) {
     return (
@@ -62,17 +71,59 @@ export default async function ProductsPage() {
           </Link>
         </div>
 
+        {/* Search Bar */}
+        <div className="mb-8">
+          <form action="/dashboard/products" method="get" className="flex gap-2">
+            <input
+              type="text"
+              name="q"
+              placeholder="Buscar por nombre o descripción..."
+              defaultValue={q || ''}
+              className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-500 transition-colors focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+            <button
+              type="submit"
+              className="rounded-xl bg-blue-500 px-6 py-3 font-semibold text-white transition-all hover:bg-blue-600"
+            >
+              Buscar
+            </button>
+            {searchTerm && (
+              <Link
+                href="/dashboard/products"
+                className="rounded-xl border border-gray-300 bg-white px-6 py-3 font-semibold text-gray-700 transition-all hover:bg-gray-50"
+              >
+                Limpiar
+              </Link>
+            )}
+          </form>
+        </div>
+
+        {/* Search term display */}
+        {searchTerm && (
+          <div className="mb-4 text-sm text-gray-600">
+            Resultados de búsqueda para: <span className="font-semibold">{searchTerm}</span>
+          </div>
+        )}
+
         {/* Products List */}
         {products.length === 0 ? (
           <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center">
-            <div className="mb-4 text-4xl text-gray-300">📦</div>
-            <h3 className="mb-2 text-lg font-semibold text-gray-900">Sin productos</h3>
-            <p className="mb-6 text-gray-500">Comienza creando tu primer producto</p>
+            <div className="mb-4 text-4xl text-gray-300">
+              {searchTerm ? '🔍' : '📦'}
+            </div>
+            <h3 className="mb-2 text-lg font-semibold text-gray-900">
+              {searchTerm ? 'No se encontraron productos' : 'Sin productos'}
+            </h3>
+            <p className="mb-6 text-gray-500">
+              {searchTerm
+                ? 'Intenta con otros términos de búsqueda'
+                : 'Comienza creando tu primer producto'}
+            </p>
             <Link
               href="/dashboard/products/create"
               className="inline-block rounded-xl bg-green-500 px-6 py-3 font-semibold text-white transition-all hover:bg-green-600"
             >
-              Crear primer producto
+              {searchTerm ? 'Crear nuevo producto' : 'Crear primer producto'}
             </Link>
           </div>
         ) : (
@@ -105,7 +156,7 @@ export default async function ProductsPage() {
                         <span className="font-semibold text-gray-900">{product.name}</span>
                       </td>
                       <td className="px-6 py-4 text-gray-600">
-                        ${product.price.toLocaleString('es-CO')}
+                        ${product.price.toLocaleString('es-CL')}
                       </td>
                       <td className="max-w-xs px-6 py-4 text-gray-600">
                         <span className="line-clamp-2 text-sm">
@@ -124,21 +175,35 @@ export default async function ProductsPage() {
                         )}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <Link
-                          href={`/dashboard/products/${product.id}/edit`}
-                          className="inline-flex items-center gap-2 rounded-lg bg-blue-100 px-3 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-200"
-                        >
-                          <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
-                            <path
-                              d="M3 17.25V21h3.75L17.81 9.94m-2.83-2.83l2.83-2.83a2 2 0 012.83 0l2.83 2.83a2 2 0 010 2.83l-2.83 2.83m-2.83-2.83L9.94 3.19"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                          Editar
-                        </Link>
+                        <div className="flex items-center justify-end gap-2">
+                          <Link
+                            href={`/dashboard/products/${product.id}`}
+                            className="inline-flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
+                          >
+                            <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
+                              <path
+                                d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"
+                                fill="currentColor"
+                              />
+                            </svg>
+                            Ver
+                          </Link>
+                          <Link
+                            href={`/dashboard/products/${product.id}/edit`}
+                            className="inline-flex items-center gap-2 rounded-lg bg-blue-100 px-3 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-200"
+                          >
+                            <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
+                              <path
+                                d="M3 17.25V21h3.75L17.81 9.94m-2.83-2.83l2.83-2.83a2 2 0 012.83 0l2.83 2.83a2 2 0 010 2.83l-2.83 2.83m-2.83-2.83L9.94 3.19"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                            Editar
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   ))}

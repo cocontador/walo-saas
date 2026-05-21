@@ -17,7 +17,7 @@ vi.mock('@/lib/prisma', () => ({
   prisma: {
     product: {
       findFirst: vi.fn(),
-      update: vi.fn(),
+      updateMany: vi.fn(),
     },
   },
 }))
@@ -35,14 +35,6 @@ describe('updateProduct - WALO-155, WALO-156, WALO-157, WALO-158', () => {
 
     vi.mocked(getUserStoreId).mockResolvedValue('store-456')
 
-    vi.mocked(prisma.product.findFirst).mockResolvedValue({ id: 'prod-1' } as any)
-
-    const updateData = {
-      name: 'Producto actualizado',
-      price: 60000,
-      description: 'Nueva descripción',
-    }
-
     const updatedProduct = {
       id: 'prod-1',
       name: 'Producto actualizado',
@@ -51,7 +43,19 @@ describe('updateProduct - WALO-155, WALO-156, WALO-157, WALO-158', () => {
       visible: true,
     }
 
-    vi.mocked(prisma.product.update).mockResolvedValue(updatedProduct as any)
+    // Mock findFirst for initial check and final retrieval
+    vi.mocked(prisma.product.findFirst)
+      .mockResolvedValueOnce({ id: 'prod-1' } as any) // First call: check if exists
+      .mockResolvedValueOnce(updatedProduct as any) // Second call: get updated product
+
+    // Mock updateMany
+    vi.mocked(prisma.product.updateMany).mockResolvedValue({ count: 1 } as any)
+
+    const updateData = {
+      name: 'Producto actualizado',
+      price: 60000,
+      description: 'Nueva descripción',
+    }
 
     // Act
     const result = await updateProduct('prod-1', updateData)
@@ -61,7 +65,14 @@ describe('updateProduct - WALO-155, WALO-156, WALO-157, WALO-158', () => {
     if (result.success) {
       expect(result.data).toEqual(updatedProduct)
     }
-    expect(prisma.product.update).toHaveBeenCalled()
+    expect(prisma.product.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          id: 'prod-1',
+          storeId: 'store-456',
+        },
+      })
+    )
   })
 
   it('WALO-157: debería mantener tenant - validar que actualiza solo productos de la tienda del usuario', async () => {
@@ -74,7 +85,12 @@ describe('updateProduct - WALO-155, WALO-156, WALO-157, WALO-158', () => {
     vi.mocked(getUserStoreId).mockResolvedValue(userStoreId)
 
     // Simular que el producto pertenece a la tienda del usuario
-    vi.mocked(prisma.product.findFirst).mockResolvedValue({ id: 'prod-1' } as any)
+    vi.mocked(prisma.product.findFirst)
+      .mockResolvedValueOnce({ id: 'prod-1' } as any) // First check
+      .mockResolvedValueOnce({ id: 'prod-1', name: 'Nuevo nombre', price: 100, description: null, visible: true } as any) // After update
+
+    // Mock updateMany to return success
+    vi.mocked(prisma.product.updateMany).mockResolvedValue({ count: 1 } as any)
 
     // Act
     await updateProduct('prod-1', { name: 'Nuevo nombre' })
@@ -86,6 +102,15 @@ describe('updateProduct - WALO-155, WALO-156, WALO-157, WALO-158', () => {
         where: {
           id: 'prod-1',
           storeId: userStoreId, // WALO-157: Verifica que mantiene tenant
+        },
+      })
+    )
+    // Verifica que updateMany también filtra por storeId
+    expect(prisma.product.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          id: 'prod-1',
+          storeId: userStoreId,
         },
       })
     )
@@ -102,6 +127,9 @@ describe('updateProduct - WALO-155, WALO-156, WALO-157, WALO-158', () => {
     // El producto no existe en la tienda del usuario
     vi.mocked(prisma.product.findFirst).mockResolvedValue(null)
 
+    // Mock updateMany (should not be called in this case)
+    vi.mocked(prisma.product.updateMany).mockResolvedValue({ count: 0 } as any)
+
     // Act
     const result = await updateProduct('prod-999', { name: 'Intento de cambio' })
 
@@ -110,11 +138,15 @@ describe('updateProduct - WALO-155, WALO-156, WALO-157, WALO-158', () => {
     if (!result.success) {
       expect(result.error).toContain('no tienes permiso')
     }
+    // updateMany should NOT have been called since product check failed first
+    expect(prisma.product.updateMany).not.toHaveBeenCalled()
   })
 
   it('debería rechazar si no hay sesión autenticada', async () => {
     // Arrange
     vi.mocked(getServerSession).mockResolvedValue(null)
+
+    vi.mocked(prisma.product.updateMany).mockResolvedValue({ count: 0 } as any)
 
     // Act
     const result = await updateProduct('prod-1', { name: 'Nuevo nombre' })
@@ -133,6 +165,8 @@ describe('updateProduct - WALO-155, WALO-156, WALO-157, WALO-158', () => {
     } as any)
 
     vi.mocked(getUserStoreId).mockResolvedValue(null)
+
+    vi.mocked(prisma.product.updateMany).mockResolvedValue({ count: 0 } as any)
 
     // Act
     const result = await updateProduct('prod-1', { name: 'Nuevo nombre' })

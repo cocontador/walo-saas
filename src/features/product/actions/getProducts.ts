@@ -1,4 +1,4 @@
-'use server'
+﻿'use server'
 
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/server/auth'
@@ -18,7 +18,7 @@ export type ProductListItem = {
   createdAt: Date
 }
 
-export async function getProducts(): Promise<ActionResult<ProductListItem[]>> {
+export async function getProducts(searchTerm?: string | null): Promise<ActionResult<ProductListItem[]>> {
   try {
     // Get user session
     const session = await getServerSession(authOptions)
@@ -44,6 +44,14 @@ export async function getProducts(): Promise<ActionResult<ProductListItem[]>> {
     const products = await prisma.product.findMany({
       where: {
         storeId,
+        ...(searchTerm && searchTerm.trim()
+          ? {
+              OR: [
+                { name: { contains: searchTerm.trim(), mode: 'insensitive' } },
+                { description: { contains: searchTerm.trim(), mode: 'insensitive' } },
+              ],
+            }
+          : {}),
       },
       select: {
         id: true,
@@ -70,3 +78,4 @@ export async function getProducts(): Promise<ActionResult<ProductListItem[]>> {
     }
   }
 }
+
