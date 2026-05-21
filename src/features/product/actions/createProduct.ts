@@ -1,5 +1,7 @@
 'use server'
 
+import "server-only"
+
 import { z } from 'zod'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/server/auth'

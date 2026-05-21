@@ -97,42 +97,20 @@ export default async function DashboardPage() {
               <StoreStatusButton storeId={store.id} isActive={store.isActive} />
             </div>
 
-            <div className="mt-6">
-              <Link
-                href="/dashboard/products"
-                className="inline-block rounded-xl bg-green-500 px-6 py-3 text-center font-semibold text-white transition-all hover:bg-green-600"
-              >
-                Crear nuevo producto
-              </Link>
-            </div>
-
             <div className="mt-6 border-t border-gray-100 pt-6">
               <h3 className="font-semibold text-gray-900 mb-4">Editar datos de tienda</h3>
               <StoreForm
                 storeId={store.id}
                 initialName={store.name}
+                initialSlug={store.slug}
                 initialDescription={store.description}
+                initialLogoUrl={store.logoUrl}
               />
             </div>
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[
-            { title: 'Agregar producto', desc: 'Sube fotos, precios y descripciones.', icon: '📦' },
-            { title: 'Compartir catálogo', desc: 'Envía el link por WhatsApp.', icon: '🔗' },
-            { title: 'Ver pedidos', desc: 'Gestiona los pedidos entrantes.', icon: '📋' },
-          ].map((card) => (
-            <div
-              key={card.title}
-              className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div className="text-3xl mb-3">{card.icon}</div>
-              <h3 className="font-semibold text-gray-900">{card.title}</h3>
-              <p className="text-sm text-gray-500 mt-1">{card.desc}</p>
-            </div>
-          ))}
-        </div>
+
       </main>
     </div>
   )
