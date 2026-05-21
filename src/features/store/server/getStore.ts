@@ -1,3 +1,5 @@
+import "server-only"
+
 // src/features/store/actions/getStore.ts
 import { prisma } from "@/lib/prisma";
 

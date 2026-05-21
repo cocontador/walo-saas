@@ -1,5 +1,7 @@
 'use server'
 
+import "server-only"
+
 import { DeleteObjectCommand } from '@aws-sdk/client-s3'
 
 import { prisma } from '@/lib/prisma'

@@ -1,3 +1,4 @@
+import "server-only"
 import { S3Client } from "@aws-sdk/client-s3"
 
 /**
@@ -34,11 +35,12 @@ export const r2Client = new S3Client({
 /**
  * Construye la key canónica del logo de una tienda en el bucket de R2.
  * @param storeId Identificador de la tienda propietaria del logo.
- * @param extension Extensión del archivo (con o sin punto).
- * @returns Ruta final del objeto en formato `stores/{storeId}/logo.{extension}`.
- * @throws {Error} Si `storeId` o `extension` están vacíos.
+ * @param extension Extensión del archivo (con o sin punto) para validación defensiva.
+ * @returns Ruta final del objeto en formato `stores/{storeId}/logo`.
+ * @throws {Error} Si `storeId` o `extension` están vacíos, o si la extensión no está permitida.
  */
 export function buildStoreLogoKey(storeId: string, extension: string): string {
+  const ALLOWED = ["jpg", "jpeg", "png", "webp"]
   const cleanStoreId = storeId.trim()
   const cleanExtension = extension.trim().replace(/^\./, "").toLowerCase()
 
@@ -50,5 +52,9 @@ export function buildStoreLogoKey(storeId: string, extension: string): string {
     throw new Error("extension is required")
   }
 
-  return `stores/${cleanStoreId}/logo.${cleanExtension}`
+  if (!ALLOWED.includes(cleanExtension)) {
+    throw new Error(`Extension not allowed: ${cleanExtension}`)
+  }
+
+  return `stores/${cleanStoreId}/logo`
 }
