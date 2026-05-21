@@ -1,4 +1,4 @@
-'use server'
+﻿'use server'
 
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/server/auth'
@@ -78,3 +78,4 @@ export async function getProducts(searchTerm?: string | null): Promise<ActionRes
     }
   }
 }
+

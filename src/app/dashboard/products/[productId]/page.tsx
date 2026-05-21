@@ -1,4 +1,4 @@
-import { getServerSession } from 'next-auth'
+﻿import { getServerSession } from 'next-auth'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 
@@ -56,7 +56,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
 
   const product = result.data
 
-  const formattedDate = new Intl.DateTimeFormat('es-CO', {
+  const formattedDate = new Intl.DateTimeFormat('es-CL', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -64,7 +64,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
     minute: '2-digit',
   }).format(new Date(product.createdAt))
 
-  const updatedFormattedDate = new Intl.DateTimeFormat('es-CO', {
+  const updatedFormattedDate = new Intl.DateTimeFormat('es-CL', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -107,7 +107,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                 Precio
               </h2>
               <p className="mt-2 text-3xl font-bold text-gray-900">
-                ${product.price.toLocaleString('es-CO')}
+                ${product.price.toLocaleString('es-CL')}
               </p>
             </div>
 
@@ -180,3 +180,5 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
     </main>
   )
 }
+
+
