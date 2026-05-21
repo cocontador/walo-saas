@@ -28,6 +28,8 @@ model Store {
   name          String
   description   String?
   whatsappPhone String?
+  logoUrl       String?
+  logoKey       String?
   isActive      Boolean       @default(true)
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
