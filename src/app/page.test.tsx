@@ -3,11 +3,11 @@ import { describe, expect, it } from 'vitest'
 import HomePage from './page'
 
 describe('HomePage', () => {
-  it('renderiza el título principal', () => {
+  it('renderiza el CTA principal de la landing', () => {
     render(<HomePage />)
 
     expect(
-      screen.getByRole('heading', { name: /tu catálogo digital/i })
+      screen.getByRole('link', { name: /crear mi tienda/i })
     ).toBeInTheDocument()
   })
 })
