@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 
 import { authOptions } from '@/server/auth'
-import { getProducts, hideProduct, reactivateProduct } from '@/features/product/actions'
+import { getProducts } from '@/features/product/actions'
 
 type ProductsPageProps = {
   searchParams: Promise<{
@@ -203,19 +203,6 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                             </svg>
                             Editar
                           </Link>
-                          <form action={product.visible ? hideProduct : reactivateProduct} method="post" className="inline-block">
-                            <input type="hidden" name="productId" value={product.id} />
-                            <button
-                              type="submit"
-                              className={`inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                                product.visible
-                                  ? 'bg-orange-100 text-orange-700 hover:bg-orange-200'
-                                  : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
-                              }`}
-                            >
-                              {product.visible ? 'Ocultar' : 'Reactivar'}
-                            </button>
-                          </form>
                         </div>
                       </td>
                     </tr>
