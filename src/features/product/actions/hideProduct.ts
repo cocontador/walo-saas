@@ -1,4 +1,5 @@
 'use server'
+import "server-only"
 
 import { getServerSession } from 'next-auth'
 import { revalidatePath } from 'next/cache'
@@ -9,6 +10,15 @@ import { prisma } from '@/lib/prisma'
 export type ActionResult<T> =
   | { success: true; data: T }
   | { success: false; error: string }
+
+function getProductIdFromFormData(formData: FormData): string | null {
+  const rawProductId = formData.get('productId')
+
+  if (typeof rawProductId !== 'string') return null
+
+  const productId = rawProductId.trim()
+  return productId.length > 0 ? productId : null
+}
 
 async function hideProductById(productId: string): Promise<ActionResult<{ id: string; visible: boolean }>> {
   if (!productId) {
@@ -92,7 +102,9 @@ async function hideProductById(productId: string): Promise<ActionResult<{ id: st
 }
 
 export async function hideProduct(formData: FormData): Promise<void> {
-  const productId = String(formData.get('productId'))
+  const productId = getProductIdFromFormData(formData)
+
+  if (!productId) return
   await hideProductById(productId)
 }
 
