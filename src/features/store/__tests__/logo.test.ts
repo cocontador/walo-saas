@@ -69,15 +69,15 @@ describe('Store logo actions', () => {
     mockPrisma.store.findUnique.mockResolvedValue({ id: 'store_1' })
     mockPrisma.store.update.mockResolvedValue({
       id: 'store_1',
-      logoUrl: 'https://pub-test.r2.dev/stores/store_1/logo.png',
-      logoKey: 'stores/store_1/logo.png',
+      logoUrl: 'https://pub-test.r2.dev/stores/store_1/logo',
+      logoKey: 'stores/store_1/logo',
     })
 
     const result = await uploadLogo(createLogoFormData())
 
     expect(result.ok).toBe(true)
     if (result.ok) {
-      expect(result.logoUrl).toContain('https://pub-test.r2.dev/stores/store_1/logo.png')
+      expect(result.logoUrl).toContain('https://pub-test.r2.dev/stores/store_1/logo')
     }
     expect(mockPrisma.storeMember.findFirst).toHaveBeenCalledOnce()
     expect(mockSend).toHaveBeenCalledOnce()
