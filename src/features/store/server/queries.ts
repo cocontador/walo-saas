@@ -37,3 +37,16 @@ export async function getVisibleProducts(storeId: string) {
         },
     })
 }
+
+export async function canManageStoreByUser(storeId: string, userId: string) {
+    const membership = await prisma.storeMember.findFirst({
+        where: {
+            storeId,
+            userId,
+            role: "OWNER",
+        },
+        select: { id: true },
+    })
+
+    return Boolean(membership)
+}

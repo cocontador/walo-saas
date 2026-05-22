@@ -1,5 +1,6 @@
-import { render, screen, fireEvent } from '@testing-library/react'
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { fireEvent, render, screen } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
 import { ShareButton } from '@/features/store/components/ShareButton'
 
 describe('ShareButton', () => {
@@ -9,7 +10,7 @@ describe('ShareButton', () => {
                 writeText: vi.fn().mockResolvedValue(undefined),
             },
         })
-        vi.spyOn(window, 'alert').mockImplementation(() => { })
+        vi.spyOn(window, 'alert').mockImplementation(() => {})
     })
 
     it('renderiza el botón de compartir', () => {
