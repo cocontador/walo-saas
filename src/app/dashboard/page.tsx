@@ -1,9 +1,9 @@
-import { getServerSession } from 'next-auth'
 import Link from 'next/link'
+import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
 
-import { SignOutButton } from '@/features/auth/components/SignOutButton'
 import { StoreStatusButton } from '@/features/store/components/StoreStatusButton'
+import { ShareButton } from '@/features/store/components/ShareButton'
 import { StoreForm } from '@/features/store/components/StoreForm'
 import { authOptions } from '@/server/auth'
 
@@ -29,32 +29,27 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <span className="text-xl font-bold text-gray-900">WALO</span>
-        <SignOutButton />
-      </nav>
-
-      <main className="max-w-4xl mx-auto px-6 py-12">
+      <main className="mx-auto max-w-4xl px-6 py-12">
         <div className="mb-10">
           <h1 className="text-3xl font-bold text-gray-900">
             ¡Bienvenido/a, {session.user.name ?? session.user.email}! 👋
           </h1>
-          <p className="text-gray-500 mt-2">
+          <p className="mt-2 text-gray-500">
             Tu tienda está lista. Empieza a agregar productos y comparte tu catálogo.
           </p>
         </div>
 
         {!store && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6 mb-6">
+          <div className="mb-6 rounded-2xl border border-yellow-200 bg-yellow-50 p-6">
             <h3 className="font-semibold text-yellow-800">No tienes una tienda aún</h3>
-            <p className="text-sm text-yellow-700 mt-1">Crea tu tienda para empezar a vender.</p>
+            <p className="mt-1 text-sm text-yellow-700">Crea tu tienda para empezar a vender.</p>
           </div>
         )}
 
         {store && (
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm mb-6">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
+          <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="mb-4 flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-500">
                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
                   <path
                     d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"
@@ -79,16 +74,31 @@ export default async function DashboardPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 mt-4">
+            <div className="mt-4 flex flex-wrap items-center gap-2">
               <span className="text-sm text-gray-500">Link de tu tienda:</span>
-              <code className="text-sm bg-gray-100 px-3 py-1 rounded-lg text-green-700 font-mono">
+              <code className="rounded-lg bg-gray-100 px-3 py-1 font-mono text-sm text-green-700">
                 walo.app/{store.slug}
               </code>
+              <Link
+                href={`/${store.slug}`}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-green-500 px-3 py-1 text-sm font-semibold text-white transition-colors hover:bg-green-600"
+              >
+                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                  />
+                </svg>
+                Ver catálogo
+              </Link>
+              <ShareButton slug={store.slug} />
             </div>
 
-            <div className="flex items-center gap-3 mt-4">
+            <div className="mt-4 flex items-center gap-3">
               <span
-                className={`text-sm font-medium px-3 py-1 rounded-full ${
+                className={`rounded-full px-3 py-1 text-sm font-medium ${
                   store.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                 }`}
               >
@@ -97,42 +107,18 @@ export default async function DashboardPage() {
               <StoreStatusButton storeId={store.id} isActive={store.isActive} />
             </div>
 
-            <div className="mt-6">
-              <Link
-                href="/dashboard/products"
-                className="inline-block rounded-xl bg-green-500 px-6 py-3 text-center font-semibold text-white transition-all hover:bg-green-600"
-              >
-                Crear nuevo producto
-              </Link>
-            </div>
-
             <div className="mt-6 border-t border-gray-100 pt-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Editar datos de tienda</h3>
+              <h3 className="mb-4 font-semibold text-gray-900">Editar datos de tienda</h3>
               <StoreForm
                 storeId={store.id}
                 initialName={store.name}
+                initialSlug={store.slug}
                 initialDescription={store.description}
+                initialLogoUrl={store.logoUrl}
               />
             </div>
           </div>
         )}
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[
-            { title: 'Agregar producto', desc: 'Sube fotos, precios y descripciones.', icon: '📦' },
-            { title: 'Compartir catálogo', desc: 'Envía el link por WhatsApp.', icon: '🔗' },
-            { title: 'Ver pedidos', desc: 'Gestiona los pedidos entrantes.', icon: '📋' },
-          ].map((card) => (
-            <div
-              key={card.title}
-              className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div className="text-3xl mb-3">{card.icon}</div>
-              <h3 className="font-semibold text-gray-900">{card.title}</h3>
-              <p className="text-sm text-gray-500 mt-1">{card.desc}</p>
-            </div>
-          ))}
-        </div>
       </main>
     </div>
   )

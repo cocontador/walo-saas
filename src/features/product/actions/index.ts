@@ -1,2 +1,8 @@
 export { createProduct, type ActionResult } from './createProduct'
-export { createProductSchema, type CreateProductInput } from './schema'
+export { getProducts, type ProductListItem } from './getProducts'
+export { getProductById, type ProductDetail } from './getProductById'
+export { updateProduct } from './updateProduct'
+export { hideProduct } from './hideProduct'
+export { reactivateProduct } from './reactivateProduct'
+export { deactivateProduct } from './deactivateProduct'
+

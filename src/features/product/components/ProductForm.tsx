@@ -1,8 +1,20 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createProduct } from '@/features/product/actions'
+import { createProduct, updateProduct } from '@/features/product/actions'
+
+type FormMode = 'create' | 'edit'
+
+type ProductFormProps = {
+  mode?: FormMode
+  initialValues?: {
+    name: string
+    price: number
+    description: string | null
+  }
+  productId?: string
+}
 
 type FieldProps = {
   label: string
@@ -27,10 +39,7 @@ function Field({
 }: FieldProps) {
   return (
     <div>
-      <label
-        htmlFor={id}
-        className="mb-1 block text-xs font-semibold tracking-widest text-gray-500"
-      >
+      <label htmlFor={id} className="mb-1 block text-xs font-semibold tracking-widest text-gray-500">
         {label}
         {required && <span className="text-red-500">*</span>}
       </label>
@@ -73,10 +82,7 @@ function TextArea({
 }: TextAreaProps) {
   return (
     <div>
-      <label
-        htmlFor={id}
-        className="mb-1 block text-xs font-semibold tracking-widest text-gray-500"
-      >
+      <label htmlFor={id} className="mb-1 block text-xs font-semibold tracking-widest text-gray-500">
         {label}
         {required && <span className="text-red-500">*</span>}
       </label>
@@ -87,7 +93,7 @@ function TextArea({
         required={required}
         onChange={(e) => onChange(e.target.value)}
         rows={4}
-        className={`w-full resize-none rounded-xl border px-4 py-3 text-gray-900 placeholder-gray-400 transition-all focus:outline-none ${
+        className={`w-full rounded-xl border px-4 py-3 text-gray-900 placeholder-gray-400 transition-all focus:outline-none resize-none ${
           error
             ? 'border-red-300 bg-red-50 focus:border-red-500 focus:bg-white'
             : 'border-transparent bg-gray-100 focus:border-green-500 focus:bg-white'
@@ -98,17 +104,15 @@ function TextArea({
   )
 }
 
-export function ProductForm() {
+export function ProductForm({ mode = 'create', initialValues, productId }: ProductFormProps) {
   const router = useRouter()
-  const [name, setName] = useState('')
-  const [price, setPrice] = useState('')
-  const [description, setDescription] = useState('')
+  const [name, setName] = useState(initialValues?.name ?? '')
+  const [price, setPrice] = useState(String(initialValues?.price ?? ''))
+  const [description, setDescription] = useState(initialValues?.description ?? '')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
-  const [validationErrors, setValidationErrors] = useState<
-    Record<string, string>
-  >({})
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
 
   const validateForm = () => {
     const errors: Record<string, string> = {}
@@ -139,11 +143,19 @@ export function ProductForm() {
     setLoading(true)
 
     try {
-      const result = await createProduct({
+      const formData = {
         name: name.trim(),
         price: Math.round(Number(price)),
         description: description.trim() || null,
-      })
+      }
+
+      let result
+
+      if (mode === 'edit' && productId) {
+        result = await updateProduct(productId, formData)
+      } else {
+        result = await createProduct(formData)
+      }
 
       if (!result.success) {
         setError(result.error)
@@ -152,13 +164,17 @@ export function ProductForm() {
       }
 
       setSuccess(true)
-      setName('')
-      setPrice('')
-      setDescription('')
 
-      // Muestra el mensaje de éxito durante 2 segundos y luego redirige.
+      if (mode === 'create') {
+        setName('')
+        setPrice('')
+        setDescription('')
+      }
+
+      // Show success for 2 seconds then redirect
       setTimeout(() => {
-        router.push('/dashboard')
+        router.push('/dashboard/products')
+        router.refresh()
       }, 2000)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ocurrió un error inesperado')
@@ -167,10 +183,22 @@ export function ProductForm() {
     }
   }
 
+  const isEditMode = mode === 'edit'
+  const pageTitle = isEditMode ? 'Editar producto' : 'Crear producto'
+  const pageDescription = isEditMode ? 'Actualiza los detalles del producto' : 'Agrega un nuevo producto a tu catálogo'
+  const submitButtonText = isEditMode
+    ? loading
+      ? 'Guardando...'
+      : 'Guardar cambios'
+    : loading
+      ? 'Guardando...'
+      : 'Crear producto'
+  const successMessage = isEditMode ? '✓ Producto actualizado exitosamente.' : '✓ Producto creado exitosamente.'
+
   return (
     <div className="w-full max-w-2xl">
       <button
-        onClick={() => router.push('/dashboard')}
+        onClick={() => router.push('/dashboard/products')}
         className="mb-8 flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-gray-800"
       >
         <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
@@ -182,11 +210,11 @@ export function ProductForm() {
             strokeLinejoin="round"
           />
         </svg>
-        Volver al dashboard
+        Volver a productos
       </button>
 
-      <h2 className="mb-1 text-3xl font-bold text-gray-900">Crear producto</h2>
-      <p className="mb-8 text-gray-500">Agrega un nuevo producto a tu catálogo</p>
+      <h2 className="mb-1 text-3xl font-bold text-gray-900">{pageTitle}</h2>
+      <p className="mb-8 text-gray-500">{pageDescription}</p>
 
       {error && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
@@ -196,7 +224,7 @@ export function ProductForm() {
 
       {success && (
         <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-          ✓ Producto creado exitosamente.
+          {successMessage}
         </div>
       )}
 
@@ -236,9 +264,10 @@ export function ProductForm() {
           disabled={loading}
           className="w-full rounded-xl bg-green-500 px-6 py-3 font-semibold text-white transition-all hover:bg-green-600 disabled:bg-gray-400"
         >
-          {loading ? 'Guardando...' : 'Crear producto'}
+          {submitButtonText}
         </button>
       </form>
     </div>
   )
 }
+
