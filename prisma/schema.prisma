@@ -12,32 +12,47 @@ datasource db {
 }
 
 model User {
-  id           String        @id @default(cuid())
-  email        String        @unique
+  id           String   @id @default(cuid())
+  email        String   @unique
   name         String?
   passwordHash String
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  memberships  StoreMember[]
+  memberships StoreMember[]
 }
 
 model Store {
-  id            String        @id @default(cuid())
-  slug          String        @unique
+  id            String   @id @default(cuid())
+  slug          String   @unique
   name          String
   description   String?
   whatsappPhone String?
   logoUrl       String?
   logoKey       String?
-  isActive      Boolean       @default(true)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  memberships   StoreMember[]
-  products      Product[]
+  memberships StoreMember[]
+  products    Product[]
+  categories  Category[]
 
   @@index([slug])
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  storeId   String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store    Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@unique([storeId, name])
+  @@index([storeId])
 }
 
 model StoreMember {
@@ -47,8 +62,8 @@ model StoreMember {
   role      StoreRole @default(OWNER)
   createdAt DateTime  @default(now())
 
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  store     Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
 
   @@unique([userId, storeId])
   @@index([userId])
@@ -58,6 +73,7 @@ model StoreMember {
 model Product {
   id          String   @id @default(cuid())
   storeId     String
+  categoryId  String?
   name        String
   description String?
   price       Int
@@ -65,10 +81,12 @@ model Product {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  store    Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   @@index([storeId])
   @@index([storeId, visible])
+  @@index([storeId, categoryId])
 }
 
 enum StoreRole {

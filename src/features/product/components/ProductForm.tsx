@@ -6,13 +6,20 @@ import { createProduct, updateProduct } from '@/features/product/actions'
 
 type FormMode = 'create' | 'edit'
 
+type CategoryOption = {
+  id: string
+  name: string
+}
+
 type ProductFormProps = {
   mode?: FormMode
   initialValues?: {
     name: string
     price: number
     description: string | null
+    categoryId?: string | null
   }
+  categories?: CategoryOption[]
   productId?: string
 }
 
@@ -104,11 +111,12 @@ function TextArea({
   )
 }
 
-export function ProductForm({ mode = 'create', initialValues, productId }: ProductFormProps) {
+export function ProductForm({ mode = 'create', initialValues, categories, productId }: ProductFormProps) {
   const router = useRouter()
   const [name, setName] = useState(initialValues?.name ?? '')
   const [price, setPrice] = useState(String(initialValues?.price ?? ''))
   const [description, setDescription] = useState(initialValues?.description ?? '')
+  const [categoryId, setCategoryId] = useState(initialValues?.categoryId ?? '')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -147,6 +155,7 @@ export function ProductForm({ mode = 'create', initialValues, productId }: Produ
         name: name.trim(),
         price: Math.round(Number(price)),
         description: description.trim() || null,
+        ...(categoryId?.trim() ? { categoryId: categoryId.trim() } : {}),
       }
 
       let result
@@ -258,6 +267,27 @@ export function ProductForm({ mode = 'create', initialValues, productId }: Produ
           onChange={setDescription}
           required={false}
         />
+
+        {categories && categories.length > 0 && (
+          <div>
+            <label htmlFor="category" className="mb-1 block text-xs font-semibold tracking-widest text-gray-500">
+              Categoría
+            </label>
+            <select
+              id="category"
+              value={categoryId ?? ''}
+              onChange={(e) => setCategoryId(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 bg-gray-100 px-4 py-3 text-gray-900 transition-all focus:border-green-500 focus:bg-white focus:outline-none"
+            >
+              <option value="">Sin categoría</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <button
           type="submit"

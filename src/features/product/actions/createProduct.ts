@@ -37,6 +37,27 @@ export async function createProduct(
         error: 'No tienes una tienda asociada. Contacta a soporte.',
       }
     }
+    const categoryId = validatedData.categoryId?.trim()
+
+    if (categoryId) {
+      const category = await prisma.category.findFirst({
+        where: {
+          id: categoryId,
+          storeId,
+        },
+        select: {
+          id: true,
+        },
+      })
+
+      if (!category) {
+        return {
+          success: false,
+          error: 'La categoría seleccionada no existe o no pertenece a tu tienda.',
+        }
+      }
+    }
+
     // Create product in database
     const product = await prisma.product.create({
       data: {
@@ -45,6 +66,7 @@ export async function createProduct(
         price: validatedData.price,
         description: validatedData.description || null,
         visible: true,
+        ...(categoryId ? { categoryId } : {}),
       },
       select: {
         id: true,

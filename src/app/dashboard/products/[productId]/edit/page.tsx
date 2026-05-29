@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 
 import { authOptions } from '@/server/auth'
 import { getProductById } from '@/features/product/actions'
+import { getCategories } from '@/features/category/actions'
 import { ProductForm } from '@/features/product/components/ProductForm'
 
 type EditProductPageProps = {
@@ -35,6 +36,8 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
   }
 
   const product = result.data
+  const categoriesResult = await getCategories()
+  const categories = categoriesResult.success ? categoriesResult.data : []
 
   return (
     <main className="flex min-h-screen flex-col bg-gray-50 px-6 py-12">
@@ -42,10 +45,12 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
         <ProductForm
           mode="edit"
           productId={productId}
+          categories={categories}
           initialValues={{
             name: product.name,
             price: product.price,
             description: product.description,
+            categoryId: product.categoryId,
           }}
         />
       </div>

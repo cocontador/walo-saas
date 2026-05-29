@@ -11,21 +11,13 @@ export type ActionResult<T> =
   | { success: true; data: T }
   | { success: false; error: string }
 
-export type ProductDetail = {
+export type CategoryListItem = {
   id: string
   name: string
-  price: number
-  description: string | null
-  visible: boolean
-  storeId: string
-  categoryId: string | null
-  createdAt: Date
-  updatedAt: Date
 }
 
-export async function getProductById(productId: string): Promise<ActionResult<ProductDetail>> {
+export async function getCategories(): Promise<ActionResult<CategoryListItem[]>> {
   try {
-    // Get user session
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.id) {
@@ -35,7 +27,6 @@ export async function getProductById(productId: string): Promise<ActionResult<Pr
       }
     }
 
-    // Get user's store
     const storeId = await getUserStoreId()
 
     if (!storeId) {
@@ -45,41 +36,28 @@ export async function getProductById(productId: string): Promise<ActionResult<Pr
       }
     }
 
-    // Fetch product and validate it belongs to user's store
-    const product = await prisma.product.findFirst({
+    const categories = await prisma.category.findMany({
       where: {
-        id: productId,
         storeId,
       },
       select: {
         id: true,
         name: true,
-        price: true,
-        description: true,
-        visible: true,
-        storeId: true,
-        categoryId: true,
-        createdAt: true,
-        updatedAt: true,
+      },
+      orderBy: {
+        name: 'asc',
       },
     })
 
-    if (!product) {
-      return {
-        success: false,
-        error: 'Producto no encontrado o no tienes permiso para acceder a él.',
-      }
-    }
-
     return {
       success: true,
-      data: product,
+      data: categories,
     }
   } catch (error) {
-    console.error('Error fetching product:', error)
+    console.error('Error fetching categories:', error)
     return {
       success: false,
-      error: 'Ocurrió un error al obtener el producto. Por favor intenta nuevamente.',
+      error: 'Ocurrió un error al obtener las categorías. Por favor intenta nuevamente.',
     }
   }
 }

@@ -61,6 +61,33 @@ export async function updateProduct(
     // Validate input data
     const validatedData = updateProductSchema.parse(input)
 
+    let categoryData: { categoryId?: string | null } = {}
+
+    if (validatedData.categoryId !== undefined) {
+      const categoryId = validatedData.categoryId?.trim() ?? null
+
+      if (categoryId) {
+        const category = await prisma.category.findFirst({
+          where: {
+            id: categoryId,
+            storeId,
+          },
+          select: {
+            id: true,
+          },
+        })
+
+        if (!category) {
+          return {
+            success: false,
+            error: 'La categoría seleccionada no existe o no pertenece a tu tienda.',
+          }
+        }
+      }
+
+      categoryData = { categoryId }
+    }
+
     // Update the product in the database
     const updateResult = await prisma.product.updateMany({
       where: {
@@ -72,6 +99,7 @@ export async function updateProduct(
         ...(validatedData.price !== undefined && { price: validatedData.price }),
         ...(validatedData.description !== undefined && { description: validatedData.description }),
         ...(validatedData.visible !== undefined && { visible: validatedData.visible }),
+        ...categoryData,
       },
     })
 
