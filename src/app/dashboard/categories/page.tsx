@@ -52,9 +52,17 @@ export default async function CategoriesPage() {
                 {categories.map((category) => (
                   <li
                     key={category.id}
-                    className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4"
+                    className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 flex items-center justify-between"
                   >
                     <p className="font-semibold text-gray-900">{category.name}</p>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/dashboard/categories/${category.id}/edit`}
+                        className="text-sm text-blue-600 hover:underline"
+                      >
+                        Editar
+                      </Link>
+                    </div>
                   </li>
                 ))}
               </ul>

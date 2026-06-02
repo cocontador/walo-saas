@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createProduct, updateProduct } from '@/features/product/actions'
+import { CreateProductInput, UpdateProductInput } from '@/features/product/schemas'
 
 type FormMode = 'create' | 'edit'
 
@@ -151,19 +152,30 @@ export function ProductForm({ mode = 'create', initialValues, categories, produc
     setLoading(true)
 
     try {
-      const formData = {
-        name: name.trim(),
-        price: Math.round(Number(price)),
-        description: description.trim() || null,
-        ...(categoryId?.trim() ? { categoryId: categoryId.trim() } : {}),
+      let formData: CreateProductInput | UpdateProductInput
+
+      if (mode === 'edit') {
+        formData = {
+          name: name.trim(),
+          price: Math.round(Number(price)),
+          description: description.trim() || null,
+          categoryId: categoryId?.trim() ? categoryId.trim() : null,
+        }
+      } else {
+        formData = {
+          name: name.trim(),
+          price: Math.round(Number(price)),
+          description: description.trim() || null,
+          ...(categoryId?.trim() ? { categoryId: categoryId.trim() } : {}),
+        }
       }
 
       let result
 
       if (mode === 'edit' && productId) {
-        result = await updateProduct(productId, formData)
+        result = await updateProduct(productId, formData as UpdateProductInput)
       } else {
-        result = await createProduct(formData)
+        result = await createProduct(formData as CreateProductInput)
       }
 
       if (!result.success) {

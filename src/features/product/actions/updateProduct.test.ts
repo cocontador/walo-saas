@@ -19,6 +19,9 @@ vi.mock('@/lib/prisma', () => ({
       findFirst: vi.fn(),
       updateMany: vi.fn(),
     },
+    category: {
+      findFirst: vi.fn(),
+    },
   },
 }))
 
@@ -176,6 +179,30 @@ describe('updateProduct - WALO-155, WALO-156, WALO-157, WALO-158', () => {
     if (!result.success) {
       expect(result.error).toContain('No tienes una tienda asociada')
     }
+  })
+
+  it('debería permitir limpiar la categoría enviando categoryId: null sin buscar la categoría', async () => {
+    vi.mocked(getServerSession).mockResolvedValue({
+      user: { id: 'user-123', email: 'test@example.com' },
+    } as any)
+
+    vi.mocked(getUserStoreId).mockResolvedValue('store-456')
+
+    // findFirst for existence and retrieval
+    vi.mocked(prisma.product.findFirst)
+      .mockResolvedValueOnce({ id: 'prod-1' } as any)
+      .mockResolvedValueOnce({ id: 'prod-1', name: 'Producto', price: 100, description: null, visible: true } as any)
+
+    vi.mocked(prisma.product.updateMany).mockResolvedValue({ count: 1 } as any)
+
+    // category.findFirst should NOT be called when categoryId is null
+    vi.mocked(prisma.category.findFirst).mockResolvedValue({ id: 'cat-1' } as any)
+
+    const result = await updateProduct('prod-1', { categoryId: null as any })
+
+    expect(result.success).toBe(true)
+    // category.findFirst should not be used because categoryId is null
+    expect(prisma.category.findFirst).not.toHaveBeenCalled()
   })
 })
 
