@@ -6,15 +6,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/server/auth'
 import { getUserStoreId } from '@/server/store'
 import { prisma } from '@/lib/prisma'
-
-export type ActionResult<T> =
-  | { success: true; data: T }
-  | { success: false; error: string }
-
-export type CategoryListItem = {
-  id: string
-  name: string
-}
+import { ActionResult, CategoryListItem } from '@/features/category/types'
 
 export async function getCategories(): Promise<ActionResult<CategoryListItem[]>> {
   try {
@@ -43,6 +35,8 @@ export async function getCategories(): Promise<ActionResult<CategoryListItem[]>>
       select: {
         id: true,
         name: true,
+        isActive: true,
+        visible: true,
       },
       orderBy: {
         name: 'asc',

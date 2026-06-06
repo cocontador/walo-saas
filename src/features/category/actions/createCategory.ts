@@ -10,15 +10,7 @@ import { prisma } from '@/lib/prisma'
 import { createCategorySchema, type CreateCategoryInput } from '@/features/category/schemas'
 import { Prisma } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
-
-export type ActionResult<T> =
-  | { success: true; data: T }
-  | { success: false; error: string }
-
-export type CategoryListItem = {
-  id: string
-  name: string
-}
+import { ActionResult, CategoryListItem } from '@/features/category/types'
 
 export async function createCategory(
   input: CreateCategoryInput
@@ -52,6 +44,8 @@ export async function createCategory(
       select: {
         id: true,
         name: true,
+        isActive: true,
+        visible: true,
       },
     })
 

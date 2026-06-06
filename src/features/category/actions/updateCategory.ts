@@ -7,25 +7,17 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/server/auth'
 import { getUserStoreId } from '@/server/store'
 import { prisma } from '@/lib/prisma'
-import { createCategorySchema } from '@/features/category/schemas'
+import { updateCategorySchema, type UpdateCategoryInput } from '@/features/category/schemas'
 import { Prisma } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
-
-export type ActionResult<T> =
-  | { success: true; data: T }
-  | { success: false; error: string }
-
-export type CategoryListItem = {
-  id: string
-  name: string
-}
+import { ActionResult, CategoryListItem } from '@/features/category/types'
 
 export async function updateCategory(
   categoryId: string,
-  input: unknown
+  input: UpdateCategoryInput
 ): Promise<ActionResult<CategoryListItem>> {
   try {
-    const validatedData = createCategorySchema.parse(input)
+    const validatedData = updateCategorySchema.parse(input)
 
     const session = await getServerSession(authOptions)
 
@@ -55,9 +47,15 @@ export async function updateCategory(
       }
     }
 
+    // Build update data only with provided fields
+    const updateData: Prisma.CategoryUpdateInput = {}
+    if (validatedData.name !== undefined) updateData.name = validatedData.name
+    if (validatedData.visible !== undefined) updateData.visible = validatedData.visible
+    if (validatedData.isActive !== undefined) updateData.isActive = validatedData.isActive
+
     const updateResult = await prisma.category.updateMany({
       where: { id: categoryId, storeId },
-      data: { name: validatedData.name },
+      data: updateData,
     })
 
     if (updateResult.count === 0) {
@@ -67,7 +65,7 @@ export async function updateCategory(
       }
     }
 
-    const category = await prisma.category.findFirst({ where: { id: categoryId, storeId }, select: { id: true, name: true } })
+    const category = await prisma.category.findFirst({ where: { id: categoryId, storeId }, select: { id: true, name: true, isActive: true, visible: true } })
 
     if (!category) {
       return {

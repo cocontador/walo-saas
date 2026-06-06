@@ -34,8 +34,8 @@ describe('getCategories - WALO-41, WALO-450', () => {
     vi.mocked(getUserStoreId).mockResolvedValue('store-456')
 
     const mockCategories = [
-      { id: 'cat-1', name: 'Ropa' },
-      { id: 'cat-2', name: 'Accesorios' },
+      { id: 'cat-1', name: 'Ropa', isActive: true, visible: true },
+      { id: 'cat-2', name: 'Accesorios', isActive: true, visible: false },
     ]
 
     vi.mocked(prisma.category.findMany).mockResolvedValue(mockCategories as any)
@@ -45,11 +45,19 @@ describe('getCategories - WALO-41, WALO-450', () => {
     expect(result.success).toBe(true)
     if (result.success) {
       expect(result.data).toEqual(mockCategories)
+      expect(result.data[0]).toHaveProperty('isActive')
+      expect(result.data[0]).toHaveProperty('visible')
     }
     expect(prisma.category.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
           storeId: 'store-456',
+        },
+        select: {
+          id: true,
+          name: true,
+          isActive: true,
+          visible: true,
         },
       })
     )

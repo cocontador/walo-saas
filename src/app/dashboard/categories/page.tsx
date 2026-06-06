@@ -52,9 +52,31 @@ export default async function CategoriesPage() {
                 {categories.map((category) => (
                   <li
                     key={category.id}
-                    className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 flex items-center justify-between"
+                    className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 flex items-center justify-between gap-4"
                   >
-                    <p className="font-semibold text-gray-900">{category.name}</p>
+                    <div>
+                      <p className="font-semibold text-gray-900">{category.name}</p>
+                      <div className="mt-2 flex gap-2">
+                        <span
+                          className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${
+                            category.visible
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-gray-200 text-gray-700'
+                          }`}
+                        >
+                          {category.visible ? 'Visible' : 'Oculta'}
+                        </span>
+                        <span
+                          className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${
+                            category.isActive
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-orange-100 text-orange-800'
+                          }`}
+                        >
+                          {category.isActive ? 'Activa' : 'Inactiva'}
+                        </span>
+                      </div>
+                    </div>
                     <div className="flex items-center gap-2">
                       <Link
                         href={`/dashboard/categories/${category.id}/edit`}

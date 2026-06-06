@@ -7,10 +7,7 @@ import { authOptions } from '@/server/auth'
 import { getUserStoreId } from '@/server/store'
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
-
-export type ActionResult<T> =
-  | { success: true; data: T }
-  | { success: false; error: string }
+import { ActionResult } from '@/features/category/types'
 
 export async function deleteCategory(categoryId: string): Promise<ActionResult<null>> {
   try {

@@ -198,7 +198,7 @@ describe('updateProduct - WALO-155, WALO-156, WALO-157, WALO-158', () => {
     // category.findFirst should NOT be called when categoryId is null
     vi.mocked(prisma.category.findFirst).mockResolvedValue({ id: 'cat-1' } as any)
 
-    const result = await updateProduct('prod-1', { categoryId: null as any })
+    const result = await updateProduct('prod-1', { categoryId: null })
 
     expect(result.success).toBe(true)
     // category.findFirst should not be used because categoryId is null

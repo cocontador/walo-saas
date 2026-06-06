@@ -19,7 +19,7 @@ export default async function EditCategoryPage({ params }: { params: { categoryI
     redirect('/dashboard')
   }
 
-  const category = await prisma.category.findFirst({ where: { id: params.categoryId, storeId }, select: { id: true, name: true } })
+  const category = await prisma.category.findFirst({ where: { id: params.categoryId, storeId }, select: { id: true, name: true, isActive: true, visible: true } })
 
   if (!category) {
     redirect('/dashboard/categories')

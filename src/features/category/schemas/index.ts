@@ -1,1 +1,1 @@
-export { createCategorySchema, type CreateCategoryInput } from './categorySchema'
+export { createCategorySchema, updateCategorySchema, type CreateCategoryInput, type UpdateCategoryInput } from './categorySchema'

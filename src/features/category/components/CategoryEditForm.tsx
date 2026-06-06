@@ -5,12 +5,13 @@ import { useRouter } from 'next/navigation'
 import { updateCategory, deleteCategory } from '@/features/category/actions'
 
 type Props = {
-  category: { id: string; name: string }
+  category: { id: string; name: string; isActive: boolean; visible: boolean }
 }
 
 export function CategoryEditForm({ category }: Props) {
   const router = useRouter()
   const [name, setName] = useState(category.name)
+  const [visible, setVisible] = useState(category.visible)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -28,7 +29,7 @@ export function CategoryEditForm({ category }: Props) {
     setLoading(true)
 
     try {
-      const result = await updateCategory(category.id, { name: name.trim() })
+      const result = await updateCategory(category.id, { name: name.trim(), visible })
 
       if (!result.success) {
         setError(result.error)
@@ -66,7 +67,7 @@ export function CategoryEditForm({ category }: Props) {
   return (
     <div className="rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
       <h2 className="mb-4 text-2xl font-bold text-gray-900">Editar categoría</h2>
-      <p className="mb-6 text-sm text-gray-500">Modifica el nombre de la categoría.</p>
+      <p className="mb-6 text-sm text-gray-500">Modifica el nombre y visibilidad de la categoría.</p>
 
       {error && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>
@@ -91,6 +92,19 @@ export function CategoryEditForm({ category }: Props) {
             className="w-full rounded-xl border border-gray-200 bg-gray-100 px-4 py-3 text-gray-900 transition-all focus:border-green-500 focus:bg-white focus:outline-none"
             required
           />
+        </div>
+
+        <div className="flex items-center gap-3">
+          <input
+            id="category-visible"
+            type="checkbox"
+            checked={visible}
+            onChange={(e) => setVisible(e.target.checked)}
+            className="h-5 w-5 rounded border-gray-300 text-green-500 transition-all focus:ring-green-500"
+          />
+          <label htmlFor="category-visible" className="text-sm font-medium text-gray-700">
+            Visible en el catálogo público
+          </label>
         </div>
 
         <div className="flex gap-2">

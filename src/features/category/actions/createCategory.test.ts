@@ -39,19 +39,29 @@ describe('createCategory - WALO-41, WALO-450', () => {
     vi.mocked(prisma.category.create).mockResolvedValue({
       id: 'cat-1',
       name: 'Ropa',
+      isActive: true,
+      visible: true,
     } as any)
 
     const result = await createCategory({ name: 'Ropa' })
 
     expect(result.success).toBe(true)
     if (result.success) {
-      expect(result.data).toEqual({ id: 'cat-1', name: 'Ropa' })
+      expect(result.data).toEqual({ id: 'cat-1', name: 'Ropa', isActive: true, visible: true })
+      expect(result.data).toHaveProperty('isActive')
+      expect(result.data).toHaveProperty('visible')
     }
     expect(prisma.category.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: {
           storeId: 'store-456',
           name: 'Ropa',
+        },
+        select: {
+          id: true,
+          name: true,
+          isActive: true,
+          visible: true,
         },
       })
     )
@@ -84,7 +94,7 @@ describe('createCategory - WALO-41, WALO-450', () => {
 
     expect(result.success).toBe(false)
     if (!result.success) {
-      expect(result.error).toContain('Campo no permitido')
+      expect(result.error).toContain('Unrecognized key')
     }
     expect(prisma.category.create).not.toHaveBeenCalled()
   })
