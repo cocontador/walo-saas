@@ -5,7 +5,7 @@ import "server-only"
 import { PutObjectCommand } from '@aws-sdk/client-s3'
 
 import { prisma } from '@/lib/prisma'
-import { buildStoreLogoKey, r2Bucket, r2Client } from '@/lib/r2'
+import { buildStoreLogoKey, getR2Client, getR2Bucket, getR2PublicUrlBase } from '@/lib/r2'
 import { requireAuth } from '@/server/require-auth'
 
 import { validateLogoFile } from '../schema/logo.schema'
@@ -21,13 +21,13 @@ const MIME_EXTENSION_MAP: Record<string, string> = {
 }
 
 function getPublicUrl(key: string): string {
-  const baseUrl = process.env.R2_PUBLIC_URL
+  const baseUrl = getR2PublicUrlBase()
 
   if (!baseUrl) {
-    throw new Error('R2_PUBLIC_URL is not defined')
+    throw new Error('R2 is not configured (missing R2_PUBLIC_URL).')
   }
 
-  return `${baseUrl.replace(/\/$/, '')}/${key}`
+  return `${baseUrl}/${key}`
 }
 
 /**
@@ -84,9 +84,16 @@ export async function uploadLogo(formData: FormData): Promise<ActionResult> {
   const logoUrl = getPublicUrl(logoKey)
   const body = new Uint8Array(await logoFile.arrayBuffer())
 
-  await r2Client.send(
+  const client = getR2Client()
+  const bucket = getR2Bucket()
+
+  if (!client || !bucket) {
+    return { ok: false, status: 500, error: 'R2 no está configurado. Revisa las variables de entorno.' }
+  }
+
+  await client.send(
     new PutObjectCommand({
-      Bucket: r2Bucket,
+      Bucket: bucket,
       Key: logoKey,
       Body: body,
       ContentType: logoFile.type,

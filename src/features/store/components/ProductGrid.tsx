@@ -5,6 +5,7 @@ type Product = {
     name: string
     description: string | null
     price: number
+    imageUrl?: string | null
 }
 
 type Props = {
@@ -29,6 +30,7 @@ export function ProductGrid({ products }: Props) {
                     name={product.name}
                     description={product.description}
                     price={product.price}
+                    imageUrl={product.imageUrl}
                 />
             ))}
         </div>

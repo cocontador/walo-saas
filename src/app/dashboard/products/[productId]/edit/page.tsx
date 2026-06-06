@@ -47,6 +47,7 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
             price: product.price,
             description: product.description,
           }}
+          initialImageUrl={product.imageUrl}
         />
       </div>
     </main>
