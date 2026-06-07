@@ -65,9 +65,26 @@ export function CategoryEditForm({ category }: Props) {
   }
 
   return (
-    <div className="rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
-      <h2 className="mb-4 text-2xl font-bold text-gray-900">Editar categoría</h2>
-      <p className="mb-6 text-sm text-gray-500">Modifica el nombre y visibilidad de la categoría.</p>
+    <div className="w-full max-w-2xl">
+      <button
+        type="button"
+        onClick={() => router.push('/dashboard/categories')}
+        className="cursor-pointer mb-8 flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-gray-800"
+      >
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
+          <path
+            d="M19 12H5M5 12l7 7M5 12l7-7"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        Volver a categorías
+      </button>
+
+      <h2 className="mb-1 text-3xl font-bold text-gray-900">Editar categoría</h2>
+      <p className="mb-8 text-gray-500">Modifica el nombre y visibilidad de la categoría.</p>
 
       {error && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>
@@ -80,7 +97,7 @@ export function CategoryEditForm({ category }: Props) {
       <form onSubmit={handleUpdate} className="space-y-6">
         <div>
           <label htmlFor="category-name" className="mb-1 block text-xs font-semibold tracking-widest text-gray-500">
-            Nombre de la categoría
+            NOMBRE DE LA CATEGORÍA
             <span className="ml-1 text-red-500">*</span>
           </label>
           <input
@@ -89,7 +106,7 @@ export function CategoryEditForm({ category }: Props) {
             placeholder="Ej: Ropa, Accesorios"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-xl border border-gray-200 bg-gray-100 px-4 py-3 text-gray-900 transition-all focus:border-green-500 focus:bg-white focus:outline-none"
+            className="w-full rounded-xl border border-transparent bg-gray-100 px-4 py-3 text-gray-900 transition-all focus:border-green-500 focus:bg-white focus:outline-none"
             required
           />
         </div>
@@ -100,9 +117,9 @@ export function CategoryEditForm({ category }: Props) {
             type="checkbox"
             checked={visible}
             onChange={(e) => setVisible(e.target.checked)}
-            className="h-5 w-5 rounded border-gray-300 text-green-500 transition-all focus:ring-green-500"
+            className="cursor-pointer h-5 w-5 rounded border-gray-300 text-green-500 transition-all focus:ring-green-500"
           />
-          <label htmlFor="category-visible" className="text-sm font-medium text-gray-700">
+          <label htmlFor="category-visible" className="cursor-pointer text-sm font-medium text-gray-700">
             Visible en el catálogo público
           </label>
         </div>
@@ -111,7 +128,7 @@ export function CategoryEditForm({ category }: Props) {
           <button
             type="submit"
             disabled={loading}
-            className="inline-flex w-full items-center justify-center rounded-xl bg-green-500 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-70"
+            className="cursor-pointer inline-flex w-full items-center justify-center rounded-xl bg-green-500 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-70"
           >
             {loading ? 'Guardando...' : 'Guardar cambios'}
           </button>
@@ -120,7 +137,7 @@ export function CategoryEditForm({ category }: Props) {
             type="button"
             onClick={handleDelete}
             disabled={loading}
-            className="inline-flex w-full items-center justify-center rounded-xl bg-red-500 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-70"
+            className="cursor-pointer inline-flex w-full items-center justify-center rounded-xl bg-red-500 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-70"
           >
             {loading ? 'Eliminando...' : 'Eliminar categoría'}
           </button>

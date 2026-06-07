@@ -69,7 +69,7 @@ export function RegisterForm() {
     <div className="w-full max-w-md">
       <button
         onClick={() => router.push('/')}
-        className="mb-8 flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-gray-800"
+        className="cursor-pointer mb-8 flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-gray-800"
       >
         <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
           <path d="M19 12H5M5 12l7 7M5 12l7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -111,7 +111,7 @@ export function RegisterForm() {
         <button
           type="submit"
           disabled={loading}
-          className="mt-2 w-full rounded-xl bg-green-500 px-4 py-3 font-semibold text-white transition-all hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-60"
+          className="cursor-pointer mt-2 w-full rounded-xl bg-green-500 px-4 py-3 font-semibold text-white transition-all hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading ? 'Creando tu tienda...' : 'Crear mi tienda gratis'}
         </button>

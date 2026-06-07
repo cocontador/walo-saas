@@ -50,7 +50,7 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
             name: product.name,
             price: product.price,
             description: product.description,
-            categoryId: product.categoryId,
+            categoryIds: product.categories.map(c => c.id),
           }}
         />
       </div>
