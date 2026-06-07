@@ -69,7 +69,7 @@ export default function LoginPage() {
                 <div className="w-full max-w-md">
                     <button
                         onClick={() => router.push('/')}
-                        className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 mb-8 transition-colors"
+                        className="cursor-pointer flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 mb-8 transition-colors"
                     >
                         <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
                             <path d="M19 12H5M5 12l7 7M5 12l7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -80,13 +80,13 @@ export default function LoginPage() {
                     {/* Tabs */}
                     <div className="flex bg-gray-200 rounded-full p-1 mb-8">
                         <button
-                            className="flex-1 py-2 text-sm font-medium rounded-full bg-white text-gray-900 shadow-sm"
+                            className="cursor-pointer flex-1 py-2 text-sm font-medium rounded-full bg-white text-gray-900 shadow-sm"
                         >
                             Iniciar sesión
                         </button>
                         <button
                             onClick={() => router.push('/register')}
-                            className="flex-1 py-2 text-sm font-medium rounded-full text-gray-500 hover:text-gray-700 transition-all"
+                            className="cursor-pointer flex-1 py-2 text-sm font-medium rounded-full text-gray-500 hover:text-gray-700 transition-all"
                         >
                             Crear cuenta
                         </button>
@@ -116,7 +116,7 @@ export default function LoginPage() {
                         </div>
                         <button
                             type="submit" disabled={loading}
-                            className="w-full py-3 px-4 rounded-xl font-semibold text-white bg-gray-900 hover:bg-gray-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+                            className="cursor-pointer w-full py-3 px-4 rounded-xl font-semibold text-white bg-gray-900 hover:bg-gray-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed mt-2"
                         >
                             {loading ? 'Verificando...' : 'Iniciar sesión'}
                         </button>

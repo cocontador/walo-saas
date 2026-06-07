@@ -32,6 +32,13 @@ export async function getVisibleProducts(storeId: string) {
             description: true,
             price: true,
             imageUrl: true,
+            categories: {
+                select: {
+                    category: {
+                        select: { name: true, visible: true },
+                    },
+                },
+            },
         },
         orderBy: {
             createdAt: "desc",

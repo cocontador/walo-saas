@@ -83,7 +83,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             />
             <button
               type="submit"
-              className="rounded-xl bg-blue-500 px-6 py-3 font-semibold text-white transition-all hover:bg-blue-600"
+              className="cursor-pointer rounded-xl bg-blue-500 px-6 py-3 font-semibold text-white transition-all hover:bg-blue-600"
             >
               Buscar
             </button>
@@ -207,7 +207,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                             <input type="hidden" name="productId" value={product.id} />
                             <button
                               type="submit"
-                              className={`inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                              className={`cursor-pointer inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                                 product.visible
                                   ? 'bg-orange-100 text-orange-700 hover:bg-orange-200'
                                   : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'

@@ -48,7 +48,7 @@ export function DashboardShell({ userName, userEmail, children }: DashboardShell
         <button
           type="button"
           onClick={() => setIsMobileOpen(false)}
-          className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 lg:hidden"
+          className="cursor-pointer rounded-lg p-2 text-gray-500 hover:bg-gray-100 lg:hidden"
           aria-label="Cerrar menú"
         >
           ✕
@@ -103,7 +103,7 @@ export function DashboardShell({ userName, userEmail, children }: DashboardShell
             <button
               type="button"
               aria-label="Cerrar menú"
-              className="absolute inset-0 bg-black/30"
+              className="cursor-pointer absolute inset-0 bg-black/30"
               onClick={() => setIsMobileOpen(false)}
             />
             <aside className="relative z-50 h-full w-72 bg-white px-6 py-7 shadow-xl">
@@ -120,7 +120,7 @@ export function DashboardShell({ userName, userEmail, children }: DashboardShell
             <button
               type="button"
               onClick={() => setIsMobileOpen(true)}
-              className="rounded-lg p-2 text-gray-600 hover:bg-gray-100"
+              className="cursor-pointer rounded-lg p-2 text-gray-600 hover:bg-gray-100"
               aria-label="Abrir menú"
             >
               ☰
