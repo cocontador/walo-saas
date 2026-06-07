@@ -18,7 +18,7 @@ export type ProductDetail = {
   description: string | null
   visible: boolean
   storeId: string
-  categoryId: string | null
+  categories: { id: string; name: string }[]
   createdAt: Date
   updatedAt: Date
 }
@@ -46,11 +46,8 @@ export async function getProductById(productId: string): Promise<ActionResult<Pr
     }
 
     // Fetch product and validate it belongs to user's store
-    const product = await prisma.product.findFirst({
-      where: {
-        id: productId,
-        storeId,
-      },
+    const raw = await prisma.product.findFirst({
+      where: { id: productId, storeId },
       select: {
         id: true,
         name: true,
@@ -58,13 +55,19 @@ export async function getProductById(productId: string): Promise<ActionResult<Pr
         description: true,
         visible: true,
         storeId: true,
-        categoryId: true,
         createdAt: true,
         updatedAt: true,
+        categories: {
+          select: {
+            category: {
+              select: { id: true, name: true },
+            },
+          },
+        },
       },
     })
 
-    if (!product) {
+    if (!raw) {
       return {
         success: false,
         error: 'Producto no encontrado o no tienes permiso para acceder a él.',
@@ -73,7 +76,10 @@ export async function getProductById(productId: string): Promise<ActionResult<Pr
 
     return {
       success: true,
-      data: product,
+      data: {
+        ...raw,
+        categories: raw.categories.map(pc => pc.category),
+      },
     }
   } catch (error) {
     console.error('Error fetching product:', error)

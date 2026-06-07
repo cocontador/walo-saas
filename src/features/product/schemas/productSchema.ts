@@ -19,14 +19,14 @@ const baseProductSchema = z.object({
 
 export const createProductSchema = baseProductSchema
   .extend({
-    categoryId: z.string().trim().optional(),
+    categoryIds: z.array(z.string().trim()).optional(),
   })
   .strict()
 
 export const updateProductSchema = baseProductSchema
   .extend({
     visible: z.boolean().optional(),
-    categoryId: z.string().trim().optional().nullable(),
+    categoryIds: z.array(z.string().trim()).optional(),
   })
   .partial()
   .strict()

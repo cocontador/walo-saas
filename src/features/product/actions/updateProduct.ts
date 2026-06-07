@@ -42,13 +42,8 @@ export async function updateProduct(
 
     // Check if the product exists and belongs to the user's store
     const existingProduct = await prisma.product.findFirst({
-      where: {
-        id: productId,
-        storeId,
-      },
-      select: {
-        id: true,
-      },
+      where: { id: productId, storeId },
+      select: { id: true },
     })
 
     if (!existingProduct) {
@@ -61,59 +56,34 @@ export async function updateProduct(
     // Validate input data
     const validatedData = updateProductSchema.parse(input)
 
-    let categoryData: { categoryId?: string | null } = {}
+    if (validatedData.categoryIds !== undefined && validatedData.categoryIds.length > 0) {
+      const validCategories = await prisma.category.findMany({
+        where: { id: { in: validatedData.categoryIds }, storeId },
+        select: { id: true },
+      })
 
-    if (validatedData.categoryId !== undefined) {
-      const categoryId = validatedData.categoryId?.trim() ?? null
-
-      if (categoryId) {
-        const category = await prisma.category.findFirst({
-          where: {
-            id: categoryId,
-            storeId,
-          },
-          select: {
-            id: true,
-          },
-        })
-
-        if (!category) {
-          return {
-            success: false,
-            error: 'La categoría seleccionada no existe o no pertenece a tu tienda.',
-          }
+      if (validCategories.length !== validatedData.categoryIds.length) {
+        return {
+          success: false,
+          error: 'Una o más categorías no existen o no pertenecen a tu tienda.',
         }
       }
-
-      categoryData = { categoryId }
     }
 
     // Update the product in the database
-    const updateResult = await prisma.product.updateMany({
-      where: {
-        id: productId,
-        storeId,
-      },
+    const product = await prisma.product.update({
+      where: { id: productId },
       data: {
         ...(validatedData.name !== undefined && { name: validatedData.name }),
         ...(validatedData.price !== undefined && { price: validatedData.price }),
         ...(validatedData.description !== undefined && { description: validatedData.description }),
         ...(validatedData.visible !== undefined && { visible: validatedData.visible }),
-        ...categoryData,
-      },
-    })
-
-    if (updateResult.count === 0) {
-      return {
-        success: false,
-        error: 'Producto no encontrado o no tienes permiso para editarlo.',
-      }
-    }
-
-    const product = await prisma.product.findFirst({
-      where: {
-        id: productId,
-        storeId,
+        ...(validatedData.categoryIds !== undefined && {
+          categories: {
+            deleteMany: {},
+            create: validatedData.categoryIds.map(id => ({ categoryId: id })),
+          },
+        }),
       },
       select: {
         id: true,
@@ -123,13 +93,6 @@ export async function updateProduct(
         visible: true,
       },
     })
-
-    if (!product) {
-      return {
-        success: false,
-        error: 'No se pudo recuperar el producto actualizado.',
-      }
-    }
 
     return {
       success: true,

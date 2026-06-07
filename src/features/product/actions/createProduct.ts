@@ -18,7 +18,7 @@ export async function createProduct(
 ): Promise<ActionResult<{ id: string; name: string; price: number; description: string | null }>> {
   try {
     const validatedData = createProductSchema.parse(input)
-    
+
     // Get user session
     const session = await getServerSession(authOptions)
 
@@ -28,6 +28,7 @@ export async function createProduct(
         error: 'No autenticado. Por favor inicia sesión.',
       }
     }
+
     // Get user's store
     const storeId = await getUserStoreId()
 
@@ -37,23 +38,19 @@ export async function createProduct(
         error: 'No tienes una tienda asociada. Contacta a soporte.',
       }
     }
-    const categoryId = validatedData.categoryId?.trim()
 
-    if (categoryId) {
-      const category = await prisma.category.findFirst({
-        where: {
-          id: categoryId,
-          storeId,
-        },
-        select: {
-          id: true,
-        },
+    const categoryIds = validatedData.categoryIds ?? []
+
+    if (categoryIds.length > 0) {
+      const validCategories = await prisma.category.findMany({
+        where: { id: { in: categoryIds }, storeId },
+        select: { id: true },
       })
 
-      if (!category) {
+      if (validCategories.length !== categoryIds.length) {
         return {
           success: false,
-          error: 'La categoría seleccionada no existe o no pertenece a tu tienda.',
+          error: 'Una o más categorías no existen o no pertenecen a tu tienda.',
         }
       }
     }
@@ -66,7 +63,11 @@ export async function createProduct(
         price: validatedData.price,
         description: validatedData.description || null,
         visible: true,
-        ...(categoryId ? { categoryId } : {}),
+        ...(categoryIds.length > 0 && {
+          categories: {
+            create: categoryIds.map(id => ({ categoryId: id })),
+          },
+        }),
       },
       select: {
         id: true,
@@ -81,7 +82,7 @@ export async function createProduct(
       data: product,
     }
   } catch (error) {
-        // Handle validation errors from Zod
+    // Handle validation errors from Zod
     if (error instanceof z.ZodError) {
       const firstError = error.issues[0]
       return {

@@ -33,7 +33,7 @@ describe('getProductById - WALO-25', () => {
     } as any)
     vi.mocked(getUserStoreId).mockResolvedValue('store-456')
 
-    const mockProduct = {
+    const mockRaw = {
       id: 'prod-1',
       name: 'Producto 1',
       price: 50000,
@@ -42,15 +42,17 @@ describe('getProductById - WALO-25', () => {
       storeId: 'store-456',
       createdAt: new Date(),
       updatedAt: new Date(),
+      categories: [{ category: { id: 'cat-1', name: 'Ropa' } }],
     }
 
-    vi.mocked(prisma.product.findFirst).mockResolvedValue(mockProduct as any)
+    vi.mocked(prisma.product.findFirst).mockResolvedValue(mockRaw as any)
 
     const result = await getProductById('prod-1')
 
     expect(result.success).toBe(true)
     if (result.success) {
-      expect(result.data).toEqual(mockProduct)
+      expect(result.data.categories).toEqual([{ id: 'cat-1', name: 'Ropa' }])
+      expect(result.data.id).toBe('prod-1')
     }
     expect(prisma.product.findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
