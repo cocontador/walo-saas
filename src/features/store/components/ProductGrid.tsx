@@ -1,14 +1,18 @@
 import { ProductCard } from "./ProductCard"
 
+type ProductCategory = {
+    category: {
+        name: string
+        visible: boolean
+    }
+}
+
 type Product = {
     id: string
     name: string
     description: string | null
     price: number
-    category: {
-        name: string
-        visible: boolean
-    } | null
+    categories: ProductCategory[]
 }
 
 type Props = {
@@ -27,15 +31,19 @@ export function ProductGrid({ products }: Props) {
 
     return (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-            {products.map((product) => (
-                <ProductCard
-                    key={product.id}
-                    name={product.name}
-                    description={product.description}
-                    price={product.price}
-                    category={product.category?.visible ? product.category.name : undefined}
-                />
-            ))}
+            {products.map((product) => {
+                const firstVisibleCategory = product.categories.find(pc => pc.category.visible)
+
+                return (
+                    <ProductCard
+                        key={product.id}
+                        name={product.name}
+                        description={product.description}
+                        price={product.price}
+                        category={firstVisibleCategory?.category.name}
+                    />
+                )
+            })}
         </div>
     )
 }
