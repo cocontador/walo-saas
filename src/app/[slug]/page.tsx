@@ -2,7 +2,7 @@ import Link from "next/link"
 import { getServerSession } from "next-auth"
 import { notFound } from "next/navigation"
 
-import { ProductGrid } from "@/features/store/components/ProductGrid"
+import { StoreCatalog } from "@/features/store/components/StoreCatalog"
 import {
     canManageStoreByUser,
     getStoreBySlug,
@@ -42,7 +42,7 @@ export default async function StorePage({ params }: Props) {
                         )}
                         <span className="border-b-2 border-green-500 pb-0.5 text-green-600">Tienda</span>
                     </nav>
-                    <button className="flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50">
+                    <button className="cursor-pointer flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50">
                         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path
                                 strokeLinecap="round"
@@ -84,7 +84,7 @@ export default async function StorePage({ params }: Props) {
                     {store.description && <p className="max-w-md text-gray-500">{store.description}</p>}
                 </div>
 
-                <ProductGrid products={products} />
+                <StoreCatalog products={products} />
             </main>
 
             <footer className="mt-16 border-t border-gray-100 py-6 text-center text-xs text-gray-400">

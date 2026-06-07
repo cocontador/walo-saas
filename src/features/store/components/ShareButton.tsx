@@ -15,7 +15,7 @@ export function ShareButton({ slug }: Props) {
     return (
         <button
             onClick={handleShare}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-green-500 px-3 py-1 text-sm font-semibold text-green-600 transition-colors hover:bg-green-50"
+            className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg border border-green-500 px-3 py-1 text-sm font-semibold text-green-600 transition-colors hover:bg-green-50"
         >
             <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path

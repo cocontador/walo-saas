@@ -1,10 +1,16 @@
-﻿'use client'
+'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createProduct, updateProduct } from '@/features/product/actions'
+import { CreateProductInput, UpdateProductInput } from '@/features/product/schemas'
 
 type FormMode = 'create' | 'edit'
+
+type CategoryOption = {
+  id: string
+  name: string
+}
 
 type ProductFormProps = {
   mode?: FormMode
@@ -12,7 +18,9 @@ type ProductFormProps = {
     name: string
     price: number
     description: string | null
+    categoryIds?: string[]
   }
+  categories?: CategoryOption[]
   productId?: string
 }
 
@@ -104,15 +112,22 @@ function TextArea({
   )
 }
 
-export function ProductForm({ mode = 'create', initialValues, productId }: ProductFormProps) {
+export function ProductForm({ mode = 'create', initialValues, categories, productId }: ProductFormProps) {
   const router = useRouter()
   const [name, setName] = useState(initialValues?.name ?? '')
   const [price, setPrice] = useState(String(initialValues?.price ?? ''))
   const [description, setDescription] = useState(initialValues?.description ?? '')
+  const [categoryIds, setCategoryIds] = useState<string[]>(initialValues?.categoryIds ?? [])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+
+  const toggleCategory = (id: string) => {
+    setCategoryIds(prev =>
+      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
+    )
+  }
 
   const validateForm = () => {
     const errors: Record<string, string> = {}
@@ -143,17 +158,23 @@ export function ProductForm({ mode = 'create', initialValues, productId }: Produ
     setLoading(true)
 
     try {
-      const formData = {
-        name: name.trim(),
-        price: Math.round(Number(price)),
-        description: description.trim() || null,
-      }
-
       let result
 
       if (mode === 'edit' && productId) {
+        const formData: UpdateProductInput = {
+          name: name.trim(),
+          price: Math.round(Number(price)),
+          description: description.trim() || null,
+          categoryIds,
+        }
         result = await updateProduct(productId, formData)
       } else {
+        const formData: CreateProductInput = {
+          name: name.trim(),
+          price: Math.round(Number(price)),
+          description: description.trim() || null,
+          ...(categoryIds.length > 0 && { categoryIds }),
+        }
         result = await createProduct(formData)
       }
 
@@ -169,9 +190,9 @@ export function ProductForm({ mode = 'create', initialValues, productId }: Produ
         setName('')
         setPrice('')
         setDescription('')
+        setCategoryIds([])
       }
 
-      // Show success for 2 seconds then redirect
       setTimeout(() => {
         router.push('/dashboard/products')
         router.refresh()
@@ -187,19 +208,15 @@ export function ProductForm({ mode = 'create', initialValues, productId }: Produ
   const pageTitle = isEditMode ? 'Editar producto' : 'Crear producto'
   const pageDescription = isEditMode ? 'Actualiza los detalles del producto' : 'Agrega un nuevo producto a tu catálogo'
   const submitButtonText = isEditMode
-    ? loading
-      ? 'Guardando...'
-      : 'Guardar cambios'
-    : loading
-      ? 'Guardando...'
-      : 'Crear producto'
+    ? loading ? 'Guardando...' : 'Guardar cambios'
+    : loading ? 'Guardando...' : 'Crear producto'
   const successMessage = isEditMode ? '✓ Producto actualizado exitosamente.' : '✓ Producto creado exitosamente.'
 
   return (
     <div className="w-full max-w-2xl">
       <button
         onClick={() => router.push('/dashboard/products')}
-        className="mb-8 flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-gray-800"
+        className="cursor-pointer mb-8 flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-gray-800"
       >
         <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
           <path
@@ -259,10 +276,41 @@ export function ProductForm({ mode = 'create', initialValues, productId }: Produ
           required={false}
         />
 
+        {categories && categories.length > 0 && (
+          <div>
+            <p className="mb-2 text-xs font-semibold tracking-widest text-gray-500">
+              CATEGORÍAS
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {categories.map((category) => {
+                const checked = categoryIds.includes(category.id)
+                return (
+                  <button
+                    key={category.id}
+                    type="button"
+                    onClick={() => toggleCategory(category.id)}
+                    className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-all ${
+                      checked
+                        ? 'border-green-500 bg-green-50 text-green-700'
+                        : 'border-gray-200 bg-gray-100 text-gray-600 hover:border-gray-300'
+                    }`}
+                  >
+                    {checked && <span className="mr-1">✓</span>}
+                    {category.name}
+                  </button>
+                )
+              })}
+            </div>
+            {categoryIds.length === 0 && (
+              <p className="mt-1 text-xs text-gray-400">Sin categorías asignadas</p>
+            )}
+          </div>
+        )}
+
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-xl bg-green-500 px-6 py-3 font-semibold text-white transition-all hover:bg-green-600 disabled:bg-gray-400"
+          className="cursor-pointer w-full rounded-xl bg-green-500 px-6 py-3 font-semibold text-white transition-all hover:bg-green-600 disabled:cursor-not-allowed disabled:bg-gray-400"
         >
           {submitButtonText}
         </button>
@@ -270,4 +318,3 @@ export function ProductForm({ mode = 'create', initialValues, productId }: Produ
     </div>
   )
 }
-

@@ -81,6 +81,7 @@ export default async function DashboardPage() {
               </code>
               <Link
                 href={`/${store.slug}`}
+                target="_blank"
                 className="inline-flex items-center gap-1.5 rounded-lg bg-green-500 px-3 py-1 text-sm font-semibold text-white transition-colors hover:bg-green-600"
               >
                 <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

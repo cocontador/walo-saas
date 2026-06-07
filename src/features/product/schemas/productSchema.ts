@@ -3,6 +3,7 @@ import { z } from 'zod'
 const baseProductSchema = z.object({
   name: z
     .string()
+    .trim()
     .min(1, 'El nombre es requerido')
     .max(255, 'El nombre no puede exceder 255 caracteres'),
   price: z
@@ -17,12 +18,18 @@ const baseProductSchema = z.object({
 })
 
 export const createProductSchema = baseProductSchema
+  .extend({
+    categoryIds: z.array(z.string().trim()).optional(),
+  })
+  .strict()
 
 export const updateProductSchema = baseProductSchema
   .extend({
     visible: z.boolean().optional(),
+    categoryIds: z.array(z.string().trim()).optional(),
   })
   .partial()
+  .strict()
 
 export type CreateProductInput = z.infer<typeof createProductSchema>
 export type UpdateProductInput = z.infer<typeof updateProductSchema>
