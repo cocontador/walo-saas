@@ -203,7 +203,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                             </svg>
                             Editar
                           </Link>
-                          <form action={product.visible ? hideProduct : reactivateProduct} method="post" className="inline-block">
+                          <form action={product.visible ? hideProduct : reactivateProduct} className="inline-block">
                             <input type="hidden" name="productId" value={product.id} />
                             <button
                               type="submit"

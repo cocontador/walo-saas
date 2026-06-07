@@ -111,7 +111,7 @@ describe('product image actions', () => {
     expect(mockSend).toHaveBeenCalledOnce()
   })
 
-  it('replaceProductImage performs rollback on database failure', async () => {
+  it('replaceProductImage throws when database update fails (no rollback, key is deterministic)', async () => {
     vi.mocked(getServerSession).mockResolvedValue({ user: { id: 'user-1' } } as unknown as Session)
     vi.mocked(getUserStoreId).mockResolvedValue('store-1')
 
@@ -120,7 +120,9 @@ describe('product image actions', () => {
 
     await expect(replaceProductImage('prod-1', createImageFile())).rejects.toThrow('DB update failed')
 
-    expect(mockSend).toHaveBeenCalledTimes(2)
+    // Solo 1 llamada (el upload). No hay rollback porque la key es determinística:
+    // borrar el archivo dejaría la DB apuntando a un objeto inexistente.
+    expect(mockSend).toHaveBeenCalledTimes(1)
   })
 
   it('removeProductImage deletes product image when imageKey exists', async () => {

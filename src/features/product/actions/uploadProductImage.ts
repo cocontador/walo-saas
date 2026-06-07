@@ -51,7 +51,13 @@ export async function uploadProductImage(
     return { ok: false, status: 400, error: 'Debes adjuntar un archivo de imagen.' }
   }
 
-  const validatedFile = validateProductImageFile(imageFile)
+  let validatedFile: File
+  try {
+    validatedFile = validateProductImageFile(imageFile)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Archivo de imagen inválido.'
+    return { ok: false, status: 400, error: message }
+  }
 
   const product = await prisma.product.findFirst({
     where: {

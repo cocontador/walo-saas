@@ -15,6 +15,7 @@ type Product = {
     name: string
     description: string | null
     price: number
+    imageUrl?: string | null
     categories: ProductCategory[]
 }
 
@@ -91,6 +92,7 @@ export function StoreCatalog({ products }: Props) {
                                 name={product.name}
                                 description={product.description}
                                 price={product.price}
+                                imageUrl={product.imageUrl}
                                 category={firstVisibleCategory?.category.name}
                             />
                         )

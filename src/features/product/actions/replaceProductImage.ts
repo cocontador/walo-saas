@@ -2,7 +2,7 @@
 
 import "server-only"
 
-import { DeleteObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3'
+import { PutObjectCommand } from '@aws-sdk/client-s3'
 
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/server/auth'
@@ -51,7 +51,13 @@ export async function replaceProductImage(
     return { ok: false, status: 400, error: 'Debes adjuntar un archivo de imagen.' }
   }
 
-  const validatedFile = validateProductImageFile(imageFile)
+  let validatedFile: File
+  try {
+    validatedFile = validateProductImageFile(imageFile)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Archivo de imagen inválido.'
+    return { ok: false, status: 400, error: message }
+  }
 
   const product = await prisma.product.findFirst({
     where: {
@@ -100,12 +106,9 @@ export async function replaceProductImage(
       },
     })
   } catch (error) {
-    await client.send(
-      new DeleteObjectCommand({
-        Bucket: bucket,
-        Key: imageKey,
-      })
-    )
+    // No se borra el archivo de R2 porque la key es determinística (misma para old y new).
+    // Borrarlo dejaría la DB apuntando a un objeto inexistente.
+    console.error('[PRODUCT REPLACE IMAGE DB ERROR]', error)
     throw error
   }
 
