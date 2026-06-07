@@ -50,8 +50,8 @@ model Category {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  store    Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  products Product[]
+  store    Store             @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  products ProductCategory[]
 
   @@unique([storeId, name])
   @@index([storeId])
@@ -75,7 +75,6 @@ model StoreMember {
 model Product {
   id          String   @id @default(cuid())
   storeId     String
-  categoryId  String?
   name        String
   description String?
   price       Int
@@ -83,12 +82,22 @@ model Product {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  store    Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  store      Store             @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  categories ProductCategory[]
 
   @@index([storeId])
   @@index([storeId, visible])
-  @@index([storeId, categoryId])
+}
+
+model ProductCategory {
+  productId  String
+  categoryId String
+
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([productId, categoryId])
+  @@index([categoryId])
 }
 
 enum StoreRole {
