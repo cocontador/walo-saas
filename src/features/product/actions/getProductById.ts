@@ -18,6 +18,8 @@ export type ProductDetail = {
   description: string | null
   visible: boolean
   storeId: string
+  imageUrl: string | null
+  imageKey: string | null
   categories: { id: string; name: string }[]
   createdAt: Date
   updatedAt: Date
@@ -55,6 +57,8 @@ export async function getProductById(productId: string): Promise<ActionResult<Pr
         description: true,
         visible: true,
         storeId: true,
+        imageUrl: true,
+        imageKey: true,
         createdAt: true,
         updatedAt: true,
         categories: {

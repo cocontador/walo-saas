@@ -5,7 +5,7 @@ import "server-only"
 import { DeleteObjectCommand } from '@aws-sdk/client-s3'
 
 import { prisma } from '@/lib/prisma'
-import { r2Bucket, r2Client } from '@/lib/r2'
+import { getR2Client, getR2Bucket } from '@/lib/r2'
 import { requireAuth } from '@/server/require-auth'
 
 type ActionResult =
@@ -62,12 +62,16 @@ export async function removeLogo(storeId: string): Promise<ActionResult> {
   }
 
   try {
-    await r2Client.send(
-      new DeleteObjectCommand({
-        Bucket: r2Bucket,
-        Key: store.logoKey,
-      })
-    )
+    const client = getR2Client()
+    const bucket = getR2Bucket()
+    if (client && bucket) {
+      await client.send(
+        new DeleteObjectCommand({
+          Bucket: bucket,
+          Key: store.logoKey,
+        })
+      )
+    }
   } catch (cleanupError) {
     console.error('[STORE REMOVE LOGO STORAGE ERROR]', cleanupError)
   }

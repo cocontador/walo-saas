@@ -1,8 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createProduct, updateProduct } from '@/features/product/actions'
+import {
+  createProduct,
+  updateProduct,
+  uploadProductImage,
+  replaceProductImage,
+  removeProductImage,
+} from '@/features/product/actions'
 import { CreateProductInput, UpdateProductInput } from '@/features/product/schemas'
 
 type FormMode = 'create' | 'edit'
@@ -20,6 +26,7 @@ type ProductFormProps = {
     description: string | null
     categoryIds?: string[]
   }
+  initialImageUrl?: string | null
   categories?: CategoryOption[]
   productId?: string
 }
@@ -112,15 +119,20 @@ function TextArea({
   )
 }
 
-export function ProductForm({ mode = 'create', initialValues, categories, productId }: ProductFormProps) {
+export function ProductForm({ mode = 'create', initialValues, initialImageUrl, categories, productId }: ProductFormProps) {
   const router = useRouter()
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [name, setName] = useState(initialValues?.name ?? '')
   const [price, setPrice] = useState(String(initialValues?.price ?? ''))
   const [description, setDescription] = useState(initialValues?.description ?? '')
+  const [imageUrl, setImageUrl] = useState(initialImageUrl ?? null)
   const [categoryIds, setCategoryIds] = useState<string[]>(initialValues?.categoryIds ?? [])
   const [loading, setLoading] = useState(false)
+  const [imageLoading, setImageLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [imageError, setImageError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [imageSuccess, setImageSuccess] = useState<string | null>(null)
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
 
   const toggleCategory = (id: string) => {
@@ -204,6 +216,65 @@ export function ProductForm({ mode = 'create', initialValues, categories, produc
     }
   }
 
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0]
+
+    if (!selectedFile || !isEditMode || !productId) {
+      return
+    }
+
+    setImageError(null)
+    setImageSuccess(null)
+    setImageLoading(true)
+
+    try {
+      const result = imageUrl
+        ? await replaceProductImage(productId, selectedFile)
+        : await uploadProductImage(productId, selectedFile)
+
+      if (!result.ok) {
+        setImageError(result.error ?? 'No se pudo guardar la imagen.')
+        return
+      }
+
+      setImageUrl(`${result.imageUrl}?t=${Date.now()}`)
+      setImageSuccess(imageUrl ? 'Imagen reemplazada correctamente.' : 'Imagen subida correctamente.')
+    } catch (err) {
+      setImageError(err instanceof Error ? err.message : 'No se pudo procesar la imagen.')
+    } finally {
+      setImageLoading(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
+  const handleRemoveImage = async () => {
+    if (!isEditMode || !productId) {
+      return
+    }
+
+    setImageError(null)
+    setImageSuccess(null)
+    setImageLoading(true)
+
+    try {
+      const result = await removeProductImage(productId)
+
+      if (!result.ok) {
+        setImageError(result.error ?? 'No se pudo eliminar la imagen.')
+        return
+      }
+
+      setImageUrl(null)
+      setImageSuccess('Imagen eliminada correctamente.')
+    } catch (err) {
+      setImageError(err instanceof Error ? err.message : 'No se pudo eliminar la imagen.')
+    } finally {
+      setImageLoading(false)
+    }
+  }
+
   const isEditMode = mode === 'edit'
   const pageTitle = isEditMode ? 'Editar producto' : 'Crear producto'
   const pageDescription = isEditMode ? 'Actualiza los detalles del producto' : 'Agrega un nuevo producto a tu catálogo'
@@ -276,6 +347,79 @@ export function ProductForm({ mode = 'create', initialValues, categories, produc
           required={false}
         />
 
+        {isEditMode ? (
+          <div className="rounded-2xl border border-gray-200 bg-white p-4">
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Imagen del producto
+                </p>
+                <p className="mt-1 text-sm text-gray-500">
+                  Sube una imagen de hasta 2MB en formato PNG, JPEG o WEBP.
+                </p>
+              </div>
+              <div className="text-xs text-gray-400">Opcional</div>
+            </div>
+
+            {imageUrl ? (
+              <div className="space-y-4">
+                <img
+                  src={imageUrl}
+                  alt={name || 'Imagen del producto'}
+                  className="h-72 w-full rounded-2xl object-cover"
+                />
+
+                <div className="flex flex-wrap gap-2">
+                  <label className="inline-flex cursor-pointer items-center rounded-xl bg-green-500 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-60">
+                    {imageLoading ? 'Procesando...' : 'Reemplazar imagen'}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      onChange={handleImageChange}
+                      disabled={imageLoading}
+                      className="hidden"
+                    />
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    disabled={imageLoading}
+                    className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition-all hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Eliminar imagen
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <label className="inline-flex cursor-pointer items-center rounded-xl bg-green-500 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-60">
+                {imageLoading ? 'Cargando...' : 'Subir imagen'}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={handleImageChange}
+                  disabled={imageLoading}
+                  className="hidden"
+                />
+              </label>
+            )}
+
+            {imageError && (
+              <p className="mt-3 text-sm text-red-600">{imageError}</p>
+            )}
+
+            {imageSuccess && (
+              <p className="mt-3 text-sm text-green-700">{imageSuccess}</p>
+            )}
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 text-sm text-gray-500">
+            Guarda el producto para agregar una imagen.
+          </div>
+        )}
+
         {categories && categories.length > 0 && (
           <div>
             <p className="mb-2 text-xs font-semibold tracking-widest text-gray-500">
@@ -289,7 +433,7 @@ export function ProductForm({ mode = 'create', initialValues, categories, produc
                     key={category.id}
                     type="button"
                     onClick={() => toggleCategory(category.id)}
-                    className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-all ${
+                    className={`cursor-pointer rounded-full border px-4 py-1.5 text-sm font-medium transition-all ${
                       checked
                         ? 'border-green-500 bg-green-50 text-green-700'
                         : 'border-gray-200 bg-gray-100 text-gray-600 hover:border-gray-300'

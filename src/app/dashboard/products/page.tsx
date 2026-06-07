@@ -132,6 +132,9 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
               <table className="w-full">
                 <thead className="border-b border-gray-200 bg-gray-50">
                   <tr>
+                    <th className="px-4 py-4 text-left text-xs font-semibold tracking-wider text-gray-600">
+                      IMAGEN
+                    </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-gray-600">
                       NOMBRE
                     </th>
@@ -152,6 +155,19 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                 <tbody className="divide-y divide-gray-200">
                   {products.map((product) => (
                     <tr key={product.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3">
+                        <div className="h-12 w-12 overflow-hidden rounded-lg bg-gray-50 flex items-center justify-center border border-gray-100">
+                          {product.imageUrl ? (
+                            <img
+                              src={product.imageUrl}
+                              alt={product.name}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-2xl">📦</span>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-6 py-4">
                         <span className="font-semibold text-gray-900">{product.name}</span>
                       </td>
@@ -203,7 +219,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                             </svg>
                             Editar
                           </Link>
-                          <form action={product.visible ? hideProduct : reactivateProduct} method="post" className="inline-block">
+                          <form action={product.visible ? hideProduct : reactivateProduct} className="inline-block">
                             <input type="hidden" name="productId" value={product.id} />
                             <button
                               type="submit"

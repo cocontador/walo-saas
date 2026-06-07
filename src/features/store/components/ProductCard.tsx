@@ -2,17 +2,27 @@ type Props = {
     name: string
     description: string | null
     price: number
+    imageUrl?: string | null
     category?: string
     isNew?: boolean
     isSale?: boolean
 }
 
-export function ProductCard({ name, description, price, category, isNew, isSale }: Props) {
+export function ProductCard({ name, description, price, imageUrl, category, isNew, isSale }: Props) {
     return (
         <div className="group rounded-2xl border border-gray-100 bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-            {/* Imagen placeholder */}
-            <div className="relative bg-gray-50 aspect-square flex items-center justify-center">
-                <span className="text-6xl">📦</span>
+            <div className="relative bg-gray-50 aspect-square overflow-hidden">
+                {imageUrl ? (
+                    <img
+                        src={imageUrl}
+                        alt={name}
+                        className="h-full w-full object-cover"
+                    />
+                ) : (
+                    <div className="flex h-full items-center justify-center">
+                        <span className="text-6xl">📦</span>
+                    </div>
+                )}
                 {isNew && (
                     <span className="absolute top-3 left-3 bg-white text-xs font-bold px-2 py-1 rounded-full shadow-sm">
                         NUEVO
