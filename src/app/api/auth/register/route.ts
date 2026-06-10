@@ -63,6 +63,7 @@ const { registerSchema } = await import('@/features/auth/schema/register.schema'
         data: {
           name: storeName.trim(),
           slug,
+          acceptedTermsAt: new Date(),
           memberships: {
             create: {
               userId: user.id,

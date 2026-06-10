@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -37,6 +38,7 @@ export function RegisterForm() {
   const [storeName, setStoreName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -46,10 +48,16 @@ export function RegisterForm() {
     setLoading(true)
 
     try {
+      if (!acceptedTerms) {
+        setError('Debes aceptar los Términos y Condiciones para crear tu tienda.')
+        setLoading(false)
+        return
+      }
+
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, storeName, email, password }),
+        body: JSON.stringify({ name, storeName, email, password, acceptedTerms }),
       })
       const data = await res.json()
 
@@ -108,6 +116,25 @@ export function RegisterForm() {
           value={password}
           onChange={setPassword}
         />
+
+        <div className="flex items-start gap-3 rounded-3xl border border-gray-200 bg-white px-4 py-4">
+          <input
+            id="acceptedTerms"
+            name="acceptedTerms"
+            type="checkbox"
+            checked={acceptedTerms}
+            onChange={(e) => setAcceptedTerms(e.target.checked)}
+            className="mt-1 h-4 w-4 shrink-0 rounded border-gray-300 text-green-600 focus:ring-green-500"
+          />
+          <label htmlFor="acceptedTerms" className="text-sm leading-6 text-gray-700">
+            Declaro que leí y acepto los{' '}
+            <Link href="/legal/terminos" className="font-semibold text-green-600 underline hover:text-green-700">
+              Términos y Condiciones de WALO
+            </Link>{' '}
+            y su Política de Uso Aceptable.
+          </label>
+        </div>
+
         <button
           type="submit"
           disabled={loading}
@@ -118,7 +145,7 @@ export function RegisterForm() {
       </form>
 
       <p className="mt-4 text-center text-xs text-gray-400">
-        Al registrarte aceptas nuestros Términos de Servicio y Política de Privacidad.
+        Al registrarte aceptas nuestros Términos y Condiciones de uso de WALO.
       </p>
     </div>
   )

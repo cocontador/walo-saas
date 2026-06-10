@@ -202,18 +202,11 @@ export default function LandingPage() {
               </span>
               Crear mi catálogo gratis
             </Link>
-            <p className="mt-6 text-sm text-[#9ca3af]">
+            <p className="mt-6 text-sm text-[#9ca34f]">
               No requiere tarjeta de crédito · Configuración en 2 minutos
             </p>
           </div>
         </section>
-
-        <footer className="border-t border-[rgba(0,0,0,0.06)] py-10">
-          <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 text-sm text-[#6b7280] md:flex-row">
-            <div className="text-lg font-bold text-[#191c1d]">WALO</div>
-            <div>© 2026 WALO · Hecho para microemprendedores</div>
-          </div>
-        </footer>
       </main>
     </div>
   )

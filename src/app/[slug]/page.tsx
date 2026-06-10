@@ -93,15 +93,6 @@ export default async function StorePage({ params }: Props) {
                     />
                 </main>
 
-                <footer className="mt-16 border-t border-gray-100 py-6 text-center text-xs text-gray-400">
-                    Catálogo creado con <span className="font-bold text-gray-600">WALO</span>
-                    <span className="mx-4">·</span>
-                    Privacidad
-                    <span className="mx-2">·</span>
-                    Términos
-                    <span className="mx-2">·</span>
-                    Soporte
-                </footer>
             </div>
         </CartProvider>
     )

@@ -18,6 +18,12 @@ export const registerSchema = z.object({
     password: z
         .string()
         .min(6, 'La contraseña debe tener al menos 6 caracteres.'),
+
+    acceptedTerms: z
+        .boolean()
+        .refine((value) => value === true, {
+            message: 'Debes aceptar los Términos y Condiciones para crear tu tienda.',
+        }),
 })
 
 export type RegisterInput = z.infer<typeof registerSchema>
