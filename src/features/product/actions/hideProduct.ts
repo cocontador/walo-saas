@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { authOptions } from '@/server/auth'
 import { getUserStoreId } from '@/server/store'
 import { prisma } from '@/lib/prisma'
+import { logError } from '@/lib/logger'
 
 export type ActionResult<T> =
   | { success: true; data: T }
@@ -93,7 +94,13 @@ async function hideProductById(productId: string): Promise<ActionResult<{ id: st
       },
     }
   } catch (error) {
-    console.error('Error hiding product:', error)
+    logError({
+      event: 'product.hide.failed',
+      scope: 'product',
+      message: 'Fallo al ocultar producto',
+      errorCode: 'PRODUCT_HIDE_FAILED',
+      meta: { errorName: error instanceof Error ? error.name : 'UnknownError' },
+    })
     return {
       success: false,
       error: 'Ocurrió un error al ocultar el producto. Por favor intenta nuevamente.',

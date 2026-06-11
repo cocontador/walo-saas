@@ -7,6 +7,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/server/auth'
 import { getUserStoreId } from '@/server/store'
 import { prisma } from '@/lib/prisma'
+import { logError } from '@/lib/logger'
 import { createProductSchema, type CreateProductInput } from '@/features/product/schemas'
 
 export type ActionResult<T> =
@@ -91,7 +92,13 @@ export async function createProduct(
       }
     }
 
-    console.error('Error creating product:', error)
+    logError({
+      event: 'product.create.failed',
+      scope: 'product',
+      message: 'Fallo al crear producto',
+      errorCode: 'PRODUCT_CREATE_FAILED',
+      meta: { errorName: error instanceof Error ? error.name : 'UnknownError' },
+    })
     return {
       success: false,
       error: 'Ocurrió un error al crear el producto. Por favor intenta nuevamente.',

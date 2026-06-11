@@ -9,6 +9,8 @@ import { authOptions } from '@/server/auth'
 import { getUserStoreId } from '@/server/store'
 import { prisma } from '@/lib/prisma'
 import { buildProductImageKey, getR2Client, getR2Bucket, getR2PublicUrlBase } from '@/lib/r2'
+import { readAndVerifyImage } from '@/lib/file-signature'
+import { logError } from '@/lib/logger'
 import { validateProductImageFile } from '@/features/product/schemas/imageSchema'
 
 type ActionResult =
@@ -74,14 +76,28 @@ export async function replaceProductImage(
     return { ok: false, status: 404, error: 'Producto no encontrado o no tienes permiso para editarlo.' }
   }
 
+  const verified = await readAndVerifyImage(validatedFile)
+
+  if (!verified.ok) {
+    return { ok: false, status: 400, error: verified.error }
+  }
+
   const imageKey = buildProductImageKey(storeId, cleanProductId)
   const imageUrl = getPublicUrl(imageKey)
-  const body = new Uint8Array(await validatedFile.arrayBuffer())
+  const body = verified.bytes
 
   const client = getR2Client()
   const bucket = getR2Bucket()
 
   if (!client || !bucket) {
+    logError({
+      event: 'product_image.replace.failed',
+      scope: 'media',
+      message: 'R2 no configurado para reemplazar imagen de producto',
+      storeId,
+      errorCode: 'R2_NOT_CONFIGURED',
+      meta: { productId: cleanProductId },
+    })
     return { ok: false, status: 500, error: 'R2 no está configurado. Revisa las variables de entorno.' }
   }
 
@@ -90,7 +106,7 @@ export async function replaceProductImage(
       Bucket: bucket,
       Key: imageKey,
       Body: body,
-      ContentType: validatedFile.type,
+      ContentType: verified.mime,
     })
   )
 
@@ -108,7 +124,17 @@ export async function replaceProductImage(
   } catch (error) {
     // No se borra el archivo de R2 porque la key es determinística (misma para old y new).
     // Borrarlo dejaría la DB apuntando a un objeto inexistente.
-    console.error('[PRODUCT REPLACE IMAGE DB ERROR]', error)
+    logError({
+      event: 'product_image.replace.db_failed',
+      scope: 'media',
+      message: 'Fallo actualización de DB tras subir imagen de producto',
+      storeId,
+      errorCode: 'PRODUCT_IMAGE_DB_UPDATE_FAILED',
+      meta: {
+        productId: cleanProductId,
+        errorName: error instanceof Error ? error.name : 'UnknownError',
+      },
+    })
     throw error
   }
 
