@@ -9,6 +9,7 @@ import {
     getStoreBySlug,
     getVisibleProducts,
 } from "@/features/store/server/queries"
+import { logInfo } from "@/lib/logger"
 import { authOptions } from "@/server/auth"
 
 type Props = {
@@ -25,6 +26,17 @@ export default async function StorePage({ params }: Props) {
     }
 
     const products = await getVisibleProducts(store.id)
+
+    logInfo({
+        event: "public_catalog.render_ok",
+        scope: "store",
+        message: "Catalogo publico renderizado correctamente",
+        slug,
+        storeId: store.id,
+        meta: {
+            visibleProducts: products.length,
+        },
+    })
 
     const session = await getServerSession(authOptions)
     const isOwner =
