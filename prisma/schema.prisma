@@ -37,6 +37,8 @@ model Store {
   memberships StoreMember[]
   products    Product[]
   categories  Category[]
+  orders         Order[]
+  whatsappClicks WhatsappClickEvent[]
 
   @@index([slug])
 }
@@ -105,4 +107,58 @@ model ProductCategory {
 enum StoreRole {
   OWNER
   EDITOR
+}
+
+// ==========================================
+// SPRINT 3: PAGOS, WEBHOOKS Y ANALÍTICA
+// ==========================================
+
+model Order {
+  id              String           @id @default(cuid())
+  storeId         String
+  store           Store            @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  
+  totalAmount     Int              
+  status          OrderStatus      @default(PENDING)
+  customerNotes   String?          
+  itemsSnapshot   Json             
+  
+  paymentAttempts PaymentAttempt[] 
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([storeId])
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELED
+}
+
+model PaymentAttempt {
+  id              String   @id @default(cuid())
+  orderId         String
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  khipuPaymentId  String   @unique 
+  khipuPaymentUrl String   
+  status          String   @default("pending") 
+  amount          Int
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([orderId])
+}
+
+model WhatsappClickEvent {
+  id        String   @id @default(cuid())
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) 
+
+  @@index([storeId])
 }

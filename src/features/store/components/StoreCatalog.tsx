@@ -43,9 +43,10 @@ type Props = {
     products: Product[]
     storeName?: string              // <-- Agregado para el flujo de WhatsApp
     whatsappPhone?: string | null   // <-- Agregado para el flujo de WhatsApp
+    storeId: string          // <-- Agregado para la creación de órdenes y pagos
 }
 
-export function StoreCatalog({ products, storeName = 'La Tienda', whatsappPhone }: Props) {
+export function StoreCatalog({ products, storeName = 'La Tienda', whatsappPhone, storeId }: Props) {
     const [selectedCategory, setSelectedCategory] = useState('Todos')
     const [cartOpen, setCartOpen] = useState(false)
 
@@ -154,6 +155,7 @@ export function StoreCatalog({ products, storeName = 'La Tienda', whatsappPhone 
                 onClearCart={clearCart}
                 storeName={storeName}
                 whatsappPhone={whatsappPhone}
+                storeId={storeId}
             />
         </div>
     )

@@ -21,13 +21,16 @@ type CartContextType = {
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
-export function CartProvider({ children }: { children: ReactNode }) {
+export function CartProvider({ children, storeId }: { children: ReactNode; storeId: string }) {
+    // 1. Clave única por tienda para evitar contaminación de datos
+    const CART_KEY = `walo-cart-${storeId}`
+
     const [items, setItems] = useState<CartItem[]>([])
     const [isInitialized, setIsInitialized] = useState(false)
 
-    // Cargar datos de localStorage al montar
+    // 2. Cargar datos de localStorage usando la clave dinámica
     useEffect(() => {
-        const storedCart = localStorage.getItem('walo-cart')
+        const storedCart = localStorage.getItem(CART_KEY)
         if (storedCart) {
             try {
                 setItems(JSON.parse(storedCart))
@@ -36,14 +39,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
             }
         }
         setIsInitialized(true)
-    }, [])
+    }, [CART_KEY]) // Dependencia: si cambia el storeId, se recarga el carrito
 
-    // Guardar en localStorage si hay cambios
+    // 3. Guardar en localStorage sincronizado con la clave de la tienda
     useEffect(() => {
-        if (isInitialized) {
-            localStorage.setItem('walo-cart', JSON.stringify(items))
+        if (localStorage.getItem('walo-cart')) {
+            localStorage.removeItem('walo-cart');
         }
-    }, [items, isInitialized])
+    }, [items, isInitialized, CART_KEY])
 
     // Totales calculados al vuelo
     const total = items.reduce((acc, item) => acc + (item.price * item.quantity), 0)
@@ -63,7 +66,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     const removeItem = (id: string) => setItems(prev => prev.filter(item => item.id !== id))
 
-    // Lógica para cambiar cantidad (Ticket WALO-485)
     const updateQuantity = (id: string, quantity: number) => {
         if (quantity <= 0) {
             removeItem(id)
@@ -75,8 +77,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
 
     const clearCart = () => setItems([])
-
-    //if (!isInitialized) return null // Evita parpadeos o errores de hidratación en SSR
 
     return (
         <CartContext.Provider value={{ items, total, itemCount, addItem, removeItem, updateQuantity, clearCart }}>

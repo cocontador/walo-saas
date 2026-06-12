@@ -2,41 +2,33 @@
 
 import { useState } from 'react'
 import { CartItem } from './CartContext'
+import { createPaymentIntent } from "@/features/store/server/createPayment"
+import { trackWhatsappClick } from "@/features/store/server/trackWhatsappClick"
 
-// --- WALO-494, WALO-495 & WALO-499: Lógica del mensaje con estructura protegida ---
 export function buildWhatsAppMessage(
-    phone: string,
+    phone: string | null | undefined,
     storeName: string,
     items: CartItem[],
     total: number,
-    notes?: string // Nuevo parámetro opcional para el mensaje editado
+    notes?: string
 ): string {
     if (!phone) return '#'
     const cleanPhone = phone.replace(/[^\d+]/g, '')
-
     const formatter = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' })
-
     const lines: string[] = []
     lines.push(`Hola, me gustaría hacer un pedido en *${storeName}*: \n`)
-
-    // La estructura mínima del pedido es inmutable
     items.forEach((item) => {
         const itemTotal = item.price * item.quantity
         lines.push(`• ${item.quantity}x ${item.name} (${formatter.format(itemTotal)})`)
     })
-
     lines.push(`\n*Total a pagar: ${formatter.format(total)}*`)
-
-    // WALO-500: Integración del mensaje editado al final del string
     if (notes && notes.trim() !== '') {
         lines.push(`\n*Instrucciones especiales:*`)
         lines.push(notes.trim())
     }
-
     return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(lines.join('\n'))}`
 }
 
-// --- COMPONENTE UI ---
 interface Props {
     isOpen: boolean
     onClose: () => void
@@ -47,18 +39,42 @@ interface Props {
     onClearCart: () => void
     storeName?: string
     whatsappPhone?: string | null
+    storeId: string
 }
 
 export function CartDrawer({
     isOpen, onClose, items, total, onUpdateQuantity, onRemoveItem, onClearCart,
-    storeName = 'La Tienda', whatsappPhone
+    storeName = 'La Tienda', whatsappPhone, storeId
 }: Props) {
-    // WALO-498: Estado para el editor de mensajes previo
     const [orderNotes, setOrderNotes] = useState('')
+    const [isLoadingKhipu, setIsLoadingKhipu] = useState(false)
+    const [khipuError, setKhipuError] = useState<string | null>(null)
+
+    async function handleKhipuPayment() {
+        setIsLoadingKhipu(true)
+        setKhipuError(null)
+        try {
+            const result = await createPaymentIntent({
+                storeId,
+                storeName,
+                items,
+                totalAmount: total,
+                customerNotes: orderNotes || undefined,
+            })
+            if (result.success && result.paymentUrl) {
+                window.location.href = result.paymentUrl
+            } else {
+                setKhipuError(result.error ?? 'Error al iniciar el pago')
+            }
+        } catch {
+            setKhipuError('Error inesperado. Intenta nuevamente.')
+        } finally {
+            setIsLoadingKhipu(false)
+        }
+    }
 
     return (
         <>
-            {/* Overlay */}
             {isOpen && (
                 <div
                     className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm transition-opacity"
@@ -66,9 +82,7 @@ export function CartDrawer({
                 />
             )}
 
-            {/* Drawer */}
             <div className={`fixed right-0 top-0 z-50 flex h-full w-full max-w-sm flex-col bg-white shadow-xl transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-                {/* Header */}
                 <div className="flex items-center justify-between border-b border-gray-100 px-4 py-4">
                     <h2 className="text-lg font-bold text-gray-900">Tu carrito</h2>
                     <button onClick={onClose} className="cursor-pointer rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
@@ -78,7 +92,6 @@ export function CartDrawer({
                     </button>
                 </div>
 
-                {/* Items */}
                 <div className="flex-1 overflow-y-auto px-4 py-4">
                     {items.length === 0 ? (
                         <div className="flex flex-col items-center justify-center gap-2 py-20 text-center">
@@ -114,11 +127,8 @@ export function CartDrawer({
                     )}
                 </div>
 
-                {/* Footer y Editor de Mensaje */}
                 {items.length > 0 && (
                     <div className="border-t border-gray-100 px-4 py-4 flex flex-col gap-3">
-
-                        {/* WALO-498: Editor de instrucciones */}
                         <div className="mb-2">
                             <label htmlFor="notes" className="mb-1.5 block text-xs font-semibold text-gray-600">
                                 Instrucciones especiales (Opcional)
@@ -140,12 +150,41 @@ export function CartDrawer({
                             </span>
                         </div>
 
-                        {/* WALO-496: Botón enviar pedido */}
+                        {/* WALO-520: Botón Pagar con Khipu */}
+                        <button
+                            onClick={handleKhipuPayment}
+                            disabled={isLoadingKhipu}
+                            className="cursor-pointer w-full rounded-full bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                            {isLoadingKhipu ? (
+                                <>
+                                    <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                                    </svg>
+                                    Iniciando pago...
+                                </>
+                            ) : (
+                                <>
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                    </svg>
+                                    Pagar con Khipu
+                                </>
+                            )}
+                        </button>
+
+                        {khipuError && (
+                            <p className="text-xs text-red-500 text-center">{khipuError}</p>
+                        )}
+
+                        {/* WALO-549: Botón WhatsApp con tracking */}
                         {whatsappPhone ? (
                             <a
                                 href={buildWhatsAppMessage(whatsappPhone, storeName, items, total, orderNotes)}
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                onClick={() => { trackWhatsappClick(storeId).catch(() => {}) }}
                                 className="cursor-pointer w-full rounded-full bg-green-500 py-3 text-sm font-semibold text-white hover:bg-green-600 transition-colors flex items-center justify-center gap-2 shadow-sm"
                             >
                                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
