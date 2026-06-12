@@ -5,21 +5,31 @@ import { prisma } from "@/lib/prisma";
 import { khipuConfig } from "@/lib/khipu";
 import { OrderStatus } from "@prisma/client";
 
-// Schema para validar el payload inicial de Khipu
+// Función auxiliar para observabilidad en BD
+async function logKhipu(context: string, message: string, orderId?: string) {
+    try {
+        await prisma.khipuLog.create({
+            data: { context, message, orderId }
+        });
+    } catch (e) {
+        console.error("Error crítico: Falló el registro en KhipuLog", e);
+    }
+}
+
 const khipuNotificationSchema = z.object({
     api_version: z.string(),
     notification_token: z.string(),
 });
 
 export async function POST(req: NextRequest) {
-    try {
-        // 1. Leer datos del formulario (Khipu envía webhooks como form-urlencoded)
-        const bodyText = await req.text();
-        const params = new URLSearchParams(bodyText);
+    const bodyText = await req.text();
+    
+    // Registro inicial de entrada para auditoría
+    await logKhipu("WEBHOOK_RECEIVED", bodyText);
 
-        // WALO-591: Observabilidad básica
+    try {
+        const params = new URLSearchParams(bodyText);
         const notificationToken = params.get("notification_token");
-        console.log("[WEBHOOK KHIPU RECIBIDO] Token:", notificationToken);
 
         const payload = {
             api_version: params.get("api_version") || "",
@@ -28,13 +38,13 @@ export async function POST(req: NextRequest) {
 
         const parsedData = khipuNotificationSchema.safeParse(payload);
         if (!parsedData.success) {
-            console.error("Payload inválido:", parsedData.error);
+            await logKhipu("INVALID_PAYLOAD", JSON.stringify(parsedData.error));
             return new NextResponse("Invalid payload", { status: 400 });
         }
 
         const { notification_token } = parsedData.data;
 
-        // 2. WALO-537: Verificación criptográfica con Khipu
+        // Verificación criptográfica
         const khipuEndpoint = `${khipuConfig.apiUrl}/payments`;
         const toSign = `GET&${encodeURI(khipuEndpoint)}&notification_token=${notification_token}`;
         const hash = crypto.createHmac("sha256", khipuConfig.secret).update(toSign).digest("hex");
@@ -42,36 +52,33 @@ export async function POST(req: NextRequest) {
 
         const khipuResponse = await fetch(`${khipuEndpoint}?notification_token=${notification_token}`, {
             method: "GET",
-            headers: {
-                "Authorization": authorizationHeader,
-            },
+            headers: { "Authorization": authorizationHeader },
         });
 
         if (!khipuResponse.ok) {
-            console.error("No se pudo verificar el token con Khipu");
+            await logKhipu("VERIFICATION_FAILED", `Status: ${khipuResponse.status}`, notificationToken || "N/A");
             return new NextResponse("Verification failed", { status: 400 });
         }
 
         const paymentData = await khipuResponse.json();
         const { payment_id, status } = paymentData;
 
-        // 3. WALO-539: Idempotencia
+        // Idempotencia
         const paymentAttempt = await prisma.paymentAttempt.findUnique({
             where: { khipuPaymentId: payment_id },
             include: { order: true },
         });
 
         if (!paymentAttempt) {
-            console.error(`Intento de pago no encontrado en DB: ${payment_id}`);
+            await logKhipu("PAYMENT_NOT_FOUND", `ID: ${payment_id}`);
             return new NextResponse("Payment attempt not found", { status: 404 });
         }
 
-        // Si ya está pagado, no volvemos a procesar
         if (paymentAttempt.status === "done" || paymentAttempt.order.status === OrderStatus.PAID) {
             return new NextResponse("OK", { status: 200 });
         }
 
-        // 4. WALO-528: Actualización transaccional
+        // Actualización transaccional
         if (status === "done") {
             await prisma.$transaction([
                 prisma.paymentAttempt.update({
@@ -83,19 +90,19 @@ export async function POST(req: NextRequest) {
                     data: { status: OrderStatus.PAID },
                 }),
             ]);
-            console.log(`¡Pago exitoso! Orden ID: ${paymentAttempt.orderId}`);
+            await logKhipu("PAYMENT_SUCCESS", `Orden ${paymentAttempt.orderId} pagada`, paymentAttempt.orderId);
         } else if (status === "rejected") {
             await prisma.paymentAttempt.update({
                 where: { id: paymentAttempt.id },
                 data: { status: "rejected" },
             });
-            console.log(`Pago rechazado. Orden ID: ${paymentAttempt.orderId}`);
+            await logKhipu("PAYMENT_REJECTED", `Orden ${paymentAttempt.orderId} rechazada`, paymentAttempt.orderId);
         }
 
         return new NextResponse("OK", { status: 200 });
 
-    } catch (error) {
-        console.error("Error crítico en Webhook Khipu:", error);
+    } catch (error: any) {
+        await logKhipu("CRITICAL_ERROR", error.message);
         return new NextResponse("Internal Server Error", { status: 500 });
     }
 }

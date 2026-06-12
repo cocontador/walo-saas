@@ -152,6 +152,14 @@ model PaymentAttempt {
   updatedAt       DateTime @updatedAt
 
   @@index([orderId])
+  
+}
+model KhipuLog {
+  id        String   @id @default(cuid())
+  orderId   String?
+  context   String
+  message   String
+  createdAt DateTime @default(now())
 }
 
 model WhatsappClickEvent {
