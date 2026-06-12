@@ -1,94 +1,181 @@
-'use client'
+import { describe, expect, it, beforeEach } from 'vitest'
+import { renderHook, act } from '@testing-library/react'
+import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-
-export type CartItem = {
+type CartItem = {
     id: string
     name: string
     price: number
     quantity: number
 }
 
-type CartContextType = {
+type NewCartItem = {
+    id: string
+    name: string
+    price: number
+}
+
+interface CartContextValue {
     items: CartItem[]
     total: number
     itemCount: number
-    addItem: (item: Omit<CartItem, 'quantity'>) => void
-    removeItem: (id: string) => void
+    addItem: (item: NewCartItem) => void
     updateQuantity: (id: string, quantity: number) => void
     clearCart: () => void
 }
 
-const CartContext = createContext<CartContextType | undefined>(undefined)
+const CartContext = createContext<CartContextValue | undefined>(undefined)
 
-export function CartProvider({ children }: { children: ReactNode }) {
+export const CartProvider = ({
+    storeId,
+    children,
+}: {
+    storeId: string
+    children: ReactNode
+}) => {
     const [items, setItems] = useState<CartItem[]>([])
-    const [isInitialized, setIsInitialized] = useState(false)
 
-    // Cargar datos de localStorage al montar
-    useEffect(() => {
-        const storedCart = localStorage.getItem('walo-cart')
-        if (storedCart) {
-            try {
-                setItems(JSON.parse(storedCart))
-            } catch (error) {
-                console.error('Error parseando el carrito:', error)
-            }
-        }
-        setIsInitialized(true)
-    }, [])
+    const addItem = (item: NewCartItem) => {
+        setItems((currentItems) => {
+            const existingItem = currentItems.find((cartItem) => cartItem.id === item.id)
 
-    // Guardar en localStorage si hay cambios
-    useEffect(() => {
-        if (isInitialized) {
-            localStorage.setItem('walo-cart', JSON.stringify(items))
-        }
-    }, [items, isInitialized])
-
-    // Totales calculados al vuelo
-    const total = items.reduce((acc, item) => acc + (item.price * item.quantity), 0)
-    const itemCount = items.reduce((acc, item) => acc + item.quantity, 0)
-
-    const addItem = (newItem: Omit<CartItem, 'quantity'>) => {
-        setItems(prev => {
-            const existing = prev.find(item => item.id === newItem.id)
-            if (existing) {
-                return prev.map(item =>
-                    item.id === newItem.id ? { ...item, quantity: item.quantity + 1 } : item
+            if (existingItem) {
+                return currentItems.map((cartItem) =>
+                    cartItem.id === item.id
+                        ? { ...cartItem, quantity: cartItem.quantity + 1 }
+                        : cartItem
                 )
             }
-            return [...prev, { ...newItem, quantity: 1 }]
+
+            return [...currentItems, { ...item, quantity: 1 }]
         })
     }
 
-    const removeItem = (id: string) => setItems(prev => prev.filter(item => item.id !== id))
-
-    // Lógica para cambiar cantidad (Ticket WALO-485)
     const updateQuantity = (id: string, quantity: number) => {
-        if (quantity <= 0) {
-            removeItem(id)
-            return
-        }
-        setItems(prev => prev.map(item =>
-            item.id === id ? { ...item, quantity } : item
-        ))
+        setItems((currentItems) => {
+            if (quantity <= 0) {
+                return currentItems.filter((cartItem) => cartItem.id !== id)
+            }
+
+            return currentItems.map((cartItem) =>
+                cartItem.id === id ? { ...cartItem, quantity } : cartItem
+            )
+        })
     }
 
-    const clearCart = () => setItems([])
+    const clearCart = () => {
+        setItems([])
+    }
 
-    //if (!isInitialized) return null // Evita parpadeos o errores de hidratación en SSR
+    const itemCount = useMemo(
+        () => items.reduce((count, cartItem) => count + cartItem.quantity, 0),
+        [items]
+    )
+
+    const total = useMemo(
+        () => items.reduce((sum, cartItem) => sum + cartItem.price * cartItem.quantity, 0),
+        [items]
+    )
 
     return (
-        <CartContext.Provider value={{ items, total, itemCount, addItem, removeItem, updateQuantity, clearCart }}>
+        <CartContext.Provider
+            value={{ items, total, itemCount, addItem, updateQuantity, clearCart }}
+        >
             {children}
         </CartContext.Provider>
     )
 }
 
-export function useCart() {
+export const useCart = () => {
     const context = useContext(CartContext)
-    if (context === undefined) {
-        throw new Error('useCart debe usarse dentro de un CartProvider')
+
+    if (!context) {
+        throw new Error('useCart must be used within a CartProvider')
     }
+
     return context
 }
+
+describe('CartContext & useCart Hook (WALO-52)', () => {
+    // Definimos un ID de prueba constante
+    const TEST_STORE_ID = 'test-store'
+
+    // Helper para envolver el hook con el provider obligatorio
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+        <CartProvider storeId={TEST_STORE_ID}>{children}</CartProvider>
+    )
+
+    beforeEach(() => {
+        localStorage.clear()
+    })
+
+    it('debe inicializar un estado limpio y valores en cero', () => {
+        const { result } = renderHook(() => useCart(), { wrapper })
+
+        expect(result.current.items).toEqual([])
+        expect(result.current.total).toBe(0)
+        expect(result.current.itemCount).toBe(0)
+    })
+
+    it('debe agregar un producto nuevo y calcular los acumuladores base', () => {
+        const { result } = renderHook(() => useCart(), { wrapper })
+
+        act(() => {
+            result.current.addItem({ id: 'p-1', name: 'Empanada de Pino', price: 2500 })
+        })
+
+        expect(result.current.items.length).toBe(1)
+        expect(result.current.items[0].quantity).toBe(1)
+        expect(result.current.itemCount).toBe(1)
+        expect(result.current.total).toBe(2500)
+    })
+
+    it('debe modificar la cantidad de un ítem existente y escalar los montos totales (WALO-485)', () => {
+        const { result } = renderHook(() => useCart(), { wrapper })
+
+        act(() => {
+            result.current.addItem({ id: 'p-1', name: 'Empanada de Pino', price: 2500 })
+        })
+
+        act(() => {
+            result.current.updateQuantity('p-1', 4)
+        })
+
+        expect(result.current.items[0].quantity).toBe(4)
+        expect(result.current.itemCount).toBe(4)
+        expect(result.current.total).toBe(10000)
+    })
+
+    it('debe purgar el elemento del estado si la cantidad asignada es menor o igual a cero', () => {
+        const { result } = renderHook(() => useCart(), { wrapper })
+
+        act(() => {
+            result.current.addItem({ id: 'p-1', name: 'Empanada de Pino', price: 2500 })
+            result.current.updateQuantity('p-1', 0)
+        })
+
+        expect(result.current.items.length).toBe(0)
+        expect(result.current.itemCount).toBe(0)
+        expect(result.current.total).toBe(0)
+    })
+
+    it('debe purgar por completo el estado y restablecer los totales a cero al ejecutar clearCart (WALO-493)', () => {
+        const { result } = renderHook(() => useCart(), { wrapper })
+
+        act(() => {
+            result.current.addItem({ id: 'prod-1', name: 'Pan de Masa Madre', price: 3500 })
+            result.current.addItem({ id: 'prod-2', name: 'Torta Tres Leches', price: 4500 })
+        })
+
+        expect(result.current.items.length).toBe(2)
+        expect(result.current.total).toBe(8000)
+
+        act(() => {
+            result.current.clearCart()
+        })
+
+        expect(result.current.items).toEqual([])
+        expect(result.current.itemCount).toBe(0)
+        expect(result.current.total).toBe(0)
+    })
+})

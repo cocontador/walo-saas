@@ -31,7 +31,8 @@ export default async function StorePage({ params }: Props) {
         session?.user?.id ? await canManageStoreByUser(store.id, session.user.id) : false
 
     return (
-        <CartProvider>
+        // CORRECCIÓN: Pasamos el storeId al Provider
+        <CartProvider storeId={store.id}>
             <div className="min-h-screen bg-gray-50">
                 <header className="sticky top-0 z-10 border-b border-gray-100 bg-white">
                     <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
@@ -86,7 +87,6 @@ export default async function StorePage({ params }: Props) {
                         {store.description && <p className="max-w-md text-gray-500">{store.description}</p>}
                     </div>
 
-                    {/* ¡AQUÍ ESTÁ LA MAGIA! Pasamos el nombre y el teléfono al catálogo */}
                     <StoreCatalog
                         products={products}
                         storeName={store.name}

@@ -1,7 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { CartItem } from './CartContext'
+
+interface CartItem {
+    id: string
+    name: string
+    price: number
+    quantity: number
+}
 
 // --- WALO-494, WALO-495 & WALO-499: Lógica del mensaje con estructura protegida ---
 export function buildWhatsAppMessage(
@@ -9,7 +15,7 @@ export function buildWhatsAppMessage(
     storeName: string,
     items: CartItem[],
     total: number,
-    notes?: string // Nuevo parámetro opcional para el mensaje editado
+    notes?: string
 ): string {
     if (!phone) return '#'
     const cleanPhone = phone.replace(/[^\d+]/g, '')
