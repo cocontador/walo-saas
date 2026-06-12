@@ -10,6 +10,7 @@ type Props = {
     storeName: string
     whatsappPhone?: string | null
     onAddToCart: () => void
+    priority?: boolean
 }
 
 export function ProductCard({
@@ -20,7 +21,8 @@ export function ProductCard({
     category,
     storeName,
     whatsappPhone,
-    onAddToCart
+    onAddToCart,
+    priority = false,
 }: Props) {
 
     // Generador de mensaje express para pedir un solo producto directo
@@ -36,7 +38,14 @@ export function ProductCard({
             {/* Imagen del Producto */}
             <div className="relative bg-gray-50 aspect-square overflow-hidden">
                 {imageUrl ? (
-                    <Image src={imageUrl} alt={name} fill className="object-cover" />
+                    <Image
+                        src={imageUrl}
+                        alt={name}
+                        fill
+                        sizes="(max-width: 640px) 50vw, 33vw"
+                        loading={priority ? 'eager' : 'lazy'}
+                        className="object-cover"
+                    />
                 ) : (
                     <div className="flex h-full items-center justify-center">
                         <span className="text-6xl">📦</span>

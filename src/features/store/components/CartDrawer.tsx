@@ -10,16 +10,14 @@ interface CartItem {
 }
 
 // --- WALO-494, WALO-495 & WALO-499: Lógica del mensaje con estructura protegida ---
-export function buildWhatsAppMessage(
-    phone: string,
+
+// Construye solo el texto plano del pedido. Se usa para la preview y para armar la URL.
+export function buildWhatsAppMessageText(
     storeName: string,
     items: CartItem[],
     total: number,
     notes?: string
 ): string {
-    if (!phone) return '#'
-    const cleanPhone = phone.replace(/[^\d+]/g, '')
-
     const formatter = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' })
 
     const lines: string[] = []
@@ -39,7 +37,20 @@ export function buildWhatsAppMessage(
         lines.push(notes.trim())
     }
 
-    return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(lines.join('\n'))}`
+    return lines.join('\n')
+}
+
+// Envuelve el texto en la URL de WhatsApp lista para usar en el href.
+export function buildWhatsAppMessage(
+    phone: string,
+    storeName: string,
+    items: CartItem[],
+    total: number,
+    notes?: string
+): string {
+    if (!phone) return '#'
+    const cleanPhone = phone.replace(/[^\d+]/g, '')
+    return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(buildWhatsAppMessageText(storeName, items, total, notes))}`
 }
 
 // --- COMPONENTE UI ---
@@ -102,7 +113,7 @@ export function CartDrawer({
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <button onClick={() => onUpdateQuantity(item.id, item.quantity - 1)} className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:border-red-400 hover:text-red-600 transition-colors">
+                                        <button onClick={() => item.quantity === 1 ? onRemoveItem(item.id) : onUpdateQuantity(item.id, item.quantity - 1)} className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:border-red-400 hover:text-red-600 transition-colors">
                                             {item.quantity === 1 ? (
                                                 <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -144,6 +155,14 @@ export function CartDrawer({
                             <span className="text-lg font-bold text-gray-900">
                                 {total.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                             </span>
+                        </div>
+
+                        {/* WALO-56 AC1: vista previa del mensaje final */}
+                        <div>
+                            <p className="mb-1 text-xs font-semibold text-gray-600">Vista previa del mensaje</p>
+                            <pre className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700 whitespace-pre-wrap max-h-36 overflow-y-auto">
+                                {buildWhatsAppMessageText(storeName, items, total, orderNotes)}
+                            </pre>
                         </div>
 
                         {/* WALO-496: Botón enviar pedido */}

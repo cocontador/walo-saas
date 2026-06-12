@@ -31,7 +31,7 @@ describe('StoreCatalog Component (WALO-50)', () => {
     // Helper para inyectar el proveedor del carrito indispensable en los subcomponentes
     const renderComponent = (productsList = mockProducts) => {
         return render(
-            <CartProvider>
+            <CartProvider storeId="test-store">
                 <StoreCatalog products={productsList} />
             </CartProvider>
         )
