@@ -12,30 +12,31 @@ datasource db {
 }
 
 model User {
-  id           String        @id @default(cuid())
-  email        String        @unique
+  id           String   @id @default(cuid())
+  email        String   @unique
   name         String?
   passwordHash String
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  memberships  StoreMember[]
+  memberships StoreMember[]
 }
 
 model Store {
-  id            String        @id @default(cuid())
-  slug          String        @unique
+  id            String   @id @default(cuid())
+  slug          String   @unique
   name          String
   description   String?
   whatsappPhone String?
   logoUrl       String?
   logoKey       String?
-  isActive      Boolean       @default(true)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  memberships   StoreMember[]
-  products      Product[]
+  memberships  StoreMember[]
+  products     Product[]
+  subscription StoreSubscription?
 
   @@index([slug])
 }
@@ -47,8 +48,8 @@ model StoreMember {
   role      StoreRole @default(OWNER)
   createdAt DateTime  @default(now())
 
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  store     Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
 
   @@unique([userId, storeId])
   @@index([userId])
@@ -65,7 +66,7 @@ model Product {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
 
   @@index([storeId])
   @@index([storeId, visible])
@@ -74,4 +75,64 @@ model Product {
 enum StoreRole {
   OWNER
   EDITOR
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  TRIALING
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+}
+
+model Plan {
+  id               String   @id @default(cuid())
+  name             String
+  slug             String   @unique
+  description      String?
+  priceMonthly     Int // en pesos chilenos
+  priceYearly      Int? // en pesos chilenos
+  currency         String   @default("CLP")
+  productLimit     Int? // null = ilimitado
+  customDomain     Boolean  @default(false)
+  analytics        Boolean  @default(false)
+  premiumTemplates Boolean  @default(false)
+  supportLevel     String   @default("basic") // basic, email, priority
+  features         Json     @default("[]")
+  limitations      Json?
+  isActive         Boolean  @default(true)
+  sortOrder        Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  subscriptions StoreSubscription[]
+
+  @@index([isActive])
+  @@index([slug])
+}
+
+model StoreSubscription {
+  id                 String             @id @default(cuid())
+  storeId            String             @unique
+  planId             String
+  status             SubscriptionStatus @default(ACTIVE)
+  billingCycle       BillingCycle       @default(MONTHLY)
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean            @default(false)
+  canceledAt         DateTime?
+  reactivatedAt      DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  plan  Plan  @relation(fields: [planId], references: [id])
+
+  @@index([storeId])
+  @@index([planId])
+  @@index([status])
 }

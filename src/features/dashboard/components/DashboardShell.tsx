@@ -21,6 +21,7 @@ const navItems: NavItem[] = [
   { label: 'Mi tienda', href: '/dashboard' },
   { label: 'Productos', href: '/dashboard/products' },
   { label: 'Categorías', href: '/dashboard/categories' },
+  { label: 'Mi Plan', href: '/dashboard/billing' },
 ]
 
 function navItemClasses(isActive: boolean) {
