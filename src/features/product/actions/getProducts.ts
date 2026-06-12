@@ -1,4 +1,4 @@
-﻿'use server'
+'use server'
 
 import "server-only"
 
@@ -17,6 +17,7 @@ export type ProductListItem = {
   price: number
   description: string | null
   visible: boolean
+  imageUrl: string | null
   createdAt: Date
 }
 
@@ -61,6 +62,7 @@ export async function getProducts(searchTerm?: string | null): Promise<ActionRes
         price: true,
         description: true,
         visible: true,
+        imageUrl: true,
         createdAt: true,
       },
       orderBy: {

@@ -5,4 +5,7 @@ export { updateProduct } from './updateProduct'
 export { hideProduct } from './hideProduct'
 export { reactivateProduct } from './reactivateProduct'
 export { deactivateProduct } from './deactivateProduct'
+export { uploadProductImage } from './uploadProductImage'
+export { replaceProductImage } from './replaceProductImage'
+export { removeProductImage } from './removeProductImage'
 
