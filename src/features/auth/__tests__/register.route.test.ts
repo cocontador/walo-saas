@@ -58,12 +58,16 @@ describe('register route', () => {
   })
 
   it('crea tienda con acceptedTerms true y persiste acceptedTermsAt', async () => {
+    const mockTx = {
+      user: { create: vi.fn().mockResolvedValue({ id: 'user-1', name: 'María', email: 'maria@example.com' }) },
+      store: { create: vi.fn().mockResolvedValue({ id: 'store-1', slug: 'tienda-demo', name: 'Tienda Demo' }) },
+    }
+
     mockPrisma.user.findUnique.mockResolvedValue(null)
     mockPrisma.store.findUnique.mockResolvedValue(null)
-    mockPrisma.$transaction.mockResolvedValue({
-      user: { id: 'user-1', name: 'María', email: 'maria@example.com' },
-      store: { id: 'store-1', slug: 'tienda-demo', name: 'Tienda Demo' },
-    })
+    mockPrisma.$transaction.mockImplementation(async (callback: (tx: typeof mockTx) => Promise<unknown>) =>
+      callback(mockTx)
+    )
 
     const request = buildRequest({
       name: 'María',
@@ -78,6 +82,12 @@ describe('register route', () => {
 
     expect(response.status).toBe(201)
     expect(body.store).toEqual({ id: 'store-1', slug: 'tienda-demo', name: 'Tienda Demo' })
-    expect(mockPrisma.$transaction).toHaveBeenCalledOnce()
+    expect(mockTx.store.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          acceptedTermsAt: expect.any(Date),
+        }),
+      })
+    )
   })
 })

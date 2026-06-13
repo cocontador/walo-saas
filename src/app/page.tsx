@@ -202,7 +202,7 @@ export default function LandingPage() {
               </span>
               Crear mi catálogo gratis
             </Link>
-            <p className="mt-6 text-sm text-[#9ca34f]">
+            <p className="mt-6 text-sm text-[#9ca3af]">
               No requiere tarjeta de crédito · Configuración en 2 minutos
             </p>
           </div>
