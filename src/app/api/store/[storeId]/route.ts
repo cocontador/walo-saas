@@ -16,7 +16,7 @@ const storeUpdateSchema = z.object({
       'El slug solo permite minúsculas, números y guiones (sin espacios).'
     ),
   description: z.string().optional().nullable(),
-  whatsappPhone: z.string().optional().nullable(),
+  whatsappPhone: z.string().regex(/^\+569\d{8}$/, 'El número de WhatsApp debe tener 8 dígitos.').optional().nullable(),
 })
 
 /**

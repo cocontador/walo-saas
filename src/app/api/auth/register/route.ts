@@ -26,7 +26,7 @@ const { registerSchema } = await import('@/features/auth/schema/register.schema'
       )
     }
 
-    const { name, storeName, email, password } = validation.data
+    const { name, storeName, slug: requestedSlug, whatsappPhone, email, password } = validation.data
     const normalizedEmail = email.trim().toLowerCase()
 
     const existingUser = await prisma.user.findUnique({
@@ -40,12 +40,11 @@ const { registerSchema } = await import('@/features/auth/schema/register.schema'
       )
     }
 
-    const baseSlug = generateSlug(storeName)
-    let slug = baseSlug
+    let slug = requestedSlug
     let suffix = 1
 
     while (await prisma.store.findUnique({ where: { slug } })) {
-      slug = `${baseSlug}-${suffix++}`
+      slug = `${requestedSlug}-${suffix++}`
     }
 
     const passwordHash = await bcrypt.hash(password, 12)
@@ -63,6 +62,7 @@ const { registerSchema } = await import('@/features/auth/schema/register.schema'
         data: {
           name: storeName.trim(),
           slug,
+          whatsappPhone: whatsappPhone.trim(),
           acceptedTermsAt: new Date(),
           memberships: {
             create: {

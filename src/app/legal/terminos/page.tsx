@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 export const metadata = {
   title: 'Términos y Condiciones | WALO',
   description:
@@ -6,7 +8,30 @@ export const metadata = {
 
 export default function LegalTerminosPage() {
   return (
-    <div className="min-h-screen bg-gray-50 py-16">
+    <div className="min-h-screen bg-gray-50" style={{ fontFamily: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+      <nav className="fixed top-0 z-50 w-full border-b border-[rgba(0,0,0,0.06)] bg-[rgba(248,249,250,0.85)] backdrop-blur-[20px]">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 md:px-12">
+          <Link href="/" className="text-xl font-bold tracking-[-0.04em] text-[#191c1d]">
+            WALO
+          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/login"
+              className="text-sm font-semibold text-[#6b7280] transition-colors hover:text-[#191c1d]"
+            >
+              Iniciar sesión
+            </Link>
+            <Link
+              href="/register"
+              className="inline-flex items-center justify-center rounded-full bg-gradient-to-br from-[#16A34A] to-[#22C55E] px-5 py-2.5 text-sm font-bold text-white shadow-[0_4px_15px_rgba(34,197,94,0.25)] transition-all hover:-translate-y-px hover:shadow-[0_8px_25px_rgba(34,197,94,0.35)]"
+            >
+              Empezar gratis
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      <div className="pt-24 pb-16 px-4">
       <main className="mx-auto max-w-5xl space-y-10 rounded-[2rem] bg-white px-6 py-10 shadow-[0_20px_80px_rgba(15,23,42,0.08)] ring-1 ring-black/5 sm:px-10 sm:py-12">
         <header className="space-y-4">
           <p className="text-sm font-semibold uppercase tracking-[0.28em] text-green-600">Términos y Condiciones de Uso de WALO</p>
@@ -148,6 +173,7 @@ export default function LegalTerminosPage() {
           </article>
         </section>
       </main>
+      </div>
     </div>
   )
 }

@@ -45,6 +45,8 @@ describe('register route', () => {
     const request = buildRequest({
       name: 'María',
       storeName: 'Tienda Demo',
+      slug: 'tienda-demo',
+      whatsappPhone: '+56987654321',
       email: 'maria@example.com',
       password: '123456',
       acceptedTerms: false,
@@ -72,6 +74,8 @@ describe('register route', () => {
     const request = buildRequest({
       name: 'María',
       storeName: 'Tienda Demo',
+      slug: 'tienda-demo',
+      whatsappPhone: '+56987654321',
       email: 'maria@example.com',
       password: '123456',
       acceptedTerms: true,
