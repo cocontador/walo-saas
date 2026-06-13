@@ -1,8 +1,6 @@
 import type { MetadataRoute } from "next"
 
-function getBaseUrl() {
-  return (process.env.NEXTAUTH_URL ?? "http://localhost:3000").replace(/\/+$/, "")
-}
+import { getBaseUrl } from "@/lib/getBaseUrl"
 
 export default function robots(): MetadataRoute.Robots {
   const baseUrl = getBaseUrl()
@@ -11,7 +9,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: ["/", "/*"],
+        allow: ["/"],
         disallow: [
           "/dashboard",
           "/dashboard/*",

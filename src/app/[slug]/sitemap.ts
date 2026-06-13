@@ -1,13 +1,10 @@
 import type { MetadataRoute } from "next"
 
+import { getBaseUrl } from "@/lib/getBaseUrl"
 import { prisma } from "@/lib/prisma"
 
 type Props = {
   params: Promise<{ slug: string }>
-}
-
-function getBaseUrl() {
-  return (process.env.NEXTAUTH_URL ?? "http://localhost:3000").replace(/\/+$/, "")
 }
 
 export default async function sitemap({ params }: Props): Promise<MetadataRoute.Sitemap> {

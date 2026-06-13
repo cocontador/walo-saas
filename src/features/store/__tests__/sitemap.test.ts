@@ -14,55 +14,7 @@ vi.mock('@/lib/prisma', () => ({
   prisma: mockPrisma,
 }))
 
-import { MetadataRoute } from 'next'
-
-// Importamos la función del sitemap dinámico
-// Como es un archivo de ruta (route handler), simulamos su lógica
-async function mockSitemapHandler(slug: string): Promise<MetadataRoute.Sitemap> {
-  const { prisma } = await import('@/lib/prisma')
-
-  const baseUrl = (process.env.NEXTAUTH_URL ?? 'http://localhost:3000').replace(/\/+$/, '')
-
-  const store = await prisma.store.findUnique({
-    where: { slug },
-    select: {
-      id: true,
-      slug: true,
-      updatedAt: true,
-      isActive: true,
-      products: {
-        where: {
-          visible: true,
-        },
-        select: {
-          updatedAt: true,
-        },
-        orderBy: {
-          updatedAt: 'desc',
-        },
-      },
-    },
-  })
-
-  if (!store || !store.isActive) {
-    return []
-  }
-
-  const latestPublicProductUpdate = store.products[0]?.updatedAt
-  const lastModified =
-    latestPublicProductUpdate && latestPublicProductUpdate > store.updatedAt
-      ? latestPublicProductUpdate
-      : store.updatedAt
-
-  return [
-    {
-      url: `${baseUrl}/${store.slug}`,
-      lastModified,
-      changeFrequency: 'daily' as const,
-      priority: 0.8,
-    },
-  ]
-}
+import sitemap from '@/app/[slug]/sitemap'
 
 describe('WALO-035: Sitemap dinámico por tienda', () => {
   beforeEach(() => {
@@ -80,7 +32,7 @@ describe('WALO-035: Sitemap dinámico por tienda', () => {
         products: [],
       })
 
-      const result = await mockSitemapHandler('mi-tienda')
+      const result = await sitemap({ params: Promise.resolve({ slug: 'mi-tienda' }) })
 
       expect(result).toHaveLength(1)
       expect(result[0]).toMatchObject({
@@ -107,7 +59,7 @@ describe('WALO-035: Sitemap dinámico por tienda', () => {
         ],
       })
 
-      const result = await mockSitemapHandler('tienda-activa')
+      const result = await sitemap({ params: Promise.resolve({ slug: 'tienda-activa' }) })
 
       expect(result[0].lastModified).toEqual(productDate)
     })
@@ -128,7 +80,7 @@ describe('WALO-035: Sitemap dinámico por tienda', () => {
         ],
       })
 
-      const result = await mockSitemapHandler('tienda-actualizada')
+      const result = await sitemap({ params: Promise.resolve({ slug: 'tienda-actualizada' }) })
 
       expect(result[0].lastModified).toEqual(storeDate)
     })
@@ -144,7 +96,7 @@ describe('WALO-035: Sitemap dinámico por tienda', () => {
         products: [],
       })
 
-      const result = await mockSitemapHandler('tienda-sin-productos')
+      const result = await sitemap({ params: Promise.resolve({ slug: 'tienda-sin-productos' }) })
 
       expect(result).toHaveLength(1)
       expect(result[0].lastModified).toEqual(storeDate)
@@ -161,7 +113,7 @@ describe('WALO-035: Sitemap dinámico por tienda', () => {
         products: [],
       })
 
-      const result = await mockSitemapHandler('test-slug')
+      const result = await sitemap({ params: Promise.resolve({ slug: 'test-slug' }) })
 
       expect(result[0].url).toBe('https://test.walo.app/test-slug')
     })
@@ -177,7 +129,7 @@ describe('WALO-035: Sitemap dinámico por tienda', () => {
         products: [],
       })
 
-      const result = await mockSitemapHandler('tienda-inactiva')
+      const result = await sitemap({ params: Promise.resolve({ slug: 'tienda-inactiva' }) })
 
       expect(result).toEqual([])
     })
@@ -195,7 +147,7 @@ describe('WALO-035: Sitemap dinámico por tienda', () => {
         ],
       })
 
-      const result = await mockSitemapHandler('archived-store')
+      const result = await sitemap({ params: Promise.resolve({ slug: 'archived-store' }) })
 
       expect(result).toHaveLength(0)
       expect(result.some((e) => e.url.includes('archived-store'))).toBe(false)
@@ -206,7 +158,7 @@ describe('WALO-035: Sitemap dinámico por tienda', () => {
     it('retorna array vacío cuando slug no existe', async () => {
       mockPrisma.store.findUnique.mockResolvedValue(null)
 
-      const result = await mockSitemapHandler('slug-inexistente')
+      const result = await sitemap({ params: Promise.resolve({ slug: 'slug-inexistente' }) })
 
       expect(result).toEqual([])
     })
@@ -214,7 +166,7 @@ describe('WALO-035: Sitemap dinámico por tienda', () => {
     it('no hace throw para slug inexistente', async () => {
       mockPrisma.store.findUnique.mockResolvedValue(null)
 
-      await expect(mockSitemapHandler('invalid-slug')).resolves.not.toThrow()
+      await expect(sitemap({ params: Promise.resolve({ slug: 'invalid-slug' }) })).resolves.not.toThrow()
     })
   })
 
@@ -234,7 +186,7 @@ describe('WALO-035: Sitemap dinámico por tienda', () => {
         ],
       })
 
-      await mockSitemapHandler('tienda-filtrada')
+      await sitemap({ params: Promise.resolve({ slug: 'tienda-filtrada' }) })
 
       expect(mockPrisma.store.findUnique).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -269,7 +221,7 @@ describe('WALO-035: Sitemap dinámico por tienda', () => {
         ],
       })
 
-      const result = await mockSitemapHandler('tienda-multiples')
+      const result = await sitemap({ params: Promise.resolve({ slug: 'tienda-multiples' }) })
 
       expect(result[0].lastModified).toEqual(newestDate)
     })
@@ -285,7 +237,7 @@ describe('WALO-035: Sitemap dinámico por tienda', () => {
         products: [],
       })
 
-      const result = await mockSitemapHandler('tienda-sin-visibles')
+      const result = await sitemap({ params: Promise.resolve({ slug: 'tienda-sin-visibles' }) })
 
       expect(result).toHaveLength(1)
       expect(result[0].lastModified).toEqual(storeDate)
@@ -302,7 +254,7 @@ describe('WALO-035: Sitemap dinámico por tienda', () => {
         products: [],
       })
 
-      const result = await mockSitemapHandler('tienda-prioridad')
+      const result = await sitemap({ params: Promise.resolve({ slug: 'tienda-prioridad' }) })
 
       expect(result[0].changeFrequency).toBe('daily')
       expect(result[0].priority).toBe(0.8)
@@ -322,7 +274,7 @@ describe('WALO-035: Sitemap dinámico por tienda', () => {
         products: [{ updatedAt: productDate }],
       })
 
-      const result = await mockSitemapHandler('tienda-completa')
+      const result = await sitemap({ params: Promise.resolve({ slug: 'tienda-completa' }) })
 
       expect(result).toHaveLength(1)
       expect(result[0]).toEqual({
@@ -344,7 +296,7 @@ describe('WALO-035: Sitemap dinámico por tienda', () => {
         products: [],
       })
 
-      const result = await mockSitemapHandler('tienda-privada')
+      const result = await sitemap({ params: Promise.resolve({ slug: 'tienda-privada' }) })
 
       expect(result).toHaveLength(1)
       expect(result[0].lastModified).toEqual(storeDate)
@@ -353,7 +305,7 @@ describe('WALO-035: Sitemap dinámico por tienda', () => {
     it('flujo: tienda no existe → sitemap vacío', async () => {
       mockPrisma.store.findUnique.mockResolvedValue(null)
 
-      const result = await mockSitemapHandler('no-existe')
+      const result = await sitemap({ params: Promise.resolve({ slug: 'no-existe' }) })
 
       expect(result).toEqual([])
     })
@@ -367,7 +319,7 @@ describe('WALO-035: Sitemap dinámico por tienda', () => {
         products: [{ updatedAt: new Date() }],
       })
 
-      const result = await mockSitemapHandler('archived')
+      const result = await sitemap({ params: Promise.resolve({ slug: 'archived' }) })
 
       expect(result).toEqual([])
     })
