@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { registerSchema } from './register.schema'
 
 describe('registerSchema - WALO-11: Política de contraseña mínima', () => {
-  // Objeto base PERFECTO que cumple todas las reglas de tu esquema
+
   const validUser = {
     name: 'Maria',
     storeName: 'Mi Tienda',
@@ -29,7 +29,7 @@ describe('registerSchema - WALO-11: Política de contraseña mínima', () => {
 
   it('debería aceptar contraseña larga válida', () => {
     const result = registerSchema.safeParse({ ...validUser, password: 'contrasenalargasegura123' })
-    // Si esto vuelve a fallar, el problema es una restricción oculta
+  
     expect(result.success).toBe(true)
   })
 })
