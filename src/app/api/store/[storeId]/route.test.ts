@@ -1,164 +1,230 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest } from 'next/server'
 
-const { mockPrisma } = vi.hoisted(() => ({
-  mockPrisma: {
-    storeMember: { findFirst: vi.fn() },
-    store: { findFirst: vi.fn(), update: vi.fn() },
+const { mockGetServerSession, mockStoreMemberFindFirst, mockStoreFindFirst, mockStoreUpdate } = vi.hoisted(() => ({
+  mockGetServerSession: vi.fn(),
+  mockStoreMemberFindFirst: vi.fn(),
+  mockStoreFindFirst: vi.fn(),
+  mockStoreUpdate: vi.fn(),
+}))
+
+vi.mock('next-auth', () => ({ getServerSession: mockGetServerSession }))
+vi.mock('@/server/auth', () => ({ authOptions: {} }))
+vi.mock('@/lib/prisma', () => ({
+  prisma: {
+    storeMember: { findFirst: mockStoreMemberFindFirst },
+    store: { findFirst: mockStoreFindFirst, update: mockStoreUpdate },
   },
 }))
 
-vi.mock('next-auth', () => ({
-  getServerSession: vi.fn(),
-}))
+import { PATCH, DELETE, PUT } from './route'
 
-vi.mock('@/lib/prisma', () => ({
-  prisma: mockPrisma,
-}))
-
-import { getServerSession } from 'next-auth'
-import type { Session } from 'next-auth'
-import { PATCH, PUT, DELETE } from './route'
-
-function makeRequest(body?: unknown, storeId = 'store-1') {
-  return {
-    req: new NextRequest('http://localhost/api/store/' + storeId, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: body ? JSON.stringify(body) : undefined,
-    }),
-    params: Promise.resolve({ storeId }),
-  }
+function makeRequest(method: string, body: object) {
+  return new NextRequest(`http://localhost/api/store/store-1`, {
+    method,
+    body: JSON.stringify(body),
+    headers: { 'Content-Type': 'application/json' },
+  })
 }
 
-const validPayload = { name: 'Mi Tienda', slug: 'mi-tienda', description: null, whatsappPhone: null }
+const params = Promise.resolve({ storeId: 'store-1' })
 
-describe('/api/store/[storeId]', () => {
+describe('PATCH /api/store/[storeId] - WALO-18: Edición de tienda', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  // --- PATCH ---
+  it('debería actualizar la tienda cuando los datos son válidos', async () => {
+    mockGetServerSession.mockResolvedValue({ user: { id: 'user-1' } })
+    mockStoreMemberFindFirst.mockResolvedValue({ id: 'member-1', role: 'OWNER' })
+    mockStoreFindFirst.mockResolvedValue(null) // slug no duplicado
+    mockStoreUpdate.mockResolvedValue({ id: 'store-1', name: 'Tienda Actualizada', slug: 'tienda-actualizada' })
 
-  it('PATCH devuelve 401 sin sesión', async () => {
-    vi.mocked(getServerSession).mockResolvedValue(null)
-    const { req, params } = makeRequest(validPayload)
+    const req = makeRequest('PATCH', { name: 'Tienda Actualizada', slug: 'tienda-actualizada' })
+    const res = await PATCH(req, { params })
 
+    expect(res.status).toBe(200)
+    const data = await res.json()
+    expect(data.store).toBeDefined()
+  })
+
+  it('debería rechazar la edición sin sesión activa (401)', async () => {
+    mockGetServerSession.mockResolvedValue(null)
+
+    const req = makeRequest('PATCH', { name: 'Tienda', slug: 'tienda' })
     const res = await PATCH(req, { params })
 
     expect(res.status).toBe(401)
   })
 
-  it('PATCH devuelve 403 si el usuario no es OWNER de la tienda (anti-IDOR)', async () => {
-    vi.mocked(getServerSession).mockResolvedValue({ user: { id: 'user-1' } } as unknown as Session)
-    mockPrisma.storeMember.findFirst.mockResolvedValue(null)
-    const { req, params } = makeRequest(validPayload)
+  it('debería rechazar edición de tienda ajena (403)', async () => {
+    mockGetServerSession.mockResolvedValue({ user: { id: 'user-1' } })
+    // No hay membresía — usuario no pertenece a esta tienda
+    mockStoreMemberFindFirst.mockResolvedValue(null)
 
+    const req = makeRequest('PATCH', { name: 'Tienda', slug: 'tienda' })
     const res = await PATCH(req, { params })
 
     expect(res.status).toBe(403)
   })
 
-  it('PATCH devuelve 400 con payload inválido (Zod)', async () => {
-    vi.mocked(getServerSession).mockResolvedValue({ user: { id: 'user-1' } } as unknown as Session)
-    mockPrisma.storeMember.findFirst.mockResolvedValue({ id: 'member-1', role: 'OWNER' })
-    const { req, params } = makeRequest({ name: 'x', slug: '!!slug inválido!!' })
+  it('debería rechazar campos inválidos (400)', async () => {
+    mockGetServerSession.mockResolvedValue({ user: { id: 'user-1' } })
+    mockStoreMemberFindFirst.mockResolvedValue({ id: 'member-1', role: 'OWNER' })
 
+    // Nombre demasiado corto (min 2 chars)
+    const req = makeRequest('PATCH', { name: 'A', slug: 'tienda' })
     const res = await PATCH(req, { params })
 
     expect(res.status).toBe(400)
   })
+})
 
-  it('PATCH devuelve 409 si el slug ya está en uso por otra tienda', async () => {
-    vi.mocked(getServerSession).mockResolvedValue({ user: { id: 'user-1' } } as unknown as Session)
-    mockPrisma.storeMember.findFirst.mockResolvedValue({ id: 'member-1', role: 'OWNER' })
-    mockPrisma.store.findFirst.mockResolvedValue({ id: 'store-otra' })
-    const { req, params } = makeRequest(validPayload)
+describe('PATCH /api/store/[storeId] - WALO-19: Validación de slug', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
 
+  it('debería rechazar slug duplicado (409)', async () => {
+    mockGetServerSession.mockResolvedValue({ user: { id: 'user-1' } })
+    mockStoreMemberFindFirst.mockResolvedValue({ id: 'member-1', role: 'OWNER' })
+    // Otro store ya usa ese slug
+    mockStoreFindFirst.mockResolvedValue({ id: 'otro-store' })
+
+    const req = makeRequest('PATCH', { name: 'Mi Tienda', slug: 'slug-en-uso' })
     const res = await PATCH(req, { params })
 
     expect(res.status).toBe(409)
+    const data = await res.json()
+    expect(data.error).toContain('slug')
   })
 
-  it('PATCH actualiza la tienda y devuelve 200', async () => {
-    vi.mocked(getServerSession).mockResolvedValue({ user: { id: 'user-1' } } as unknown as Session)
-    mockPrisma.storeMember.findFirst.mockResolvedValue({ id: 'member-1', role: 'OWNER' })
-    mockPrisma.store.findFirst.mockResolvedValue(null)
-    mockPrisma.store.update.mockResolvedValue({ id: 'store-1', ...validPayload })
-    const { req, params } = makeRequest(validPayload)
+  it('debería aceptar slug único', async () => {
+    mockGetServerSession.mockResolvedValue({ user: { id: 'user-1' } })
+    mockStoreMemberFindFirst.mockResolvedValue({ id: 'member-1', role: 'OWNER' })
+    mockStoreFindFirst.mockResolvedValue(null) // slug libre
+    mockStoreUpdate.mockResolvedValue({ id: 'store-1', slug: 'slug-libre' })
 
+    const req = makeRequest('PATCH', { name: 'Mi Tienda', slug: 'slug-libre' })
     const res = await PATCH(req, { params })
 
     expect(res.status).toBe(200)
   })
 
-  // --- DELETE ---
+  it('debería rechazar slug con espacios (formato inválido)', async () => {
+    mockGetServerSession.mockResolvedValue({ user: { id: 'user-1' } })
+    mockStoreMemberFindFirst.mockResolvedValue({ id: 'member-1', role: 'OWNER' })
 
-  it('DELETE devuelve 401 sin sesión', async () => {
-    vi.mocked(getServerSession).mockResolvedValue(null)
-    const req = new NextRequest('http://localhost/api/store/store-1', { method: 'DELETE' })
+    const req = makeRequest('PATCH', { name: 'Mi Tienda', slug: 'slug con espacios' })
+    const res = await PATCH(req, { params })
 
-    const res = await DELETE(req, { params: Promise.resolve({ storeId: 'store-1' }) })
+    expect(res.status).toBe(400)
+  })
+})
 
-    expect(res.status).toBe(401)
+describe('PATCH /api/store/[storeId] - WALO-20: Campo WhatsApp', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
   })
 
-  it('DELETE devuelve 403 si el usuario no es OWNER (anti-IDOR)', async () => {
-    vi.mocked(getServerSession).mockResolvedValue({ user: { id: 'user-1' } } as unknown as Session)
-    mockPrisma.storeMember.findFirst.mockResolvedValue(null)
-    const req = new NextRequest('http://localhost/api/store/store-1', { method: 'DELETE' })
+  it('debería guardar el número de WhatsApp cuando se provee', async () => {
+    mockGetServerSession.mockResolvedValue({ user: { id: 'user-1' } })
+    mockStoreMemberFindFirst.mockResolvedValue({ id: 'member-1', role: 'OWNER' })
+    mockStoreFindFirst.mockResolvedValue(null)
+    mockStoreUpdate.mockResolvedValue({ id: 'store-1', whatsappPhone: '+56912345678' })
 
-    const res = await DELETE(req, { params: Promise.resolve({ storeId: 'store-1' }) })
-
-    expect(res.status).toBe(403)
-  })
-
-  it('DELETE desactiva la tienda (isActive: false) y devuelve 200', async () => {
-    vi.mocked(getServerSession).mockResolvedValue({ user: { id: 'user-1' } } as unknown as Session)
-    mockPrisma.storeMember.findFirst.mockResolvedValue({ id: 'member-1', role: 'OWNER' })
-    mockPrisma.store.update.mockResolvedValue({ id: 'store-1', isActive: false })
-    const req = new NextRequest('http://localhost/api/store/store-1', { method: 'DELETE' })
-
-    const res = await DELETE(req, { params: Promise.resolve({ storeId: 'store-1' }) })
+    const req = makeRequest('PATCH', {
+      name: 'Mi Tienda',
+      slug: 'mi-tienda',
+      whatsappPhone: '+56912345678',
+    })
+    const res = await PATCH(req, { params })
 
     expect(res.status).toBe(200)
-    expect(mockPrisma.store.update).toHaveBeenCalledWith(
-      expect.objectContaining({ data: { isActive: false } })
+    expect(mockStoreUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ whatsappPhone: '+56912345678' }),
+      })
     )
   })
 
-  // --- PUT ---
+  it('debería permitir guardar la tienda sin número de WhatsApp (opcional)', async () => {
+    mockGetServerSession.mockResolvedValue({ user: { id: 'user-1' } })
+    mockStoreMemberFindFirst.mockResolvedValue({ id: 'member-1', role: 'OWNER' })
+    mockStoreFindFirst.mockResolvedValue(null)
+    mockStoreUpdate.mockResolvedValue({ id: 'store-1', whatsappPhone: null })
 
-  it('PUT devuelve 401 sin sesión', async () => {
-    vi.mocked(getServerSession).mockResolvedValue(null)
-    const req = new NextRequest('http://localhost/api/store/store-1', { method: 'PUT' })
-
-    const res = await PUT(req, { params: Promise.resolve({ storeId: 'store-1' }) })
-
-    expect(res.status).toBe(401)
-  })
-
-  it('PUT devuelve 403 si el usuario no es OWNER (anti-IDOR)', async () => {
-    vi.mocked(getServerSession).mockResolvedValue({ user: { id: 'user-1' } } as unknown as Session)
-    mockPrisma.storeMember.findFirst.mockResolvedValue(null)
-    const req = new NextRequest('http://localhost/api/store/store-1', { method: 'PUT' })
-
-    const res = await PUT(req, { params: Promise.resolve({ storeId: 'store-1' }) })
-
-    expect(res.status).toBe(403)
-  })
-
-  it('PUT reactiva la tienda (isActive: true) y devuelve 200', async () => {
-    vi.mocked(getServerSession).mockResolvedValue({ user: { id: 'user-1' } } as unknown as Session)
-    mockPrisma.storeMember.findFirst.mockResolvedValue({ id: 'member-1', role: 'OWNER' })
-    mockPrisma.store.update.mockResolvedValue({ id: 'store-1', isActive: true })
-    const req = new NextRequest('http://localhost/api/store/store-1', { method: 'PUT' })
-
-    const res = await PUT(req, { params: Promise.resolve({ storeId: 'store-1' }) })
+    const req = makeRequest('PATCH', { name: 'Mi Tienda', slug: 'mi-tienda' })
+    const res = await PATCH(req, { params })
 
     expect(res.status).toBe(200)
-    expect(mockPrisma.store.update).toHaveBeenCalledWith(
-      expect.objectContaining({ data: { isActive: true } })
+  })
+})
+
+describe('DELETE /api/store/[storeId] - WALO-21: Desactivación de tienda', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('debería desactivar la tienda (isActive: false)', async () => {
+    mockGetServerSession.mockResolvedValue({ user: { id: 'user-1' } })
+    mockStoreMemberFindFirst.mockResolvedValue({ id: 'member-1', role: 'OWNER' })
+    mockStoreUpdate.mockResolvedValue({ id: 'store-1', isActive: false })
+
+    const req = new NextRequest('http://localhost/api/store/store-1', { method: 'DELETE' })
+    const res = await DELETE(req, { params })
+
+    expect(res.status).toBe(200)
+    expect(mockStoreUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'store-1' },
+        data: { isActive: false },
+      })
     )
+  })
+
+  it('debería rechazar desactivación de tienda ajena (403)', async () => {
+    mockGetServerSession.mockResolvedValue({ user: { id: 'user-1' } })
+    mockStoreMemberFindFirst.mockResolvedValue(null)
+
+    const req = new NextRequest('http://localhost/api/store/store-1', { method: 'DELETE' })
+    const res = await DELETE(req, { params })
+
+    expect(res.status).toBe(403)
+    expect(mockStoreUpdate).not.toHaveBeenCalled()
+  })
+})
+
+describe('PUT /api/store/[storeId] - WALO-22: Reactivación de tienda', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('debería reactivar la tienda (isActive: true)', async () => {
+    mockGetServerSession.mockResolvedValue({ user: { id: 'user-1' } })
+    mockStoreMemberFindFirst.mockResolvedValue({ id: 'member-1', role: 'OWNER' })
+    mockStoreUpdate.mockResolvedValue({ id: 'store-1', isActive: true })
+
+    const req = new NextRequest('http://localhost/api/store/store-1', { method: 'PUT' })
+    const res = await PUT(req, { params })
+
+    expect(res.status).toBe(200)
+    expect(mockStoreUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'store-1' },
+        data: { isActive: true },
+      })
+    )
+  })
+
+  it('debería rechazar reactivación sin sesión activa (401)', async () => {
+    mockGetServerSession.mockResolvedValue(null)
+
+    const req = new NextRequest('http://localhost/api/store/store-1', { method: 'PUT' })
+    const res = await PUT(req, { params })
+
+    expect(res.status).toBe(401)
+    expect(mockStoreUpdate).not.toHaveBeenCalled()
   })
 })

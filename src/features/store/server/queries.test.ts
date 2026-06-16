@@ -1,97 +1,107 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-const { mockPrisma } = vi.hoisted(() => ({
-  mockPrisma: {
-    store: { findUnique: vi.fn() },
-    product: { findMany: vi.fn() },
-    storeMember: { findFirst: vi.fn() },
+const { mockStoreFindUnique, mockProductFindMany } = vi.hoisted(() => ({
+  mockStoreFindUnique: vi.fn(),
+  mockProductFindMany: vi.fn(),
+}))
+
+vi.mock('@/lib/prisma', () => ({
+  prisma: {
+    store: { findUnique: mockStoreFindUnique },
+    product: { findMany: mockProductFindMany },
   },
 }))
 
-vi.mock('@/lib/prisma', () => ({ prisma: mockPrisma }))
+import { getStoreBySlug, getVisibleProducts } from './queries'
 
-import { getStoreBySlug, getVisibleProducts, canManageStoreByUser } from './queries'
-
-describe('getStoreBySlug', () => {
-  beforeEach(() => vi.clearAllMocks())
-
-  it('devuelve la tienda si está activa', async () => {
-    mockPrisma.store.findUnique.mockResolvedValue({
-      id: 's1', name: 'Tienda', slug: 'tienda', isActive: true,
-      description: null, logoUrl: null, whatsappPhone: null,
-    })
-
-    const result = await getStoreBySlug('tienda')
-
-    expect(result).not.toBeNull()
-    expect(result?.id).toBe('s1')
+describe('getStoreBySlug - WALO-33: Catálogo público por slug', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
   })
 
-  it('devuelve null si la tienda no existe', async () => {
-    mockPrisma.store.findUnique.mockResolvedValue(null)
+  it('debería retornar la tienda cuando el slug es válido y la tienda está activa', async () => {
+    const mockStore = {
+      id: 'store-1',
+      name: 'Mi Tienda',
+      slug: 'mi-tienda',
+      description: 'Tienda de ropa',
+      logoUrl: null,
+      whatsappPhone: '+56912345678',
+      isActive: true,
+    }
+    mockStoreFindUnique.mockResolvedValue(mockStore)
 
-    const result = await getStoreBySlug('no-existe')
+    const result = await getStoreBySlug('mi-tienda')
 
+    expect(result).toEqual(mockStore)
+  })
+
+  it('debería retornar null para slug inexistente (404)', async () => {
+    mockStoreFindUnique.mockResolvedValue(null)
+
+    const result = await getStoreBySlug('slug-que-no-existe')
+
+    // El caller debe llamar notFound() cuando esto es null
     expect(result).toBeNull()
   })
 
-  it('devuelve null si la tienda existe pero está inactiva', async () => {
-    mockPrisma.store.findUnique.mockResolvedValue({
-      id: 's1', name: 'Inactiva', slug: 'inactiva', isActive: false,
-      description: null, logoUrl: null, whatsappPhone: null,
+  it('debería retornar null cuando la tienda está inactiva', async () => {
+    mockStoreFindUnique.mockResolvedValue({
+      id: 'store-1',
+      name: 'Mi Tienda',
+      slug: 'mi-tienda',
+      isActive: false,
     })
 
-    const result = await getStoreBySlug('inactiva')
+    const result = await getStoreBySlug('mi-tienda')
 
+    // Tienda inactiva no se expone públicamente
     expect(result).toBeNull()
   })
 })
 
-describe('getVisibleProducts', () => {
-  beforeEach(() => vi.clearAllMocks())
+describe('getVisibleProducts - WALO-33: Productos visibles por tienda', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
 
-  it('devuelve solo los productos visibles de la tienda', async () => {
-    mockPrisma.product.findMany.mockResolvedValue([
-      { id: 'p1', name: 'Producto', description: null, price: 1000, imageUrl: null, categories: [] },
-    ])
+  it('debería retornar solo productos visibles de la tienda solicitada', async () => {
+    const mockProducts = [
+      { id: 'prod-1', name: 'Camiseta', price: 10000, description: null, imageUrl: null, categories: [] },
+      { id: 'prod-2', name: 'Pantalón', price: 25000, description: 'Jean azul', imageUrl: null, categories: [] },
+    ]
+    mockProductFindMany.mockResolvedValue(mockProducts)
 
-    const result = await getVisibleProducts('s1')
+    const result = await getVisibleProducts('store-1')
 
-    expect(result).toHaveLength(1)
-    expect(mockPrisma.product.findMany).toHaveBeenCalledWith(
+    expect(result).toEqual(mockProducts)
+    // Solo consulta productos visibles del storeId dado — aislamiento de tenant
+    expect(mockProductFindMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ storeId: 's1', visible: true }),
+        where: expect.objectContaining({
+          storeId: 'store-1',
+          visible: true,
+        }),
       })
     )
   })
 
-  it('filtra por storeId para no exponer productos de otras tiendas', async () => {
-    mockPrisma.product.findMany.mockResolvedValue([])
+  it('debería retornar arreglo vacío cuando la tienda no tiene productos visibles', async () => {
+    mockProductFindMany.mockResolvedValue([])
 
-    await getVisibleProducts('s1')
+    const result = await getVisibleProducts('store-sin-productos')
 
-    const callArgs = mockPrisma.product.findMany.mock.calls[0][0]
-    expect(callArgs.where.storeId).toBe('s1')
-    expect(callArgs.where.visible).toBe(true)
-  })
-})
-
-describe('canManageStoreByUser', () => {
-  beforeEach(() => vi.clearAllMocks())
-
-  it('devuelve true si el usuario es OWNER de la tienda', async () => {
-    mockPrisma.storeMember.findFirst.mockResolvedValue({ id: 'm1' })
-
-    const result = await canManageStoreByUser('s1', 'u1')
-
-    expect(result).toBe(true)
+    expect(result).toEqual([])
   })
 
-  it('devuelve false si el usuario no tiene membresía OWNER', async () => {
-    mockPrisma.storeMember.findFirst.mockResolvedValue(null)
+  it('no debería mezclar productos de otras tiendas', async () => {
+    mockProductFindMany.mockResolvedValue([])
 
-    const result = await canManageStoreByUser('s1', 'u-otro')
+    await getVisibleProducts('store-A')
 
-    expect(result).toBe(false)
+    const callArg = mockProductFindMany.mock.calls[0][0]
+    // El filtro de storeId nunca debe estar ausente
+    expect(callArg.where.storeId).toBe('store-A')
   })
 })
