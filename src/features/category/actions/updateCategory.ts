@@ -7,6 +7,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/server/auth'
 import { getUserStoreId } from '@/server/store'
 import { prisma } from '@/lib/prisma'
+import { logError } from '@/lib/logger'
 import { updateCategorySchema, type UpdateCategoryInput } from '@/features/category/schemas'
 import { Prisma } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
@@ -97,7 +98,13 @@ export async function updateCategory(
       }
     }
 
-    console.error('Error updating category:', error)
+    logError({
+      event: 'category.update.failed',
+      scope: 'category',
+      message: 'Fallo al actualizar categoría',
+      errorCode: 'CATEGORY_UPDATE_FAILED',
+      meta: { errorName: error instanceof Error ? error.name : 'UnknownError' },
+    })
     return {
       success: false,
       error: 'Ocurrió un error al actualizar la categoría. Por favor intenta nuevamente.',

@@ -4,6 +4,7 @@ import "server-only"
 
 import { DeleteObjectCommand } from '@aws-sdk/client-s3'
 
+import { logInfo, logWarn } from '@/lib/logger'
 import { prisma } from '@/lib/prisma'
 import { getR2Client, getR2Bucket } from '@/lib/r2'
 import { requireAuth } from '@/server/require-auth'
@@ -37,6 +38,13 @@ export async function removeLogo(storeId: string): Promise<ActionResult> {
   })
 
   if (!membership) {
+    logWarn({
+      event: 'authz.membership.denied',
+      scope: 'store',
+      message: 'Usuario sin permisos para eliminar logo',
+      storeId: cleanStoreId,
+      userId,
+    })
     return { ok: false, status: 403, error: 'No tienes permisos para editar esta tienda.' }
   }
 
@@ -58,8 +66,28 @@ export async function removeLogo(storeId: string): Promise<ActionResult> {
       },
     })
 
+    logInfo({
+      event: 'store_logo.remove.succeeded',
+      scope: 'media',
+      message: 'Remocion idempotente de logo sin objeto previo',
+      storeId: cleanStoreId,
+      meta: {
+        logoRemoved: false,
+      },
+    })
+
     return { ok: true, storeId: cleanStoreId, logoRemoved: false }
   }
+
+  logInfo({
+    event: 'store_logo.remove.started',
+    scope: 'media',
+    message: 'Iniciando eliminacion de logo en R2',
+    storeId: cleanStoreId,
+    meta: {
+      key: store.logoKey,
+    },
+  })
 
   try {
     const client = getR2Client()
@@ -73,7 +101,17 @@ export async function removeLogo(storeId: string): Promise<ActionResult> {
       )
     }
   } catch (cleanupError) {
-    console.error('[STORE REMOVE LOGO STORAGE ERROR]', cleanupError)
+    logWarn({
+      event: 'store_logo.remove.storage_cleanup_failed',
+      scope: 'media',
+      message: 'Fallo limpieza de logo en R2',
+      storeId: cleanStoreId,
+      errorCode: 'R2_LOGO_DELETE_FAILED',
+      meta: {
+        key: store.logoKey,
+        errorName: cleanupError instanceof Error ? cleanupError.name : 'UnknownError',
+      },
+    })
   }
 
   await prisma.store.update({
@@ -81,6 +119,16 @@ export async function removeLogo(storeId: string): Promise<ActionResult> {
     data: {
       logoUrl: null,
       logoKey: null,
+    },
+  })
+
+  logInfo({
+    event: 'store_logo.remove.succeeded',
+    scope: 'media',
+    message: 'Logo de tienda removido correctamente',
+    storeId: cleanStoreId,
+    meta: {
+      logoRemoved: true,
     },
   })
 

@@ -1,18 +1,44 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { getServerSession } from "next-auth"
 import { notFound } from "next/navigation"
 
 import { StoreCatalog } from "@/features/store/components/StoreCatalog"
 import { CartProvider } from "@/features/store/components/CartContext"
+import { DEFAULT_SEO_METADATA, getSeoMetadata } from "@/features/store/server/getSeoMetadata"
 import {
     canManageStoreByUser,
     getStoreBySlug,
     getVisibleProducts,
 } from "@/features/store/server/queries"
+import { logInfo } from "@/lib/logger"
 import { authOptions } from "@/server/auth"
 
 type Props = {
     params: Promise<{ slug: string }>
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+    const { slug } = await params
+    const store = await getStoreBySlug(slug)
+
+    if (!store) {
+        return {
+            title: DEFAULT_SEO_METADATA.title,
+            description: DEFAULT_SEO_METADATA.description,
+        }
+    }
+
+    const seoMetadata = getSeoMetadata({
+        name: store.name,
+        description: store.description,
+        slug: store.slug,
+    })
+
+    return {
+        title: seoMetadata.title,
+        description: seoMetadata.description,
+    }
 }
 
 export default async function StorePage({ params }: Props) {
@@ -26,13 +52,24 @@ export default async function StorePage({ params }: Props) {
 
     const products = await getVisibleProducts(store.id)
 
+    logInfo({
+        event: "public_catalog.render_ok",
+        scope: "store",
+        message: "Catalogo publico renderizado correctamente",
+        slug,
+        storeId: store.id,
+        meta: {
+            visibleProducts: products.length,
+        },
+    })
+
     const session = await getServerSession(authOptions)
     const isOwner =
         session?.user?.id ? await canManageStoreByUser(store.id, session.user.id) : false
 
     return (
-        // CORRECCIÓN: Pasamos el storeId al Provider
-        <CartProvider storeId={store.id}>
+        // Usamos key={store.id} para asegurar que el carrito se limpie si cambias de tienda
+        <CartProvider key={store.id} storeId={store.id}>
             <div className="min-h-screen bg-gray-50">
                 <header className="sticky top-0 z-10 border-b border-gray-100 bg-white">
                     <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
@@ -47,12 +84,7 @@ export default async function StorePage({ params }: Props) {
                         </nav>
                         <button className="cursor-pointer flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50">
                             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                                />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                             </svg>
                             Compartir
                         </button>
@@ -66,17 +98,9 @@ export default async function StorePage({ params }: Props) {
                     </p>
 
                     {isOwner && (
-                        <Link
-                            href="/dashboard"
-                            className="mb-6 inline-flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-gray-900"
-                        >
+                        <Link href="/dashboard" className="mb-6 inline-flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-gray-900">
                             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M15 19l-7-7 7-7"
-                                />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                             </svg>
                             Volver al dashboard
                         </Link>
@@ -94,16 +118,6 @@ export default async function StorePage({ params }: Props) {
                         storeId={store.id}
                     />
                 </main>
-
-                <footer className="mt-16 border-t border-gray-100 py-6 text-center text-xs text-gray-400">
-                    Catálogo creado con <span className="font-bold text-gray-600">WALO</span>
-                    <span className="mx-4">·</span>
-                    Privacidad
-                    <span className="mx-2">·</span>
-                    Términos
-                    <span className="mx-2">·</span>
-                    Soporte
-                </footer>
             </div>
         </CartProvider>
     )

@@ -14,7 +14,7 @@ vi.mock('@/features/store/server/createPayment', () => ({ createPaymentIntent: v
 vi.mock('@/features/store/server/trackWhatsappClick', () => ({ trackWhatsappClick: vi.fn() }));
 
 import { describe, expect, it } from 'vitest'
-import { buildWhatsAppMessage } from '@/features/store/components/CartDrawer'
+import { buildWhatsAppMessage, buildWhatsAppMessageText } from '@/features/store/components/CartDrawer'
 import { CartItem } from '@/features/store/components/CartContext'
 
 describe('CartDrawer - WhatsApp Link Builder (WALO-55 / WALO-56)', () => {
@@ -47,5 +47,20 @@ describe('CartDrawer - WhatsApp Link Builder (WALO-55 / WALO-56)', () => {
         
         expect(decodedText).toContain('*Instrucciones especiales:*')
         expect(decodedText).toContain('Por favor, enviar por la entrada lateral.')
+    })
+
+    // WALO-56 AC1: la preview usa la misma fuente de verdad que la URL
+    it('buildWhatsAppMessageText debe producir el mismo texto que decodificar la URL generada por buildWhatsAppMessage', () => {
+        const mockItems: CartItem[] = [
+            { id: '1', name: 'Empanada de Pino', price: 2500, quantity: 2 }
+        ]
+        const notes = 'Sin cebolla por favor'
+
+        const text = buildWhatsAppMessageText('La Cocina', mockItems, 5000, notes)
+        const url = buildWhatsAppMessage('+56987654321', 'La Cocina', mockItems, 5000, notes)
+
+        // El texto de la preview debe ser idéntico al que viaja dentro de la URL
+        const decodedFromUrl = decodeURIComponent(new URL(url).searchParams.get('text') || '')
+        expect(text).toBe(decodedFromUrl)
     })
 })

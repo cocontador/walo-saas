@@ -113,7 +113,7 @@ export function StoreCatalog({ products, storeName = 'La Tienda', whatsappPhone,
                 </div>
             ) : (
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                    {filteredProducts.map(product => {
+                    {filteredProducts.map((product, index) => {
                         const firstVisibleCategory = (product.categories || []).find(
                             pc => pc?.category?.visible
                         )
@@ -128,6 +128,7 @@ export function StoreCatalog({ products, storeName = 'La Tienda', whatsappPhone,
                                 category={firstVisibleCategory?.category?.name}
                                 storeName={storeName}          // <-- Transferido a la tarjeta
                                 whatsappPhone={whatsappPhone}  // <-- Transferido a la tarjeta
+                                priority={index === 0}
                                 onAddToCart={() => addItem({   // <-- Callback reactivo inmediato
                                     id: product.id,
                                     name: product.name,

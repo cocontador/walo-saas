@@ -20,9 +20,10 @@ const mockProducts = [
 ]
 
 describe('StoreCatalog Component', () => {
-    const renderComponent = (productsList = mockProducts, storeId = 'store-1') => {
+    // Unificamos: usamos storeId que viene del argumento, con valor por defecto
+    const renderComponent = (productsList = mockProducts, storeId = 'test-store') => {
         return render(
-            <CartProvider>
+            <CartProvider storeId={storeId}>
                 <StoreCatalog products={productsList as any} storeId={storeId} />
             </CartProvider>
         )

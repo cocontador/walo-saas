@@ -60,7 +60,8 @@ import { replaceProductImage } from './replaceProductImage'
 import { removeProductImage } from './removeProductImage'
 
 function createImageFile() {
-  return new File(['fake-image'], 'photo.png', { type: 'image/png' })
+  const pngSignature = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+  return new File([pngSignature], 'photo.png', { type: 'image/png' })
 }
 
 describe('product image actions', () => {
@@ -168,5 +169,99 @@ describe('product image actions', () => {
     }
     expect(mockSend).not.toHaveBeenCalled()
     expect(mockPrisma.product.updateMany).toHaveBeenCalledOnce()
+  })
+
+  // --- Casos de denegación (anti-IDOR) ---
+
+  it('uploadProductImage devuelve 401 sin sesión', async () => {
+    vi.mocked(getServerSession).mockResolvedValue(null)
+
+    const result = await uploadProductImage('prod-1', createImageFile())
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.status).toBe(401)
+    expect(mockSend).not.toHaveBeenCalled()
+  })
+
+  it('uploadProductImage devuelve 403 sin tienda asociada', async () => {
+    vi.mocked(getServerSession).mockResolvedValue({ user: { id: 'user-1' } } as unknown as Session)
+    vi.mocked(getUserStoreId).mockResolvedValue(null)
+
+    const result = await uploadProductImage('prod-1', createImageFile())
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.status).toBe(403)
+    expect(mockSend).not.toHaveBeenCalled()
+  })
+
+  it('uploadProductImage devuelve 404 si el producto no pertenece a la tienda (anti-IDOR)', async () => {
+    vi.mocked(getServerSession).mockResolvedValue({ user: { id: 'user-1' } } as unknown as Session)
+    vi.mocked(getUserStoreId).mockResolvedValue('store-1')
+    mockPrisma.product.findFirst.mockResolvedValue(null)
+
+    const result = await uploadProductImage('prod-ajena', createImageFile())
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.status).toBe(404)
+    expect(mockSend).not.toHaveBeenCalled()
+  })
+
+  it('replaceProductImage devuelve 401 sin sesión', async () => {
+    vi.mocked(getServerSession).mockResolvedValue(null)
+
+    const result = await replaceProductImage('prod-1', createImageFile())
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.status).toBe(401)
+    expect(mockSend).not.toHaveBeenCalled()
+  })
+
+  it('replaceProductImage devuelve 404 si el producto no pertenece a la tienda (anti-IDOR)', async () => {
+    vi.mocked(getServerSession).mockResolvedValue({ user: { id: 'user-1' } } as unknown as Session)
+    vi.mocked(getUserStoreId).mockResolvedValue('store-1')
+    mockPrisma.product.findFirst.mockResolvedValue(null)
+
+    const result = await replaceProductImage('prod-ajena', createImageFile())
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.status).toBe(404)
+    expect(mockSend).not.toHaveBeenCalled()
+  })
+
+  it('removeProductImage devuelve 401 sin sesión', async () => {
+    vi.mocked(getServerSession).mockResolvedValue(null)
+
+    const result = await removeProductImage('prod-1')
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.status).toBe(401)
+    expect(mockSend).not.toHaveBeenCalled()
+  })
+
+  it('removeProductImage devuelve 404 si el producto no pertenece a la tienda (anti-IDOR)', async () => {
+    vi.mocked(getServerSession).mockResolvedValue({ user: { id: 'user-1' } } as unknown as Session)
+    vi.mocked(getUserStoreId).mockResolvedValue('store-1')
+    mockPrisma.product.findFirst.mockResolvedValue(null)
+
+    const result = await removeProductImage('prod-ajena')
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.status).toBe(404)
+    expect(mockSend).not.toHaveBeenCalled()
+  })
+
+  // --- Validación de archivo inválido ---
+
+  it('uploadProductImage devuelve 400 si el archivo no tiene firma de imagen válida', async () => {
+    vi.mocked(getServerSession).mockResolvedValue({ user: { id: 'user-1' } } as unknown as Session)
+    vi.mocked(getUserStoreId).mockResolvedValue('store-1')
+    mockPrisma.product.findFirst.mockResolvedValue({ id: 'prod-1' } as unknown)
+
+    const fakeFile = new File(['not-an-image'], 'malicious.png', { type: 'image/png' })
+    const result = await uploadProductImage('prod-1', fakeFile)
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.status).toBe(400)
+    expect(mockSend).not.toHaveBeenCalled()
   })
 })
