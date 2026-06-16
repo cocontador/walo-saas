@@ -1,9 +1,11 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { getServerSession } from "next-auth"
 import { notFound } from "next/navigation"
 
 import { StoreCatalog } from "@/features/store/components/StoreCatalog"
 import { CartProvider } from "@/features/store/components/CartContext"
+import { DEFAULT_SEO_METADATA, getSeoMetadata } from "@/features/store/server/getSeoMetadata"
 import {
     canManageStoreByUser,
     getStoreBySlug,
@@ -13,6 +15,29 @@ import { authOptions } from "@/server/auth"
 
 type Props = {
     params: Promise<{ slug: string }>
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+    const { slug } = await params
+    const store = await getStoreBySlug(slug)
+
+    if (!store) {
+        return {
+            title: DEFAULT_SEO_METADATA.title,
+            description: DEFAULT_SEO_METADATA.description,
+        }
+    }
+
+    const seoMetadata = getSeoMetadata({
+        name: store.name,
+        description: store.description,
+        slug: store.slug,
+    })
+
+    return {
+        title: seoMetadata.title,
+        description: seoMetadata.description,
+    }
 }
 
 export default async function StorePage({ params }: Props) {
