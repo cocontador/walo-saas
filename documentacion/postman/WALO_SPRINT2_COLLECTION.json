@@ -1,0 +1,344 @@
+{
+  "info": {
+    "_postman_id": "2f1b1d4f-4d5b-4c32-9d2d-walo-sprint2",
+    "name": "WALO Sprint 2 - QA Operacional",
+    "description": "Coleccion versionable para validar rutas HTTP reales disponibles en WALO Sprint 2. No incluye secretos, cookies persistentes ni endpoints inventados. Las operaciones privadas requieren sesion valida gestionada por NextAuth en el entorno donde se ejecuten.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Public Catalog",
+      "description": "Rutas publicas renderizadas por Next.js App Router. Sirven para validar landing, catalogo publico por slug y estado 404 usable.",
+      "item": [
+        {
+          "name": "GET Home",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Carga la landing publica de WALO en la ruta raiz.",
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET Public Catalog by Slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Carga el catalogo publico de una tienda activa. Requiere completar publicSlug con un slug real existente en la base de datos.",
+            "url": {
+              "raw": "{{baseUrl}}/{{publicSlug}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{publicSlug}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET Public Catalog Not Found",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Valida el estado de error usable para una tienda inexistente o no disponible.",
+            "url": {
+              "raw": "{{baseUrl}}/tienda-inexistente-postman",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tienda-inexistente-postman"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Store Settings",
+      "description": "Endpoint HTTP real para configuracion de tienda. Requiere autenticacion NextAuth y membresia OWNER sobre storeId.",
+      "item": [
+        {
+          "name": "PATCH Store Settings",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Actualiza name, slug, description y whatsappPhone de la tienda autenticada. Sin sesion valida responde 401; sin membresia responde 403.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Tienda Demo WALO\",\n  \"slug\": \"tienda-demo-walo\",\n  \"description\": \"Catalogo demo para pruebas Sprint 2\",\n  \"whatsappPhone\": \"+56912345678\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/store/{{storeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "store",
+                "{{storeId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "DELETE Store Deactivate",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "description": "Marca una tienda como inactiva. Requiere sesion NextAuth y rol OWNER. Usar con cuidado en entornos compartidos.",
+            "url": {
+              "raw": "{{baseUrl}}/api/store/{{storeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "store",
+                "{{storeId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "PUT Store Reactivate",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "description": "Reactiva una tienda. Requiere sesion NextAuth y rol OWNER.",
+            "url": {
+              "raw": "{{baseUrl}}/api/store/{{storeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "store",
+                "{{storeId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "description": "Actualmente productos se gestionan mediante paginas de dashboard y Server Actions, no mediante endpoints REST publicos. Esta carpeta documenta rutas navegables reales para QA manual desde Postman.",
+      "item": [
+        {
+          "name": "GET Dashboard Products Page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Carga la vista privada de listado de productos. Requiere sesion; sin sesion debe redirigir o bloquear acceso.",
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard",
+                "products"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET Product Detail Page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Carga la vista privada de detalle de producto. Requiere productId real y sesion con tienda propietaria.",
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/products/{{productId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard",
+                "products",
+                "{{productId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET Product Create Page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Carga la vista privada de creacion de producto. La creacion real usa Server Actions desde el formulario.",
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/products/create",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard",
+                "products",
+                "create"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "description": "Actualmente categorias se gestionan mediante paginas de dashboard y Server Actions, no mediante endpoints REST publicos. Esta carpeta documenta rutas navegables reales para QA manual desde Postman.",
+      "item": [
+        {
+          "name": "GET Dashboard Categories Page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Carga la vista privada de categorias. Requiere sesion; sin sesion debe redirigir o bloquear acceso.",
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard",
+                "categories"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET Category Edit Page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Carga la vista privada de edicion de categoria. Requiere categoryId real y sesion con tienda propietaria.",
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/categories/{{categoryId}}/edit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard",
+                "categories",
+                "{{categoryId}}",
+                "edit"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth Session Checks",
+      "description": "Endpoints reales de NextAuth y registro. No se exportan cookies ni secretos; los flujos privados dependen de sesion valida en el entorno.",
+      "item": [
+        {
+          "name": "GET NextAuth Session",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Consulta la sesion actual de NextAuth. Sin cookies de sesion deberia retornar usuario nulo o sesion vacia.",
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/session",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "session"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET NextAuth Providers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Lista providers configurados por NextAuth.",
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/providers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "providers"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Crea usuario y tienda inicial. Usar email unico por corrida para evitar 409 por duplicado.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Usuario Demo\",\n  \"storeName\": \"Tienda Demo Postman\",\n  \"email\": \"demo.postman@example.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "publicSlug",
+      "value": "tienda-demo-walo",
+      "type": "string"
+    },
+    {
+      "key": "storeId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "productId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "categoryId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
