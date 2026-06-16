@@ -6,6 +6,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/server/auth'
 import { getUserStoreId } from '@/server/store'
 import { prisma } from '@/lib/prisma'
+import { logError } from '@/lib/logger'
 
 export type ActionResult<T> =
   | { success: true; data: T }
@@ -86,7 +87,13 @@ export async function getProductById(productId: string): Promise<ActionResult<Pr
       },
     }
   } catch (error) {
-    console.error('Error fetching product:', error)
+    logError({
+      event: 'product.get.failed',
+      scope: 'product',
+      message: 'Fallo al obtener producto',
+      errorCode: 'PRODUCT_GET_FAILED',
+      meta: { errorName: error instanceof Error ? error.name : 'UnknownError' },
+    })
     return {
       success: false,
       error: 'Ocurrió un error al obtener el producto. Por favor intenta nuevamente.',

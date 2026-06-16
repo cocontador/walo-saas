@@ -4,8 +4,10 @@ import "server-only"
 
 import { PutObjectCommand } from '@aws-sdk/client-s3'
 
+import { logError, logInfo, logWarn } from '@/lib/logger'
 import { prisma } from '@/lib/prisma'
 import { buildStoreLogoKey, getR2Client, getR2Bucket, getR2PublicUrlBase } from '@/lib/r2'
+import { readAndVerifyImage } from '@/lib/file-signature'
 import { requireAuth } from '@/server/require-auth'
 
 import { validateLogoFile } from '../schema/logo.schema'
@@ -56,7 +58,14 @@ export async function uploadLogo(formData: FormData): Promise<ActionResult> {
   }
 
   const storeId = storeIdValue.trim()
-  const logoFile = validateLogoFile(logoValue)
+
+  let logoFile: File
+  try {
+    logoFile = validateLogoFile(logoValue)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Archivo de logo inválido.'
+    return { ok: false, status: 400, error: message }
+  }
 
   const membership = await prisma.storeMember.findFirst({
     where: {
@@ -67,6 +76,13 @@ export async function uploadLogo(formData: FormData): Promise<ActionResult> {
   })
 
   if (!membership) {
+    logWarn({
+      event: 'authz.membership.denied',
+      scope: 'store',
+      message: 'Usuario sin permisos para subir logo',
+      storeId,
+      userId,
+    })
     return { ok: false, status: 403, error: 'No tienes permisos para editar esta tienda.' }
   }
 
@@ -79,24 +95,49 @@ export async function uploadLogo(formData: FormData): Promise<ActionResult> {
     return { ok: false, status: 404, error: 'La tienda no existe.' }
   }
 
-  const extension = MIME_EXTENSION_MAP[logoFile.type]
+  const verified = await readAndVerifyImage(logoFile)
+
+  if (!verified.ok) {
+    return { ok: false, status: 400, error: verified.error }
+  }
+
+  const extension = MIME_EXTENSION_MAP[verified.mime]
   const logoKey = buildStoreLogoKey(storeId, extension)
   const logoUrl = getPublicUrl(logoKey)
-  const body = new Uint8Array(await logoFile.arrayBuffer())
+  const body = verified.bytes
 
   const client = getR2Client()
   const bucket = getR2Bucket()
 
   if (!client || !bucket) {
+    logError({
+      event: 'store_logo.upload.failed',
+      scope: 'media',
+      message: 'R2 no configurado para subir logo',
+      storeId,
+      errorCode: 'R2_NOT_CONFIGURED',
+    })
     return { ok: false, status: 500, error: 'R2 no está configurado. Revisa las variables de entorno.' }
   }
+
+  logInfo({
+    event: 'store_logo.upload.started',
+    scope: 'media',
+    message: 'Iniciando subida de logo a R2',
+    storeId,
+    meta: {
+      key: logoKey,
+      contentType: verified.mime,
+      size: logoFile.size,
+    },
+  })
 
   await client.send(
     new PutObjectCommand({
       Bucket: bucket,
       Key: logoKey,
       Body: body,
-      ContentType: logoFile.type,
+      ContentType: verified.mime,
     })
   )
 
@@ -105,6 +146,16 @@ export async function uploadLogo(formData: FormData): Promise<ActionResult> {
     data: {
       logoUrl,
       logoKey,
+    },
+  })
+
+  logInfo({
+    event: 'store_logo.upload.succeeded',
+    scope: 'media',
+    message: 'Logo de tienda subido correctamente',
+    storeId,
+    meta: {
+      key: logoKey,
     },
   })
 
