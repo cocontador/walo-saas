@@ -6,6 +6,8 @@ export type {
   PlanCatalogItem,
   PlanChangeState,
   PlanChangeStatus,
+  SubscriptionRenewalActionState,
+  SubscriptionRenewalActionStatus,
 } from './types'
 
 export {
@@ -14,4 +16,6 @@ export {
   getPlanUsage,
   getPlanCatalog,
   changePlan,
+  cancelPlanRenewal,
+  reactivatePlan,
 } from './actions'

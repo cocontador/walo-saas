@@ -181,4 +181,56 @@ describe('getCurrentPlan', () => {
 
     expect(result.isTrialing).toBe(true)
   })
+
+  it('mantiene el plan vigente cuando la renovación está cancelada pero el período no expiró', async () => {
+    const mockPlan = {
+      id: '1',
+      name: 'Pro',
+      slug: 'pro',
+      description: 'Plan profesional',
+      priceMonthly: 5990,
+      priceYearly: null,
+      currency: 'CLP',
+      productLimit: null,
+      customDomain: true,
+      analytics: true,
+      premiumTemplates: true,
+      supportLevel: 'email',
+      features: [],
+      limitations: null,
+      isActive: true,
+      sortOrder: 2,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
+
+    const mockSubscription = {
+      id: 'sub-1',
+      storeId: 'store-1',
+      planId: '1',
+      status: 'ACTIVE',
+      billingCycle: 'MONTHLY',
+      currentPeriodStart: new Date(),
+      currentPeriodEnd: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      cancelAtPeriodEnd: true,
+      canceledAt: new Date(),
+      reactivatedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      plan: mockPlan,
+    }
+
+    vi.mocked(getUserStoreId).mockResolvedValue('store-1')
+    vi.mocked(prisma.storeSubscription.findUnique).mockResolvedValue(
+      mockSubscription as unknown as StoreSubscription
+    )
+
+    const result = await getCurrentPlan()
+
+    expect(result.plan.slug).toBe('pro')
+    expect(result.subscription?.cancelAtPeriodEnd).toBe(true)
+    expect(result.isExpired).toBe(false)
+    expect(prisma.plan.create).not.toHaveBeenCalled()
+    expect(prisma.storeSubscription.create).not.toHaveBeenCalled()
+  })
 })

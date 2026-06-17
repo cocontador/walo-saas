@@ -53,4 +53,20 @@ export interface PlanChangeState {
   message: string
 }
 
+export type SubscriptionRenewalActionStatus =
+  | 'idle'
+  | 'success'
+  | 'unauthorized'
+  | 'not_found'
+  | 'already_canceled'
+  | 'not_canceling'
+  | 'expired'
+  | 'invalid_state'
+  | 'error'
+
+export interface SubscriptionRenewalActionState {
+  status: SubscriptionRenewalActionStatus
+  message: string
+}
+
 export type { Plan, StoreSubscription, SubscriptionStatus }
