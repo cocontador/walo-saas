@@ -1,8 +1,35 @@
 import { render, screen, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { PlanComparisonCards } from './PlanComparisonCards'
-import type { PlanCatalogItem } from '../types'
+import type { PlanCatalogItem, PlanDetails } from '../types'
+
+vi.mock('./PlanChangeForm', () => ({
+  PlanChangeForm: ({ ctaLabel }: { ctaLabel: string }) => (
+    <button type="button">{ctaLabel}</button>
+  ),
+}))
+
+const basePlan: PlanDetails = {
+  id: 'plan-1',
+  name: 'Inicial',
+  slug: 'initial',
+  description: 'Plan inicial',
+  priceMonthly: 0,
+  priceYearly: 0,
+  currency: 'CLP',
+  productLimit: 15,
+  customDomain: false,
+  analytics: false,
+  premiumTemplates: false,
+  supportLevel: 'basic',
+  features: [],
+  limitations: null,
+  isActive: true,
+  sortOrder: 1,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+}
 
 const createCatalogItem = (overrides: Partial<PlanCatalogItem>): PlanCatalogItem => ({
   slug: overrides.slug ?? 'initial',
@@ -60,10 +87,7 @@ describe('PlanComparisonCards', () => {
     const proCard = screen.getByRole('article')
 
     expect(within(proCard).getByText('Más popular')).toBeInTheDocument()
-    expect(within(proCard).getByRole('link', { name: 'Mejorar plan' })).toHaveAttribute(
-      'href',
-      'mailto:soporte@walo.local'
-    )
+    expect(within(proCard).getByRole('button', { name: 'Mejorar plan' })).toBeInTheDocument()
   })
 
   it('mantiene estado vigente y Más popular cuando Pro es el plan actual', () => {

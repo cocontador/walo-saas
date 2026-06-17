@@ -4,6 +4,8 @@ export type {
   PlanUsageInfo,
   PlanCatalogInfo,
   PlanCatalogItem,
+  PlanChangeState,
+  PlanChangeStatus,
 } from './types'
 
 export {
@@ -11,4 +13,5 @@ export {
   getCurrentPlan,
   getPlanUsage,
   getPlanCatalog,
+  changePlan,
 } from './actions'
