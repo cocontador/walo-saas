@@ -31,11 +31,12 @@ export async function createPaymentIntent(data: PaymentData) {
 
             const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
             const endpoint = `${khipuConfig.apiUrl}/payments`
+            const isLocalhost = appUrl.startsWith('http://localhost') || appUrl.startsWith('http://127.')
 
             const payload: Record<string, string> = {
                 amount: data.totalAmount.toString(),
                 currency: 'CLP',
-                notify_url: `${appUrl}/api/webhooks/khipu`,
+                ...(isLocalhost ? {} : { notify_url: `${appUrl}/api/webhooks/khipu` }),
                 return_url: `${appUrl}/pago/${order.id}`,
                 subject: `Compra en ${data.storeName}`,
                 transaction_id: order.id,

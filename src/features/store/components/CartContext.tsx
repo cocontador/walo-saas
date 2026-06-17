@@ -48,11 +48,18 @@ export const CartProvider = ({
     children: ReactNode
 }) => {
     const CART_KEY = `walo-cart-${storeId}`
-    const [items, setItems] = useState<CartItem[]>(() => getStoredCartItems(CART_KEY))
+    const [items, setItems] = useState<CartItem[]>([])
+    const [hydrated, setHydrated] = useState(false)
 
     useEffect(() => {
+        setItems(getStoredCartItems(CART_KEY))
+        setHydrated(true)
+    }, [CART_KEY])
+
+    useEffect(() => {
+        if (!hydrated) return
         window.localStorage.setItem(CART_KEY, JSON.stringify(items))
-    }, [items, CART_KEY])
+    }, [items, CART_KEY, hydrated])
 
     const addItem = (item: NewCartItem) => {
         setItems((currentItems) => {
