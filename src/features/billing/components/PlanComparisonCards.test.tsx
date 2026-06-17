@@ -67,6 +67,18 @@ describe('PlanComparisonCards', () => {
     expect(screen.queryByRole('link', { name: 'Empezar gratis' })).not.toBeInTheDocument()
   })
 
+  it('muestra indicador de renovación cancelada en el plan actual', () => {
+    render(
+      <PlanComparisonCards
+        plans={[createCatalogItem({ isCurrent: true })]}
+        isCurrentPlanRenewalCanceled
+      />
+    )
+
+    expect(screen.getByText('Renovación cancelada')).toBeInTheDocument()
+    expect(screen.getByText('Vigente hasta fin del período')).toBeInTheDocument()
+  })
+
   it('muestra badge Más popular en Pro y CTA funcional', () => {
     render(
       <PlanComparisonCards

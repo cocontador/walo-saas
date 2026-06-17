@@ -3,9 +3,13 @@ import { PlanChangeForm } from './PlanChangeForm'
 
 interface PlanComparisonCardsProps {
   plans: PlanCatalogItem[]
+  isCurrentPlanRenewalCanceled?: boolean
 }
 
-export function PlanComparisonCards({ plans }: PlanComparisonCardsProps) {
+export function PlanComparisonCards({
+  plans,
+  isCurrentPlanRenewalCanceled = false,
+}: PlanComparisonCardsProps) {
   return (
     <div className="grid gap-5 lg:grid-cols-3">
       {plans.map((plan) => {
@@ -20,8 +24,10 @@ export function PlanComparisonCards({ plans }: PlanComparisonCardsProps) {
           >
             <div className="flex min-h-8 items-center gap-2">
               {plan.isCurrent && (
-                <span className="rounded-full bg-green-600 px-3 py-1 text-xs font-semibold text-white">
-                  Plan actual
+                <span className={`rounded-full px-3 py-1 text-xs font-semibold text-white ${
+                  isCurrentPlanRenewalCanceled ? 'bg-amber-600' : 'bg-green-600'
+                }`}>
+                  {isCurrentPlanRenewalCanceled ? 'Renovación cancelada' : 'Plan actual'}
                 </span>
               )}
               {plan.isPopular && (
@@ -99,8 +105,12 @@ export function PlanComparisonCards({ plans }: PlanComparisonCardsProps) {
 
             <div className="mt-auto pt-8">
               {plan.isCurrent ? (
-                <span className="block w-full rounded-lg border border-green-200 bg-green-100 px-4 py-3 text-center text-sm font-semibold text-green-800">
-                  Vigente
+                <span className={`block w-full rounded-lg border px-4 py-3 text-center text-sm font-semibold ${
+                  isCurrentPlanRenewalCanceled
+                    ? 'border-amber-200 bg-amber-100 text-amber-800'
+                    : 'border-green-200 bg-green-100 text-green-800'
+                }`}>
+                  {isCurrentPlanRenewalCanceled ? 'Vigente hasta fin del período' : 'Vigente'}
                 </span>
               ) : (
                 <PlanChangeForm
