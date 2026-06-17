@@ -1,6 +1,7 @@
 'use server'
 
 import { prisma } from "@/lib/prisma"
+import { logError } from "@/lib/logger"
 
 export async function trackWhatsappClick(storeId: string) {
     try {
@@ -10,10 +11,8 @@ export async function trackWhatsappClick(storeId: string) {
             }
         })
         return { success: true }
-    } catch (error) {
-        // Si la métrica falla por alguna razón de red, solo lo anotamos en consola 
-        // pero no rompemos la experiencia del usuario.
-        console.error("Error guardando la métrica de WhatsApp:", error)
+    } catch {
+        logError({ event: 'store.whatsapp.click.error', scope: 'analytics', message: 'Error guardando métrica de WhatsApp' })
         return { success: false }
     }
 }

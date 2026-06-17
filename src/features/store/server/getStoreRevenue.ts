@@ -1,5 +1,6 @@
 import "server-only"
 import { prisma } from "@/lib/prisma"
+import { logError } from "@/lib/logger"
 
 export async function getStoreRevenue(storeId: string) {
     try {
@@ -20,8 +21,8 @@ export async function getStoreRevenue(storeId: string) {
             success: true,
             data: { totalRevenue, totalOrders, whatsappClicks },
         }
-    } catch (error) {
-        console.error('Error obteniendo métricas:', error)
+    } catch {
+        logError({ event: 'store.revenue.error', scope: 'dashboard', message: 'Error obteniendo métricas' })
         return { success: false, data: null }
     }
 }
