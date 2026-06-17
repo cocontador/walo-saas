@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 
 export type CartItem = {
     id: string
@@ -27,25 +27,31 @@ interface CartContextValue {
 
 const CartContext = createContext<CartContextValue | undefined>(undefined)
 
-export function CartProvider({ children, storeId }: { children: ReactNode; storeId: string }) {
+function getStoredCartItems(cartKey: string): CartItem[] {
+    if (typeof window === 'undefined') {
+        return []
+    }
+
+    try {
+        const stored = window.localStorage.getItem(cartKey)
+        return stored ? (JSON.parse(stored) as CartItem[]) : []
+    } catch {
+        return []
+    }
+}
+
+export const CartProvider = ({
+    storeId,
+    children,
+}: {
+    storeId: string
+    children: ReactNode
+}) => {
     const CART_KEY = `walo-cart-${storeId}`
-    const hasHydrated = useRef(false)
-    const [items, setItems] = useState<CartItem[]>([])
+    const [items, setItems] = useState<CartItem[]>(() => getStoredCartItems(CART_KEY))
 
     useEffect(() => {
-        try {
-            const stored = localStorage.getItem(CART_KEY)
-            setItems(stored ? (JSON.parse(stored) as CartItem[]) : [])
-        } catch {
-            setItems([])
-        } finally {
-            hasHydrated.current = true
-        }
-    }, [CART_KEY])
-
-    useEffect(() => {
-        if (!hasHydrated.current) return
-        localStorage.setItem(CART_KEY, JSON.stringify(items))
+        window.localStorage.setItem(CART_KEY, JSON.stringify(items))
     }, [items, CART_KEY])
 
     const addItem = (item: NewCartItem) => {

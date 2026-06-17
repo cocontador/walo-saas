@@ -21,14 +21,13 @@ function makeRequest(body: unknown) {
   })
 }
 
-// CAMBIO: Se agregaron los campos obligatorios que faltaban para cumplir con registerSchema
 const validBody = {
   name: 'Ana Torres',
   storeName: 'Tienda Ana',
+  slug: 'tienda-ana',
+  whatsappPhone: '+56987654321',
   email: 'ana@ejemplo.com',
   password: 'secreta123',
-  slug: 'tienda-ana',
-  whatsappPhone: '+56912345678',
   acceptedTerms: true,
 }
 

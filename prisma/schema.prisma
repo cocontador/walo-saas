@@ -35,9 +35,10 @@ model Store {
   updatedAt     DateTime @updatedAt
   acceptedTermsAt DateTime?
 
-  memberships StoreMember[]
-  products    Product[]
-  categories  Category[]
+  memberships    StoreMember[]
+  products       Product[]
+  categories     Category[]
+  subscription   StoreSubscription?
   orders         Order[]
   whatsappClicks WhatsappClickEvent[]
 
@@ -111,6 +112,70 @@ enum StoreRole {
 }
 
 // ==========================================
+// SPRINT 3: PLANES Y SUSCRIPCIONES
+// ==========================================
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  TRIALING
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+}
+
+model Plan {
+  id               String   @id @default(cuid())
+  name             String
+  slug             String   @unique
+  description      String?
+  priceMonthly     Int
+  priceYearly      Int?
+  currency         String   @default("CLP")
+  productLimit     Int?
+  customDomain     Boolean  @default(false)
+  analytics        Boolean  @default(false)
+  premiumTemplates Boolean  @default(false)
+  supportLevel     String   @default("basic")
+  features         Json     @default("[]")
+  limitations      Json?
+  isActive         Boolean  @default(true)
+  sortOrder        Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  subscriptions StoreSubscription[]
+
+  @@index([isActive])
+  @@index([slug])
+}
+
+model StoreSubscription {
+  id                 String             @id @default(cuid())
+  storeId            String             @unique
+  planId             String
+  status             SubscriptionStatus @default(ACTIVE)
+  billingCycle       BillingCycle       @default(MONTHLY)
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean            @default(false)
+  canceledAt         DateTime?
+  reactivatedAt      DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  plan  Plan  @relation(fields: [planId], references: [id])
+
+  @@index([storeId])
+  @@index([planId])
+  @@index([status])
+}
+
+// ==========================================
 // SPRINT 3: PAGOS, WEBHOOKS Y ANALÍTICA
 // ==========================================
 
@@ -118,14 +183,11 @@ model Order {
   id              String           @id @default(cuid())
   storeId         String
   store           Store            @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  
-  totalAmount     Int              
+  totalAmount     Int
   status          OrderStatus      @default(PENDING)
-  customerNotes   String?          
-  itemsSnapshot   Json             
-  
-  paymentAttempts PaymentAttempt[] 
-  
+  customerNotes   String?
+  itemsSnapshot   Json
+  paymentAttempts PaymentAttempt[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
@@ -143,24 +205,23 @@ model PaymentAttempt {
   id              String   @id @default(cuid())
   orderId         String
   order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  
-  khipuPaymentId  String   @unique 
-  khipuPaymentUrl String   
-  status          String   @default("pending") 
+  khipuPaymentId  String   @unique
+  khipuPaymentUrl String
+  status          String   @default("pending")
   amount          Int
-  
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   @@index([orderId])
-  
 }
+
 model KhipuLog {
   id        String   @id @default(cuid())
   orderId   String?
   context   String
   message   String
   createdAt DateTime @default(now())
+
   @@index([orderId])
 }
 
@@ -168,7 +229,7 @@ model WhatsappClickEvent {
   id        String   @id @default(cuid())
   storeId   String
   store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now()) 
+  createdAt DateTime @default(now())
 
   @@index([storeId])
 }

@@ -11,8 +11,7 @@ async function logKhipu(context: string, message: string, orderId?: string) {
         await prisma.khipuLog.create({
             data: { context, message, orderId }
         });
-    } catch (e) {
-        console.error("Error crítico: Falló el registro en KhipuLog", e);
+    } catch {
         logError({
             event: 'khipu.log.failed',
             scope: 'webhook',

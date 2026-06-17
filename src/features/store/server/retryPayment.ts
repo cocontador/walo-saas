@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { OrderStatus } from "@prisma/client"
+import { logError } from "@/lib/logger"
 import { createPaymentIntent } from "./createPayment"
 
 interface Item {
@@ -47,8 +48,12 @@ export async function retryPayment(orderId: string) {
             customerNotes: order.customerNotes ? String(order.customerNotes) : undefined,
         })
 
-    } catch (error) {
-        console.error('Error al reintentar pago', error)
+    } catch {
+        logError({
+            event: 'payment.retry.error',
+            scope: 'payment',
+            message: 'Error al reintentar pago',
+        })
         return { success: false, error: "Error interno al reintentar." }
     }
 }

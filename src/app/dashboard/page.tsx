@@ -6,8 +6,8 @@ import { StoreStatusButton } from '@/features/store/components/StoreStatusButton
 import { ShareButton } from '@/features/store/components/ShareButton'
 import { StoreForm } from '@/features/store/components/StoreForm'
 import { authOptions } from '@/server/auth'
-
-// 1. Nuevas importaciones para las analíticas (WALO-62)
+import { getCurrentPlan, getPlanUsage } from '@/features/billing/actions'
+import { PlanLimitsCard } from '@/features/billing/components/PlanLimitsCard'
 import { getStoreRevenue } from '@/features/store/server/getStoreRevenue'
 import { DashboardStats } from '@/features/dashboard/components/DashboardStats'
 
@@ -31,13 +31,16 @@ export default async function DashboardPage() {
 
   const store = user?.memberships[0]?.store
 
-  // 2. Obtener las métricas desde la base de datos si la tienda existe
   let dashboardStats = { totalRevenue: 0, totalOrders: 0, whatsappClicks: 0 }
+  let planInfo = null
+  let usageInfo = null
   if (store) {
     const statsResult = await getStoreRevenue(store.id)
     if (statsResult.success && statsResult.data) {
       dashboardStats = statsResult.data
     }
+    planInfo = await getCurrentPlan()
+    usageInfo = await getPlanUsage()
   }
 
   return (
@@ -60,11 +63,10 @@ export default async function DashboardPage() {
         )}
 
         {store && (
-          <>
-            {/* 3. Mostrar las tarjetas de métricas justo aquí (WALO-62) */}
+          <div className="space-y-6">
             <DashboardStats stats={dashboardStats} />
 
-            <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
               <div className="mb-4 flex items-center gap-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-500">
                   <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
@@ -136,7 +138,15 @@ export default async function DashboardPage() {
                 />
               </div>
             </div>
-          </>
+
+            {planInfo && usageInfo && (
+              <PlanLimitsCard
+                plan={planInfo.plan}
+                usage={usageInfo}
+                upgradeHref="/dashboard/billing#upgrade-plans"
+              />
+            )}
+          </div>
         )}
       </main>
     </div>

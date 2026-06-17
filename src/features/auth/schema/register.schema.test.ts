@@ -2,13 +2,12 @@ import { describe, it, expect } from 'vitest'
 import { registerSchema } from './register.schema'
 
 describe('registerSchema - WALO-11: Política de contraseña mínima', () => {
-
   const validUser = {
     name: 'Maria',
     storeName: 'Mi Tienda',
     email: 'maria@ejemplo.com',
     slug: 'mi-tienda',
-    whatsappPhone: '+56912345678', // 8 dígitos tras el prefijo
+    whatsappPhone: '+56912345678',
     acceptedTerms: true,
   }
 
@@ -29,7 +28,6 @@ describe('registerSchema - WALO-11: Política de contraseña mínima', () => {
 
   it('debería aceptar contraseña larga válida', () => {
     const result = registerSchema.safeParse({ ...validUser, password: 'contrasenalargasegura123' })
-  
     expect(result.success).toBe(true)
   })
 })
