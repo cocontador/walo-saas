@@ -132,7 +132,11 @@ export default async function DashboardPage() {
           </div>
 
           {planInfo && usageInfo && (
-            <PlanLimitsCard plan={planInfo.plan} usage={usageInfo} />
+            <PlanLimitsCard
+              plan={planInfo.plan}
+              usage={usageInfo}
+              upgradeHref="/dashboard/billing#upgrade-plans"
+            />
           )}
         </div>
       )}

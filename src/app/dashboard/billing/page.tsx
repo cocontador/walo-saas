@@ -35,7 +35,7 @@ export default async function BillingPage() {
       <div className="grid gap-8 lg:grid-cols-3">
         {/* Tarjeta de Límites y Consumo actual (toma 2 columnas) */}
         <div className="lg:col-span-2">
-          <PlanLimitsCard plan={planInfo.plan} usage={usageInfo} />
+          <PlanLimitsCard plan={planInfo.plan} usage={usageInfo} upgradeHref="#upgrade-plans" />
         </div>
 
         {/* Sección de Soporte o Detalles Adicionales */}
@@ -76,6 +76,7 @@ export default async function BillingPage() {
               Si tienes dudas con tus límites o deseas un plan personalizado, contacta a nuestro equipo de soporte.
             </p>
             <a
+              // TODO: Reemplazar soporte@walo.local por el correo real de soporte antes de producción.
               href="mailto:soporte@walo.local"
               className="mt-3 inline-block text-xs font-semibold text-green-600 hover:text-green-700"
             >
@@ -87,7 +88,7 @@ export default async function BillingPage() {
 
       {/* Grid de comparación para mejorar el plan */}
       {upgradePlans.length > 0 && (
-        <div className="mt-12">
+        <div id="upgrade-plans" className="mt-12">
           <h2 className="text-xl font-bold text-gray-900">Planes Disponibles para Upgrade</h2>
           <p className="mt-1 text-sm text-gray-500 mb-6">Elige el plan ideal para expandir tu negocio en WALO.</p>
 

@@ -2,15 +2,15 @@
 
 import React from 'react'
 import type { PlanDetails, PlanUsageInfo } from '../types'
-import { PLAN_DETAILS_MAP, evaluateLimit } from '../utils/limits'
+import { PLAN_DETAILS_MAP } from '../utils/limits'
 
 interface PlanLimitsCardProps {
   plan: PlanDetails
   usage: PlanUsageInfo
-  onUpgradeClick?: () => void
+  upgradeHref?: string
 }
 
-export function PlanLimitsCard({ plan, usage, onUpgradeClick }: PlanLimitsCardProps) {
+export function PlanLimitsCard({ plan, usage, upgradeHref }: PlanLimitsCardProps) {
   const planSlug = plan.slug.toLowerCase()
   const planDetails = PLAN_DETAILS_MAP[planSlug] || {
     price: '$0',
@@ -18,8 +18,9 @@ export function PlanLimitsCard({ plan, usage, onUpgradeClick }: PlanLimitsCardPr
     limitations: (plan.limitations as string[]) || [],
   }
 
-  // Usamos el helper evaluateLimit para consistencia
-  const evaluation = evaluateLimit(usage.activeProducts, plan.productLimit)
+  const usagePercentage = usage.usagePercentage
+  const isLimitReached = usage.shouldUpgrade && !usage.isNearLimit
+  const shouldShowAlert = !usage.isUnlimited && usage.shouldUpgrade
 
   // Color de barra y textos según porcentaje/estado
   let progressBgColor = 'bg-green-500'
@@ -30,7 +31,7 @@ export function PlanLimitsCard({ plan, usage, onUpgradeClick }: PlanLimitsCardPr
   let alertTitle = 'Tu plan está al día'
   let alertMessage = 'Tienes espacio disponible para seguir creando productos.'
 
-  if (evaluation.status === 'reached') {
+  if (isLimitReached) {
     progressBgColor = 'bg-red-500 animate-pulse'
     borderAlertColor = 'border-red-200'
     bgAlertColor = 'bg-red-50'
@@ -38,14 +39,14 @@ export function PlanLimitsCard({ plan, usage, onUpgradeClick }: PlanLimitsCardPr
     badgeColor = 'bg-red-100 text-red-700'
     alertTitle = 'Límite alcanzado'
     alertMessage = 'Has llegado al límite máximo de productos activos. Sube de plan para permitir que tus clientes vean tus nuevos productos.'
-  } else if (evaluation.status === 'warning') {
+  } else if (usage.isNearLimit) {
     progressBgColor = 'bg-amber-500'
     borderAlertColor = 'border-amber-200'
     bgAlertColor = 'bg-amber-50'
     textAlertColor = 'text-amber-800'
     badgeColor = 'bg-amber-100 text-amber-700'
     alertTitle = 'Cerca del límite'
-    alertMessage = `Has utilizado el ${Math.round(evaluation.percentage)}% de tu límite de productos. Considera subir de plan para evitar interrupciones.`
+    alertMessage = `Has utilizado el ${Math.round(usagePercentage)}% de tu límite de productos. Considera subir de plan para evitar interrupciones.`
   }
 
   return (
@@ -60,12 +61,12 @@ export function PlanLimitsCard({ plan, usage, onUpgradeClick }: PlanLimitsCardPr
           <p className="mt-1 text-sm text-gray-500">{plan.description}</p>
         </div>
         {plan.slug !== 'business' && (
-          <button
-            onClick={onUpgradeClick}
+          <a
+            href={upgradeHref ?? '/dashboard/billing#upgrade-plans'}
             className="w-full rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 px-5 py-3 text-center text-sm font-semibold text-white shadow-sm transition-all hover:from-green-600 hover:to-emerald-700 hover:shadow-md sm:w-auto"
           >
             Mejorar plan
-          </button>
+          </a>
         )}
       </div>
 
@@ -88,22 +89,22 @@ export function PlanLimitsCard({ plan, usage, onUpgradeClick }: PlanLimitsCardPr
             <div className="h-2.5 w-full rounded-full bg-gray-100 overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${progressBgColor}`}
-                style={{ width: `${evaluation.percentage}%` }}
+                style={{ width: `${usagePercentage}%` }}
               />
             </div>
             <p className="mt-2 text-right text-xs text-gray-500">
-              {Math.round(evaluation.percentage)}% consumido
+              {Math.round(usagePercentage)}% consumido
             </p>
           </div>
         )}
       </div>
 
       {/* Alerta de Umbral */}
-      {!usage.isUnlimited && (evaluation.status === 'warning' || evaluation.status === 'reached') && (
+      {shouldShowAlert && (
         <div className={`rounded-xl border ${borderAlertColor} ${bgAlertColor} p-4`}>
           <div className="flex gap-3">
             <div className="mt-0.5">
-              {evaluation.status === 'reached' ? (
+              {isLimitReached ? (
                 <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>

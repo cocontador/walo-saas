@@ -49,7 +49,8 @@ async function main() {
       name: 'Pro',
       slug: 'pro',
       description: 'Plan profesional con dominio propio',
-      priceMonthly: 5990, // 5990 CLP en pesos      priceYearly: null,
+      priceMonthly: 5990,
+      priceYearly: null,
       currency: 'CLP',
       productLimit: null, // ilimitado
       customDomain: true,

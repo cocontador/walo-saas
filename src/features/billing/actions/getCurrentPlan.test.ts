@@ -13,6 +13,7 @@ vi.mock('@/lib/prisma', () => ({
     },
     plan: {
       findUnique: vi.fn(),
+      create: vi.fn(),
     },
   },
 }))
@@ -84,7 +85,7 @@ describe('getCurrentPlan', () => {
     )
   })
 
-  it('debe crear suscripción al plan inicial si no existe', async () => {
+  it('debe retornar plan inicial sin crear suscripción si no existe', async () => {
     const initialPlan = {
       id: '1',
       name: 'Inicial',
@@ -106,33 +107,31 @@ describe('getCurrentPlan', () => {
       updatedAt: new Date(),
     }
 
-    const newSubscription = {
-      id: 'sub-1',
-      storeId: 'store-1',
-      planId: '1',
-      status: 'ACTIVE',
-      billingCycle: 'MONTHLY',
-      currentPeriodStart: new Date(),
-      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      cancelAtPeriodEnd: false,
-      canceledAt: null,
-      reactivatedAt: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }
-
     vi.mocked(getUserStoreId).mockResolvedValue('store-1')
     vi.mocked(prisma.storeSubscription.findUnique).mockResolvedValue(null)
     vi.mocked(prisma.plan.findUnique).mockResolvedValue(initialPlan)
-    vi.mocked(prisma.storeSubscription.create).mockResolvedValue(
-      newSubscription as unknown as StoreSubscription
-    )
 
     const result = await getCurrentPlan()
 
     expect(result.plan.slug).toBe('initial')
-    expect(result.subscription).not.toBeNull()
-    expect(prisma.storeSubscription.create).toHaveBeenCalled()
+    expect(result.subscription).toBeNull()
+    expect(prisma.plan.create).not.toHaveBeenCalled()
+    expect(prisma.storeSubscription.create).not.toHaveBeenCalled()
+  })
+
+  it('debe retornar FALLBACK_FREE_PLAN sin escribir en BD si no existe plan inicial', async () => {
+    vi.mocked(getUserStoreId).mockResolvedValue('store-1')
+    vi.mocked(prisma.storeSubscription.findUnique).mockResolvedValue(null)
+    vi.mocked(prisma.plan.findUnique).mockResolvedValue(null)
+
+    const result = await getCurrentPlan()
+
+    expect(result.plan.slug).toBe('initial')
+    expect(result.subscription).toBeNull()
+    expect(result.isTrialing).toBe(false)
+    expect(result.isExpired).toBe(false)
+    expect(prisma.plan.create).not.toHaveBeenCalled()
+    expect(prisma.storeSubscription.create).not.toHaveBeenCalled()
   })
 
   it('debe retornar isTrialing true cuando status es TRIALING', async () => {

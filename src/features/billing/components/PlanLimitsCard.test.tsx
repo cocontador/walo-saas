@@ -46,6 +46,30 @@ describe('PlanLimitsCard', () => {
     expect(screen.getByText('Limitation 1')).toBeInTheDocument()
   })
 
+  it('renderiza el CTA de upgrade como link funcional', () => {
+    const mockUsage = {
+      activeProducts: 5,
+      productLimit: 15,
+      isUnlimited: false,
+      usagePercentage: 33.3,
+      isNearLimit: false,
+      shouldUpgrade: false,
+    }
+
+    render(
+      <PlanLimitsCard
+        plan={mockPlan}
+        usage={mockUsage}
+        upgradeHref="/dashboard/billing#upgrade-plans"
+      />
+    )
+
+    expect(screen.getByRole('link', { name: 'Mejorar plan' })).toHaveAttribute(
+      'href',
+      '/dashboard/billing#upgrade-plans'
+    )
+  })
+
   it('muestra la alerta de advertencia cuando se está cerca del límite (>= 80%)', () => {
     const mockUsage = {
       activeProducts: 12, // 80%
