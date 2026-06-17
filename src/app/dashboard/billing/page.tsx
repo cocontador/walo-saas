@@ -3,9 +3,9 @@ import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 
 import { authOptions } from '@/server/auth'
-import { getCurrentPlan, getPlanUsage, getAvailablePlans } from '@/features/billing/actions'
+import { getCurrentPlan, getPlanCatalog, getPlanUsage } from '@/features/billing/actions'
+import { PlanComparisonCards } from '@/features/billing/components/PlanComparisonCards'
 import { PlanLimitsCard } from '@/features/billing/components/PlanLimitsCard'
-import { PLAN_DETAILS_MAP } from '@/features/billing/utils/limits'
 
 export default async function BillingPage() {
   const session = await getServerSession(authOptions)
@@ -17,10 +17,7 @@ export default async function BillingPage() {
   // Fetch plan current data
   const planInfo = await getCurrentPlan()
   const usageInfo = await getPlanUsage()
-  const availablePlans = await getAvailablePlans()
-
-  // Filtramos planes para la sección de comparación/upgrade
-  const upgradePlans = availablePlans.filter(p => p.slug !== planInfo.plan.slug)
+  const planCatalog = await getPlanCatalog()
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:py-12">
@@ -88,56 +85,16 @@ export default async function BillingPage() {
         </div>
       </div>
 
-      {/* Grid de comparación para mejorar el plan */}
-      {upgradePlans.length > 0 && (
-        <div id="upgrade-plans" className="mt-12">
-          <h2 className="text-xl font-bold text-gray-900">Planes Disponibles para Upgrade</h2>
-          <p className="mt-1 text-sm text-gray-500 mb-6">Elige el plan ideal para expandir tu negocio en WALO.</p>
-
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {upgradePlans.map((upPlan) => {
-              const details = PLAN_DETAILS_MAP[upPlan.slug.toLowerCase()] || {
-                price: `${upPlan.priceMonthly} CLP`,
-                features: upPlan.features as string[],
-              }
-
-              return (
-                <div
-                  key={upPlan.id}
-                  className="flex flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md transition-shadow justify-between"
-                >
-                  <div>
-                    <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
-                      Plan {upPlan.name}
-                    </span>
-                    <div className="mt-4">
-                      <span className="text-3xl font-extrabold text-gray-950">{details.price}</span>
-                    </div>
-                    <p className="mt-2 text-xs text-gray-500">{upPlan.description}</p>
-
-                    <ul className="mt-6 space-y-3">
-                      {details.features.slice(0, 5).map((feat, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-xs text-gray-600">
-                          <svg className="h-4.5 w-4.5 text-blue-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-                          </svg>
-                          <span>{feat}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="mt-8">
-                    <button className="w-full rounded-xl bg-blue-600 py-3 text-center text-xs font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors">
-                      Subir al Plan {upPlan.name}
-                    </button>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+      <section id="upgrade-plans" className="mt-12">
+        <div className="mb-6">
+          <h2 className="text-xl font-bold text-gray-900">Planes disponibles</h2>
+          <p className="mt-1 text-sm text-gray-500">
+            Compara beneficios, límites y opciones para elegir el plan ideal para tu negocio.
+          </p>
         </div>
-      )}
+
+        <PlanComparisonCards plans={planCatalog.plans} />
+      </section>
     </main>
   )
 }
