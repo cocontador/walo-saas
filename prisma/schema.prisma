@@ -161,6 +161,7 @@ model KhipuLog {
   context   String
   message   String
   createdAt DateTime @default(now())
+  @@index([orderId])
 }
 
 model WhatsappClickEvent {

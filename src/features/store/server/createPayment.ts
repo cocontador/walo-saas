@@ -3,6 +3,7 @@
 import crypto from 'crypto'
 import { prisma } from '@/lib/prisma'
 import { khipuConfig, validateKhipuConfig } from '@/lib/khipu'
+import { logError } from '@/lib/logger'
 import { OrderStatus } from '@prisma/client'
 
 type PaymentData = {
@@ -28,38 +29,25 @@ export async function createPaymentIntent(data: PaymentData) {
                 },
             })
 
-            const appUrl =
-                process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-
+            const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
             const endpoint = `${khipuConfig.apiUrl}/payments`
 
             const payload: Record<string, string> = {
                 amount: data.totalAmount.toString(),
                 currency: 'CLP',
-                //notify_url: `${appUrl}/api/webhooks/khipu`,
+                notify_url: `${appUrl}/api/webhooks/khipu`,
                 return_url: `${appUrl}/pago/${order.id}`,
                 subject: `Compra en ${data.storeName}`,
                 transaction_id: order.id,
             }
 
             const sortedKeys = Object.keys(payload).sort()
-
             const bodyParams = new URLSearchParams()
-
-            sortedKeys.forEach((key) => {
-                bodyParams.append(key, payload[key])
-            })
-
-            // ==========================
-            // CONSTRUCCIÓN DE FIRMA
-            // ==========================
+            sortedKeys.forEach((key) => bodyParams.append(key, payload[key]))
 
             let toSign = `POST&${encodeURIComponent(endpoint)}`
-
             sortedKeys.forEach((key) => {
-                toSign += `&${encodeURIComponent(key)}=${encodeURIComponent(
-                    payload[key]
-                )}`
+                toSign += `&${encodeURIComponent(key)}=${encodeURIComponent(payload[key])}`
             })
 
             const hash = crypto
@@ -68,15 +56,6 @@ export async function createPaymentIntent(data: PaymentData) {
                 .digest('hex')
 
             const authorization = `${khipuConfig.receiverId}:${hash}`
-
-            console.log('======================')
-            console.log('KHIPU DEBUG')
-            console.log('Receiver ID:', khipuConfig.receiverId)
-            console.log('Endpoint:', endpoint)
-            console.log('Payload:', payload)
-            console.log('ToSign:', toSign)
-            console.log('Hash:', hash)
-            console.log('======================')
 
             const response = await fetch(endpoint, {
                 method: 'POST',
@@ -88,8 +67,6 @@ export async function createPaymentIntent(data: PaymentData) {
             })
 
             const responseText = await response.text()
-
-            console.log('Khipu response:', responseText)
 
             if (!response.ok) {
                 throw new Error(`Khipu API Error: ${responseText}`)
@@ -107,24 +84,19 @@ export async function createPaymentIntent(data: PaymentData) {
                 },
             })
 
-            return {
-                paymentUrl: khipuData.payment_url,
-            }
+            return { paymentUrl: khipuData.payment_url }
         })
 
-        return {
-            success: true,
-            paymentUrl: result.paymentUrl,
-        }
+        return { success: true, paymentUrl: result.paymentUrl }
     } catch (error) {
-        console.error('Error createPaymentIntent:', error)
-
+        logError({
+            event: 'payment.create_intent.error',
+            scope: 'payment',
+            message: 'Error createPaymentIntent',
+        })
         return {
             success: false,
-            error:
-                error instanceof Error
-                    ? error.message
-                    : 'Error al iniciar el pago',
+            error: error instanceof Error ? error.message : 'Error al iniciar el pago',
         }
     }
 }

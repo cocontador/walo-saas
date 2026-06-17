@@ -5,10 +5,10 @@ import { OrderStatus } from "@prisma/client"
 import { createPaymentIntent } from "./createPayment"
 
 interface Item {
-    id: string;
-    name: string;
-    price: number;
-    quantity: number;
+    id: string
+    name: string
+    price: number
+    quantity: number
 }
 
 export async function retryPayment(orderId: string) {
@@ -26,22 +26,20 @@ export async function retryPayment(orderId: string) {
             return { success: false, error: "Este pedido no es elegible para reintento." }
         }
 
-        // CAMBIO AQUÍ: Usamos 'as any' primero para liberar la restricción de tipo JsonValue
-        const rawItems = (order as any)?.items;
+        const rawItems = order.itemsSnapshot as any[]
 
         if (!Array.isArray(rawItems)) {
             return { success: false, error: "Formato de items inválido." }
         }
 
-        // Mapeo seguro
         const cartItems: Item[] = rawItems.map((item: any) => ({
             id: String(item.id),
             name: String(item.name),
             price: Number(item.price),
             quantity: Number(item.quantity)
-        }));
+        }))
 
-        const retryResult = await createPaymentIntent({
+        return await createPaymentIntent({
             storeId: order.storeId,
             storeName: order.store.name,
             items: cartItems,
@@ -49,10 +47,8 @@ export async function retryPayment(orderId: string) {
             customerNotes: order.customerNotes ? String(order.customerNotes) : undefined,
         })
 
-        return retryResult
-
     } catch (error) {
-        console.error("Error al reintentar:", error)
+        console.error('Error al reintentar pago', error)
         return { success: false, error: "Error interno al reintentar." }
     }
 }

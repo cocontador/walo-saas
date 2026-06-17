@@ -7,7 +7,7 @@ export async function logKhipuError(orderId: string, error: any, context: string
             orderId,
             context,
             message: error instanceof Error ? error.message : JSON.stringify(error),
-            timestamp: new Date()
+            createdAt: new Date()
         }
     })
 }

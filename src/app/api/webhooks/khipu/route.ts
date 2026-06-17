@@ -4,8 +4,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { khipuConfig } from "@/lib/khipu";
 import { OrderStatus } from "@prisma/client";
+import { logError } from "@/lib/logger";
 
-// Función auxiliar para observabilidad en BD
 async function logKhipu(context: string, message: string, orderId?: string) {
     try {
         await prisma.khipuLog.create({
@@ -13,6 +13,11 @@ async function logKhipu(context: string, message: string, orderId?: string) {
         });
     } catch (e) {
         console.error("Error crítico: Falló el registro en KhipuLog", e);
+        logError({
+            event: 'khipu.log.failed',
+            scope: 'webhook',
+            message: 'Falló el registro en KhipuLog',
+        })
     }
 }
 
@@ -23,8 +28,7 @@ const khipuNotificationSchema = z.object({
 
 export async function POST(req: NextRequest) {
     const bodyText = await req.text();
-    
-    // Registro inicial de entrada para auditoría
+
     await logKhipu("WEBHOOK_RECEIVED", bodyText);
 
     try {
@@ -44,7 +48,6 @@ export async function POST(req: NextRequest) {
 
         const { notification_token } = parsedData.data;
 
-        // Verificación criptográfica
         const khipuEndpoint = `${khipuConfig.apiUrl}/payments`;
         const toSign = `GET&${encodeURI(khipuEndpoint)}&notification_token=${notification_token}`;
         const hash = crypto.createHmac("sha256", khipuConfig.secret).update(toSign).digest("hex");
@@ -63,7 +66,6 @@ export async function POST(req: NextRequest) {
         const paymentData = await khipuResponse.json();
         const { payment_id, status } = paymentData;
 
-        // Idempotencia
         const paymentAttempt = await prisma.paymentAttempt.findUnique({
             where: { khipuPaymentId: payment_id },
             include: { order: true },
@@ -78,7 +80,6 @@ export async function POST(req: NextRequest) {
             return new NextResponse("OK", { status: 200 });
         }
 
-        // Actualización transaccional
         if (status === "done") {
             await prisma.$transaction([
                 prisma.paymentAttempt.update({
