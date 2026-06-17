@@ -46,13 +46,15 @@ export default async function BillingPage() {
               <div className="flex justify-between border-b border-gray-100 pb-2">
                 <dt className="text-gray-500">Estado</dt>
                 <dd className="font-semibold text-green-700 bg-green-50 px-2 py-0.5 rounded-full text-xs">
-                  {planInfo.subscription?.status === 'ACTIVE' ? 'Activa' : 'Suscrito'}
+                  {({ ACTIVE: 'Activa', TRIALING: 'En prueba', PAST_DUE: 'Vencida', CANCELED: 'Cancelada' } as Record<string, string>)[planInfo.subscription?.status ?? ''] ?? 'Plan gratuito'}
                 </dd>
               </div>
               <div className="flex justify-between border-b border-gray-100 pb-2">
                 <dt className="text-gray-500">Ciclo de Cobro</dt>
                 <dd className="font-medium text-gray-950">
-                  {planInfo.subscription?.billingCycle === 'MONTHLY' ? 'Mensual' : 'Anual'}
+                  {planInfo.subscription
+                    ? planInfo.subscription.billingCycle === 'MONTHLY' ? 'Mensual' : 'Anual'
+                    : 'Sin cobro'}
                 </dd>
               </div>
               {planInfo.subscription?.currentPeriodEnd && (
