@@ -6,6 +6,8 @@ import { StoreStatusButton } from '@/features/store/components/StoreStatusButton
 import { ShareButton } from '@/features/store/components/ShareButton'
 import { StoreForm } from '@/features/store/components/StoreForm'
 import { authOptions } from '@/server/auth'
+import { getCurrentPlan, getPlanUsage } from '@/features/billing/actions'
+import { PlanLimitsCard } from '@/features/billing/components/PlanLimitsCard'
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions)
@@ -27,6 +29,14 @@ export default async function DashboardPage() {
 
   const store = user?.memberships[0]?.store
 
+  // Fetch billing/plan information only if store exists
+  let planInfo = null
+  let usageInfo = null
+  if (store) {
+    planInfo = await getCurrentPlan()
+    usageInfo = await getPlanUsage()
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="mx-auto max-w-4xl px-6 py-12">
@@ -47,7 +57,8 @@ export default async function DashboardPage() {
         )}
 
         {store && (
-          <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <div className="mb-4 flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-500">
                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
@@ -119,7 +130,16 @@ export default async function DashboardPage() {
               />
             </div>
           </div>
-        )}
+
+          {planInfo && usageInfo && (
+            <PlanLimitsCard
+              plan={planInfo.plan}
+              usage={usageInfo}
+              upgradeHref="/dashboard/billing#upgrade-plans"
+            />
+          )}
+        </div>
+      )}
       </main>
     </div>
   )
