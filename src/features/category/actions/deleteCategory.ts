@@ -6,6 +6,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/server/auth'
 import { getUserStoreId } from '@/server/store'
 import { prisma } from '@/lib/prisma'
+import { logError } from '@/lib/logger'
 import { revalidatePath } from 'next/cache'
 import { ActionResult } from '@/features/category/types'
 
@@ -44,7 +45,13 @@ export async function deleteCategory(categoryId: string): Promise<ActionResult<n
 
     return { success: true, data: null }
   } catch (error) {
-    console.error('Error deleting category:', error)
+    logError({
+      event: 'category.delete.failed',
+      scope: 'category',
+      message: 'Fallo al eliminar categoría',
+      errorCode: 'CATEGORY_DELETE_FAILED',
+      meta: { errorName: error instanceof Error ? error.name : 'UnknownError' },
+    })
     return {
       success: false,
       error: 'Ocurrió un error al eliminar la categoría. Por favor intenta nuevamente.',

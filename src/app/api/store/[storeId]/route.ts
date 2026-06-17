@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { z } from 'zod'
 
+import { logError } from '@/lib/logger'
 import { authOptions } from '@/server/auth'
 
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
@@ -16,7 +17,7 @@ const storeUpdateSchema = z.object({
       'El slug solo permite minúsculas, números y guiones (sin espacios).'
     ),
   description: z.string().optional().nullable(),
-  whatsappPhone: z.string().optional().nullable(),
+  whatsappPhone: z.string().regex(/^\+569\d{8}$/, 'El número de WhatsApp debe tener 8 dígitos.').optional().nullable(),
 })
 
 /**
@@ -82,7 +83,15 @@ export async function PATCH(
 
     return NextResponse.json({ store }, { status: 200 })
   } catch (error) {
-    console.error('[STORE PATCH ERROR]', error)
+    logError({
+      event: 'store_api.patch.failed',
+      scope: 'store',
+      message: 'Fallo actualizacion de tienda',
+      errorCode: error instanceof z.ZodError ? 'STORE_PATCH_VALIDATION_FAILED' : 'STORE_PATCH_FAILED',
+      meta: {
+        errorName: error instanceof Error ? error.name : 'UnknownError',
+      },
+    })
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Datos inválidos', detalles: error.flatten().fieldErrors },
@@ -129,7 +138,15 @@ export async function DELETE(
 
     return NextResponse.json({ store }, { status: 200 })
   } catch (error) {
-    console.error('[STORE DELETE ERROR]', error)
+    logError({
+      event: 'store_api.delete.failed',
+      scope: 'store',
+      message: 'Fallo desactivacion de tienda',
+      errorCode: 'STORE_DELETE_FAILED',
+      meta: {
+        errorName: error instanceof Error ? error.name : 'UnknownError',
+      },
+    })
     return NextResponse.json(
       { error: 'Error interno del servidor.' },
       { status: 500 }
@@ -170,7 +187,15 @@ export async function PUT(
 
     return NextResponse.json({ store }, { status: 200 })
   } catch (error) {
-    console.error('[STORE PUT ERROR]', error)
+    logError({
+      event: 'store_api.put.failed',
+      scope: 'store',
+      message: 'Fallo reactivacion de tienda',
+      errorCode: 'STORE_PUT_FAILED',
+      meta: {
+        errorName: error instanceof Error ? error.name : 'UnknownError',
+      },
+    })
     return NextResponse.json(
       { error: 'Error interno del servidor.' },
       { status: 500 }

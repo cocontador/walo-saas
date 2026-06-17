@@ -1,7 +1,15 @@
 import "server-only"
+import { logInfo, logWarn } from "@/lib/logger"
 import { prisma } from "@/lib/prisma"
 
 export async function getStoreBySlug(slug: string) {
+    logInfo({
+        event: "public_catalog.request",
+        scope: "store",
+        message: "Resolviendo tienda publica por slug",
+        slug,
+    })
+
     const store = await prisma.store.findUnique({
         where: { slug },
         select: {
@@ -15,13 +23,32 @@ export async function getStoreBySlug(slug: string) {
         },
     })
 
-    if (!store || !store.isActive) return null
+    if (!store) {
+        logWarn({
+            event: "public_catalog.store_not_found",
+            scope: "store",
+            message: "Tienda publica no encontrada",
+            slug,
+        })
+        return null
+    }
+
+    if (!store.isActive) {
+        logWarn({
+            event: "public_catalog.store_inactive",
+            scope: "store",
+            message: "Tienda publica inactiva",
+            slug,
+            storeId: store.id,
+        })
+        return null
+    }
 
     return store
 }
 
 export async function getVisibleProducts(storeId: string) {
-    return prisma.product.findMany({
+    const products = await prisma.product.findMany({
         where: {
             storeId,
             visible: true,
@@ -44,6 +71,18 @@ export async function getVisibleProducts(storeId: string) {
             createdAt: "desc",
         },
     })
+
+    logInfo({
+        event: "public_catalog.products_loaded",
+        scope: "store",
+        message: "Productos visibles cargados para catalogo publico",
+        storeId,
+        meta: {
+            visibleProducts: products.length,
+        },
+    })
+
+    return products
 }
 
 export async function canManageStoreByUser(storeId: string, userId: string) {

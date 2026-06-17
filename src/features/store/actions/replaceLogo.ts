@@ -4,8 +4,10 @@ import "server-only"
 
 import { DeleteObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3'
 
+import { logError, logInfo, logWarn } from '@/lib/logger'
 import { prisma } from '@/lib/prisma'
 import { buildStoreLogoKey, getR2Client, getR2Bucket, getR2PublicUrlBase } from '@/lib/r2'
+import { readAndVerifyImage } from '@/lib/file-signature'
 import { requireAuth } from '@/server/require-auth'
 
 import { validateLogoFile } from '../schema/logo.schema'
@@ -56,7 +58,14 @@ export async function replaceLogo(formData: FormData): Promise<ActionResult> {
   }
 
   const storeId = storeIdValue.trim()
-  const logoFile = validateLogoFile(logoValue)
+
+  let logoFile: File
+  try {
+    logoFile = validateLogoFile(logoValue)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Archivo de logo inválido.'
+    return { ok: false, status: 400, error: message }
+  }
 
   const membership = await prisma.storeMember.findFirst({
     where: {
@@ -67,6 +76,13 @@ export async function replaceLogo(formData: FormData): Promise<ActionResult> {
   })
 
   if (!membership) {
+    logWarn({
+      event: 'authz.membership.denied',
+      scope: 'store',
+      message: 'Usuario sin permisos para reemplazar logo',
+      storeId,
+      userId,
+    })
     return { ok: false, status: 403, error: 'No tienes permisos para editar esta tienda.' }
   }
 
@@ -79,24 +95,50 @@ export async function replaceLogo(formData: FormData): Promise<ActionResult> {
     return { ok: false, status: 404, error: 'La tienda no existe.' }
   }
 
-  const extension = MIME_EXTENSION_MAP[logoFile.type]
+  const verified = await readAndVerifyImage(logoFile)
+
+  if (!verified.ok) {
+    return { ok: false, status: 400, error: verified.error }
+  }
+
+  const extension = MIME_EXTENSION_MAP[verified.mime]
   const newLogoKey = buildStoreLogoKey(storeId, extension)
   const newLogoUrl = getPublicUrl(newLogoKey)
-  const body = new Uint8Array(await logoFile.arrayBuffer())
+  const body = verified.bytes
 
   const client = getR2Client()
   const bucket = getR2Bucket()
 
   if (!client || !bucket) {
+    logError({
+      event: 'store_logo.upload.failed',
+      scope: 'media',
+      message: 'R2 no configurado para reemplazar logo',
+      storeId,
+      errorCode: 'R2_NOT_CONFIGURED',
+    })
     return { ok: false, status: 500, error: 'R2 no está configurado. Revisa las variables de entorno.' }
   }
+
+  logInfo({
+    event: 'store_logo.replace.started',
+    scope: 'media',
+    message: 'Iniciando reemplazo de logo en R2',
+    storeId,
+    meta: {
+      newKey: newLogoKey,
+      previousKey: store.logoKey,
+      contentType: verified.mime,
+      size: logoFile.size,
+    },
+  })
 
   await client.send(
     new PutObjectCommand({
       Bucket: bucket,
       Key: newLogoKey,
       Body: body,
-      ContentType: logoFile.type,
+      ContentType: verified.mime,
     })
   )
 
@@ -120,32 +162,69 @@ export async function replaceLogo(formData: FormData): Promise<ActionResult> {
           })
         )
       }
-    } catch {
-      // ignore rollback errors
+    } catch (rollbackError) {
+      logError({
+        event: 'store_logo.replace.rollback',
+        scope: 'media',
+        message: 'Fallo rollback de logo nuevo tras error de base de datos',
+        storeId,
+        errorCode: 'R2_ROLLBACK_FAILED',
+        meta: {
+          key: newLogoKey,
+          errorName: rollbackError instanceof Error ? rollbackError.name : 'UnknownError',
+        },
+      })
     }
+    logError({
+      event: 'store_logo.upload.failed',
+      scope: 'media',
+      message: 'Fallo actualizacion de base de datos despues de subir logo',
+      storeId,
+      errorCode: 'STORE_LOGO_DB_UPDATE_FAILED',
+      meta: {
+        key: newLogoKey,
+        errorName: error instanceof Error ? error.name : 'UnknownError',
+      },
+    })
     throw error
   }
 
   if (store.logoKey && store.logoKey !== newLogoKey) {
     try {
-      try {
-        const client3 = getR2Client()
-        const bucket3 = getR2Bucket()
-        if (client3 && bucket3) {
-          await client3.send(
-            new DeleteObjectCommand({
-              Bucket: bucket3,
-              Key: store.logoKey,
-            })
-          )
-        }
-      } catch (cleanupError) {
-        console.error('[STORE REPLACE LOGO CLEANUP ERROR]', cleanupError)
+      const client3 = getR2Client()
+      const bucket3 = getR2Bucket()
+      if (client3 && bucket3) {
+        await client3.send(
+          new DeleteObjectCommand({
+            Bucket: bucket3,
+            Key: store.logoKey,
+          })
+        )
       }
     } catch (cleanupError) {
-      console.error('[STORE REPLACE LOGO CLEANUP ERROR]', cleanupError)
+      logWarn({
+        event: 'store_logo.remove.storage_cleanup_failed',
+        scope: 'media',
+        message: 'Fallo limpieza de logo anterior tras reemplazo',
+        storeId,
+        errorCode: 'R2_OLD_LOGO_DELETE_FAILED',
+        meta: {
+          key: store.logoKey,
+          errorName: cleanupError instanceof Error ? cleanupError.name : 'UnknownError',
+        },
+      })
     }
   }
+
+  logInfo({
+    event: 'store_logo.replace.succeeded',
+    scope: 'media',
+    message: 'Logo de tienda reemplazado correctamente',
+    storeId,
+    meta: {
+      key: newLogoKey,
+    },
+  })
 
   return { ok: true, storeId, logoUrl: newLogoUrl, logoKey: newLogoKey }
 }

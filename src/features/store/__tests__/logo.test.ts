@@ -51,7 +51,8 @@ import { removeLogo, replaceLogo, uploadLogo } from '@/features/store/actions'
 
 function createLogoFormData() {
   const formData = new FormData()
-  const file = new File(['binary-content'], 'logo.png', { type: 'image/png' })
+  const pngSignature = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+  const file = new File([pngSignature], 'logo.png', { type: 'image/png' })
   formData.append('storeId', 'store_1')
   formData.append('logo', file)
   return formData
@@ -121,5 +122,54 @@ describe('Store logo actions', () => {
     }
     expect(mockSend).not.toHaveBeenCalled()
     expect(mockPrisma.store.update).toHaveBeenCalledOnce()
+  })
+
+  // --- Casos de denegación (anti-IDOR) ---
+
+  it('uploadLogo devuelve 401 sin sesión', async () => {
+    mockRequireAuth.mockRejectedValue(new Error('Unauthorized'))
+
+    await expect(uploadLogo(createLogoFormData())).rejects.toThrow()
+    expect(mockSend).not.toHaveBeenCalled()
+  })
+
+  it('uploadLogo devuelve 400 si el archivo no tiene firma de imagen válida', async () => {
+    const formData = new FormData()
+    const fakeFile = new File(['not-an-image'], 'malicious.png', { type: 'image/png' })
+    formData.append('storeId', 'store_1')
+    formData.append('logo', fakeFile)
+
+    const result = await uploadLogo(formData)
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.status).toBe(400)
+    expect(mockSend).not.toHaveBeenCalled()
+  })
+
+  it('uploadLogo devuelve 400 si el archivo tiene tipo MIME inválido (Zod)', async () => {
+    const formData = new FormData()
+    const pngSignature = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+    const file = new File([pngSignature], 'logo.gif', { type: 'image/gif' })
+    formData.append('storeId', 'store_1')
+    formData.append('logo', file)
+
+    const result = await uploadLogo(formData)
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.status).toBe(400)
+    expect(mockSend).not.toHaveBeenCalled()
+  })
+
+  it('removeLogo devuelve 403 si el usuario no tiene membresía (anti-IDOR)', async () => {
+    mockPrisma.storeMember.findFirst.mockResolvedValue(null)
+
+    const result = await removeLogo('store_1')
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.status).toBe(403)
+      expect(result.error).toContain('permisos')
+    }
+    expect(mockSend).not.toHaveBeenCalled()
   })
 })

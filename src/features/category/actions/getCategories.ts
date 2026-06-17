@@ -6,6 +6,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/server/auth'
 import { getUserStoreId } from '@/server/store'
 import { prisma } from '@/lib/prisma'
+import { logError } from '@/lib/logger'
 import { ActionResult, CategoryListItem } from '@/features/category/types'
 
 export async function getCategories(): Promise<ActionResult<CategoryListItem[]>> {
@@ -48,7 +49,13 @@ export async function getCategories(): Promise<ActionResult<CategoryListItem[]>>
       data: categories,
     }
   } catch (error) {
-    console.error('Error fetching categories:', error)
+    logError({
+      event: 'category.list.failed',
+      scope: 'category',
+      message: 'Fallo al obtener categorías',
+      errorCode: 'CATEGORY_LIST_FAILED',
+      meta: { errorName: error instanceof Error ? error.name : 'UnknownError' },
+    })
     return {
       success: false,
       error: 'Ocurrió un error al obtener las categorías. Por favor intenta nuevamente.',

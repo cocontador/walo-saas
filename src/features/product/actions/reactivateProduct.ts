@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { authOptions } from '@/server/auth'
 import { getUserStoreId } from '@/server/store'
 import { prisma } from '@/lib/prisma'
+import { logError } from '@/lib/logger'
 
 export type ActionResult<T> =
   | { success: true; data: T }
@@ -92,7 +93,13 @@ async function reactivateProductById(productId: string): Promise<ActionResult<{ 
       },
     }
   } catch (error) {
-    console.error('Error reactivating product:', error)
+    logError({
+      event: 'product.reactivate.failed',
+      scope: 'product',
+      message: 'Fallo al reactivar producto',
+      errorCode: 'PRODUCT_REACTIVATE_FAILED',
+      meta: { errorName: error instanceof Error ? error.name : 'UnknownError' },
+    })
     return {
       success: false,
       error: 'Ocurrió un error al reactivar el producto. Por favor intenta nuevamente.',

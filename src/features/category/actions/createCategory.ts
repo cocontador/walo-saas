@@ -7,6 +7,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/server/auth'
 import { getUserStoreId } from '@/server/store'
 import { prisma } from '@/lib/prisma'
+import { logError } from '@/lib/logger'
 import { createCategorySchema, type CreateCategoryInput } from '@/features/category/schemas'
 import { Prisma } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
@@ -78,7 +79,13 @@ export async function createCategory(
       }
     }
 
-    console.error('Error creating category:', error)
+    logError({
+      event: 'category.create.failed',
+      scope: 'category',
+      message: 'Fallo al crear categoría',
+      errorCode: 'CATEGORY_CREATE_FAILED',
+      meta: { errorName: error instanceof Error ? error.name : 'UnknownError' },
+    })
     return {
       success: false,
       error: 'Ocurrió un error al crear la categoría. Por favor intenta nuevamente.',

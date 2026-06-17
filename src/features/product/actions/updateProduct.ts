@@ -7,6 +7,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/server/auth'
 import { getUserStoreId } from '@/server/store'
 import { prisma } from '@/lib/prisma'
+import { logError } from '@/lib/logger'
 import { updateProductSchema, type UpdateProductInput } from '@/features/product/schemas'
 
 export type ActionResult<T> =
@@ -108,7 +109,13 @@ export async function updateProduct(
       }
     }
 
-    console.error('Error updating product:', error)
+    logError({
+      event: 'product.update.failed',
+      scope: 'product',
+      message: 'Fallo al actualizar producto',
+      errorCode: 'PRODUCT_UPDATE_FAILED',
+      meta: { errorName: error instanceof Error ? error.name : 'UnknownError' },
+    })
     return {
       success: false,
       error: 'Ocurrió un error al actualizar el producto. Por favor intenta nuevamente.',

@@ -9,6 +9,7 @@ import { authOptions } from '@/server/auth'
 import { getUserStoreId } from '@/server/store'
 import { prisma } from '@/lib/prisma'
 import { getR2Client, getR2Bucket } from '@/lib/r2'
+import { logWarn } from '@/lib/logger'
 
 type ActionResult =
   | { ok: true; productId: string; imageRemoved: boolean }
@@ -75,7 +76,17 @@ export async function removeProductImage(productId: string): Promise<ActionResul
       )
     }
   } catch (cleanupError) {
-    console.error('[PRODUCT REMOVE IMAGE STORAGE ERROR]', cleanupError)
+    logWarn({
+      event: 'product_image.remove.storage_cleanup_failed',
+      scope: 'media',
+      message: 'Fallo limpieza de imagen de producto en R2',
+      storeId,
+      errorCode: 'R2_PRODUCT_IMAGE_DELETE_FAILED',
+      meta: {
+        productId: cleanProductId,
+        errorName: cleanupError instanceof Error ? cleanupError.name : 'UnknownError',
+      },
+    })
   }
 
   await prisma.product.updateMany({
