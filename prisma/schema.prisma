@@ -35,10 +35,12 @@ model Store {
   updatedAt     DateTime @updatedAt
   acceptedTermsAt DateTime?
 
-  memberships  StoreMember[]
-  products     Product[]
-  categories   Category[]
-  subscription StoreSubscription?
+  memberships    StoreMember[]
+  products       Product[]
+  categories     Category[]
+  subscription   StoreSubscription?
+  orders         Order[]
+  whatsappClicks WhatsappClickEvent[]
 
   @@index([slug])
 }
@@ -109,6 +111,10 @@ enum StoreRole {
   EDITOR
 }
 
+// ==========================================
+// SPRINT 3: PLANES Y SUSCRIPCIONES
+// ==========================================
+
 enum SubscriptionStatus {
   ACTIVE
   CANCELED
@@ -126,14 +132,14 @@ model Plan {
   name             String
   slug             String   @unique
   description      String?
-  priceMonthly     Int // en pesos chilenos
-  priceYearly      Int? // en pesos chilenos
+  priceMonthly     Int
+  priceYearly      Int?
   currency         String   @default("CLP")
-  productLimit     Int? // null = ilimitado
+  productLimit     Int?
   customDomain     Boolean  @default(false)
   analytics        Boolean  @default(false)
   premiumTemplates Boolean  @default(false)
-  supportLevel     String   @default("basic") // basic, email, priority
+  supportLevel     String   @default("basic")
   features         Json     @default("[]")
   limitations      Json?
   isActive         Boolean  @default(true)
@@ -167,4 +173,63 @@ model StoreSubscription {
   @@index([storeId])
   @@index([planId])
   @@index([status])
+}
+
+// ==========================================
+// SPRINT 3: PAGOS, WEBHOOKS Y ANALÍTICA
+// ==========================================
+
+model Order {
+  id              String           @id @default(cuid())
+  storeId         String
+  store           Store            @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  totalAmount     Int
+  status          OrderStatus      @default(PENDING)
+  customerNotes   String?
+  itemsSnapshot   Json
+  paymentAttempts PaymentAttempt[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([storeId])
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELED
+}
+
+model PaymentAttempt {
+  id              String   @id @default(cuid())
+  orderId         String
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  khipuPaymentId  String   @unique
+  khipuPaymentUrl String
+  status          String   @default("pending")
+  amount          Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([orderId])
+}
+
+model KhipuLog {
+  id        String   @id @default(cuid())
+  orderId   String?
+  context   String
+  message   String
+  createdAt DateTime @default(now())
+
+  @@index([orderId])
+}
+
+model WhatsappClickEvent {
+  id        String   @id @default(cuid())
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([storeId])
 }

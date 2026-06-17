@@ -48,62 +48,44 @@ export const CartProvider = ({
     children: ReactNode
 }) => {
     const CART_KEY = `walo-cart-${storeId}`
-    const [items, setItems] = useState<CartItem[]>(() => getStoredCartItems(CART_KEY))
+    const [items, setItems] = useState<CartItem[]>([])
+    const [hydrated, setHydrated] = useState(false)
 
     useEffect(() => {
+        setItems(getStoredCartItems(CART_KEY))
+        setHydrated(true)
+    }, [CART_KEY])
+
+    useEffect(() => {
+        if (!hydrated) return
         window.localStorage.setItem(CART_KEY, JSON.stringify(items))
-    }, [items, CART_KEY])
+    }, [items, CART_KEY, hydrated])
 
     const addItem = (item: NewCartItem) => {
         setItems((currentItems) => {
-            const existingItem = currentItems.find((cartItem) => cartItem.id === item.id)
-
+            const existingItem = currentItems.find((i) => i.id === item.id)
             if (existingItem) {
-                return currentItems.map((cartItem) =>
-                    cartItem.id === item.id
-                        ? { ...cartItem, quantity: cartItem.quantity + 1 }
-                        : cartItem
-                )
+                return currentItems.map((i) => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i)
             }
-
             return [...currentItems, { ...item, quantity: 1 }]
         })
     }
 
     const updateQuantity = (id: string, quantity: number) => {
         setItems((currentItems) => {
-            if (quantity <= 0) {
-                return currentItems.filter((cartItem) => cartItem.id !== id)
-            }
-
-            return currentItems.map((cartItem) =>
-                cartItem.id === id ? { ...cartItem, quantity } : cartItem
-            )
+            if (quantity <= 0) return currentItems.filter((i) => i.id !== id)
+            return currentItems.map((i) => i.id === id ? { ...i, quantity } : i)
         })
     }
 
-    const removeItem = (id: string) => {
-        setItems((currentItems) => currentItems.filter((cartItem) => cartItem.id !== id))
-    }
+    const removeItem = (id: string) => setItems((prev) => prev.filter((i) => i.id !== id))
+    const clearCart = () => setItems([])
 
-    const clearCart = () => {
-        setItems([])
-    }
-
-    const itemCount = useMemo(
-        () => items.reduce((count, cartItem) => count + cartItem.quantity, 0),
-        [items]
-    )
-
-    const total = useMemo(
-        () => items.reduce((sum, cartItem) => sum + cartItem.price * cartItem.quantity, 0),
-        [items]
-    )
+    const itemCount = useMemo(() => items.reduce((acc, item) => acc + item.quantity, 0), [items])
+    const total = useMemo(() => items.reduce((acc, item) => acc + item.price * item.quantity, 0), [items])
 
     return (
-        <CartContext.Provider
-            value={{ items, total, itemCount, addItem, updateQuantity, removeItem, clearCart }}
-        >
+        <CartContext.Provider value={{ items, total, itemCount, addItem, updateQuantity, removeItem, clearCart }}>
             {children}
         </CartContext.Provider>
     )
@@ -111,10 +93,6 @@ export const CartProvider = ({
 
 export const useCart = () => {
     const context = useContext(CartContext)
-
-    if (!context) {
-        throw new Error('useCart must be used within a CartProvider')
-    }
-
+    if (!context) throw new Error('useCart must be used within a CartProvider')
     return context
 }

@@ -1,17 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import { CartItem } from './CartContext'
+import { createPaymentIntent } from "@/features/store/server/createPayment"
+import { trackWhatsappClick } from "@/features/store/server/trackWhatsappClick"
 
-interface CartItem {
-    id: string
-    name: string
-    price: number
-    quantity: number
-}
-
-// --- WALO-494, WALO-495 & WALO-499: Lógica del mensaje con estructura protegida ---
-
-// Construye solo el texto plano del pedido. Se usa para la preview y para armar la URL.
 export function buildWhatsAppMessageText(
     storeName: string,
     items: CartItem[],
@@ -23,7 +16,6 @@ export function buildWhatsAppMessageText(
     const lines: string[] = []
     lines.push(`Hola, me gustaría hacer un pedido en *${storeName}*: \n`)
 
-    // La estructura mínima del pedido es inmutable
     items.forEach((item) => {
         const itemTotal = item.price * item.quantity
         lines.push(`• ${item.quantity}x ${item.name} (${formatter.format(itemTotal)})`)
@@ -31,7 +23,6 @@ export function buildWhatsAppMessageText(
 
     lines.push(`\n*Total a pagar: ${formatter.format(total)}*`)
 
-    // WALO-500: Integración del mensaje editado al final del string
     if (notes && notes.trim() !== '') {
         lines.push(`\n*Instrucciones especiales:*`)
         lines.push(notes.trim())
@@ -40,7 +31,6 @@ export function buildWhatsAppMessageText(
     return lines.join('\n')
 }
 
-// Envuelve el texto en la URL de WhatsApp lista para usar en el href.
 export function buildWhatsAppMessage(
     phone: string,
     storeName: string,
@@ -53,7 +43,6 @@ export function buildWhatsAppMessage(
     return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(buildWhatsAppMessageText(storeName, items, total, notes))}`
 }
 
-// --- COMPONENTE UI ---
 interface Props {
     isOpen: boolean
     onClose: () => void
@@ -64,14 +53,33 @@ interface Props {
     onClearCart: () => void
     storeName?: string
     whatsappPhone?: string | null
+    storeId: string
 }
 
 export function CartDrawer({
     isOpen, onClose, items, total, onUpdateQuantity, onRemoveItem, onClearCart,
-    storeName = 'La Tienda', whatsappPhone
+    storeName = 'La Tienda', whatsappPhone, storeId
 }: Props) {
-    // WALO-498: Estado para el editor de mensajes previo
     const [orderNotes, setOrderNotes] = useState('')
+    const [isLoadingKhipu, setIsLoadingKhipu] = useState(false)
+    const [khipuError, setKhipuError] = useState<string | null>(null)
+
+    async function handleKhipuPayment() {
+        setIsLoadingKhipu(true)
+        setKhipuError(null)
+        try {
+            const result = await createPaymentIntent({ storeId, storeName, items, totalAmount: total, customerNotes: orderNotes })
+            if (result.success && result.paymentUrl) {
+                window.location.href = result.paymentUrl
+            } else {
+                setKhipuError(result.error ?? 'Error al iniciar pago')
+            }
+        } catch {
+            setKhipuError('Error inesperado al conectar con el servidor')
+        } finally {
+            setIsLoadingKhipu(false)
+        }
+    }
 
     return (
         <>
@@ -113,7 +121,10 @@ export function CartDrawer({
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <button onClick={() => item.quantity === 1 ? onRemoveItem(item.id) : onUpdateQuantity(item.id, item.quantity - 1)} className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:border-red-400 hover:text-red-600 transition-colors">
+                                        <button
+                                            onClick={() => item.quantity === 1 ? onRemoveItem(item.id) : onUpdateQuantity(item.id, item.quantity - 1)}
+                                            className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:border-red-400 hover:text-red-600 transition-colors"
+                                        >
                                             {item.quantity === 1 ? (
                                                 <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -121,7 +132,10 @@ export function CartDrawer({
                                             ) : '−'}
                                         </button>
                                         <span className="w-5 text-center text-sm font-semibold">{item.quantity}</span>
-                                        <button onClick={() => onUpdateQuantity(item.id, item.quantity + 1)} className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:border-green-400 hover:text-green-600 transition-colors">
+                                        <button
+                                            onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                                            className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:border-green-400 hover:text-green-600 transition-colors"
+                                        >
                                             +
                                         </button>
                                     </div>
@@ -131,11 +145,11 @@ export function CartDrawer({
                     )}
                 </div>
 
-                {/* Footer y Editor de Mensaje */}
+                {/* Footer */}
                 {items.length > 0 && (
                     <div className="border-t border-gray-100 px-4 py-4 flex flex-col gap-3">
 
-                        {/* WALO-498: Editor de instrucciones */}
+                        {/* Instrucciones */}
                         <div className="mb-2">
                             <label htmlFor="notes" className="mb-1.5 block text-xs font-semibold text-gray-600">
                                 Instrucciones especiales (Opcional)
@@ -157,7 +171,7 @@ export function CartDrawer({
                             </span>
                         </div>
 
-                        {/* WALO-56 AC1: vista previa del mensaje final */}
+                        {/* Vista previa del mensaje */}
                         <div>
                             <p className="mb-1 text-xs font-semibold text-gray-600">Vista previa del mensaje</p>
                             <pre className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700 whitespace-pre-wrap max-h-36 overflow-y-auto">
@@ -165,12 +179,26 @@ export function CartDrawer({
                             </pre>
                         </div>
 
-                        {/* WALO-496: Botón enviar pedido */}
+                        {/* Botón Khipu */}
+                        <button
+                            onClick={handleKhipuPayment}
+                            disabled={isLoadingKhipu}
+                            className="cursor-pointer w-full rounded-full bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                            {isLoadingKhipu ? 'Procesando...' : 'Pagar con Khipu'}
+                        </button>
+
+                        {khipuError && (
+                            <p className="text-center text-xs text-red-600">{khipuError}</p>
+                        )}
+
+                        {/* Botón WhatsApp */}
                         {whatsappPhone ? (
                             <a
                                 href={buildWhatsAppMessage(whatsappPhone, storeName, items, total, orderNotes)}
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                onClick={() => trackWhatsappClick(storeId)}
                                 className="cursor-pointer w-full rounded-full bg-green-500 py-3 text-sm font-semibold text-white hover:bg-green-600 transition-colors flex items-center justify-center gap-2 shadow-sm"
                             >
                                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -185,7 +213,10 @@ export function CartDrawer({
                             </div>
                         )}
 
-                        <button onClick={onClearCart} className="cursor-pointer w-full rounded-full border border-gray-200 bg-white py-2.5 text-xs font-semibold text-gray-500 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-colors flex items-center justify-center gap-1.5">
+                        <button
+                            onClick={onClearCart}
+                            className="cursor-pointer w-full rounded-full border border-gray-200 bg-white py-2.5 text-xs font-semibold text-gray-500 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-colors flex items-center justify-center gap-1.5"
+                        >
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
