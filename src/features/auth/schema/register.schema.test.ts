@@ -2,11 +2,18 @@ import { describe, it, expect } from 'vitest'
 import { registerSchema } from './register.schema'
 
 describe('registerSchema - WALO-11: Política de contraseña mínima', () => {
+  const validPayload = {
+    name: 'María',
+    storeName: 'Mi Tienda',
+    slug: 'mi-tienda',
+    whatsappPhone: '+56987654321',
+    email: 'maria@ejemplo.com',
+    acceptedTerms: true,
+  }
+
   it('debería rechazar contraseña con menos de 6 caracteres', () => {
     const result = registerSchema.safeParse({
-      name: 'María',
-      storeName: 'Mi Tienda',
-      email: 'maria@ejemplo.com',
+      ...validPayload,
       password: '12345',
     })
 
@@ -19,9 +26,7 @@ describe('registerSchema - WALO-11: Política de contraseña mínima', () => {
 
   it('debería aceptar contraseña con exactamente 6 caracteres', () => {
     const result = registerSchema.safeParse({
-      name: 'María',
-      storeName: 'Mi Tienda',
-      email: 'maria@ejemplo.com',
+      ...validPayload,
       password: '123456',
     })
 
@@ -30,9 +35,7 @@ describe('registerSchema - WALO-11: Política de contraseña mínima', () => {
 
   it('debería rechazar contraseña vacía', () => {
     const result = registerSchema.safeParse({
-      name: 'María',
-      storeName: 'Mi Tienda',
-      email: 'maria@ejemplo.com',
+      ...validPayload,
       password: '',
     })
 
@@ -45,9 +48,7 @@ describe('registerSchema - WALO-11: Política de contraseña mínima', () => {
 
   it('debería aceptar contraseña larga válida', () => {
     const result = registerSchema.safeParse({
-      name: 'María',
-      storeName: 'Mi Tienda',
-      email: 'maria@ejemplo.com',
+      ...validPayload,
       password: 'contraseña-segura-123',
     })
 

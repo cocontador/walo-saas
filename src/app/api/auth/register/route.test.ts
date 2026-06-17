@@ -24,8 +24,11 @@ function makeRequest(body: unknown) {
 const validBody = {
   name: 'Ana Torres',
   storeName: 'Tienda Ana',
+  slug: 'tienda-ana',
+  whatsappPhone: '+56987654321',
   email: 'ana@ejemplo.com',
   password: 'secreta123',
+  acceptedTerms: true,
 }
 
 describe('/api/auth/register', () => {
