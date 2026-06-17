@@ -1,4 +1,5 @@
 import type { PlanCatalogItem } from '../types'
+import { PlanChangeForm } from './PlanChangeForm'
 
 interface PlanComparisonCardsProps {
   plans: PlanCatalogItem[]
@@ -9,8 +10,6 @@ export function PlanComparisonCards({ plans }: PlanComparisonCardsProps) {
     <div className="grid gap-5 lg:grid-cols-3">
       {plans.map((plan) => {
         const isFeatured = plan.isPopular && !plan.isCurrent
-        // TODO: Reemplazar soporte@walo.local por el correo real de ventas antes de producción.
-        const ctaHref = plan.slug === 'business' ? 'mailto:soporte@walo.local' : '#upgrade-plans'
 
         return (
           <article
@@ -104,16 +103,11 @@ export function PlanComparisonCards({ plans }: PlanComparisonCardsProps) {
                   Vigente
                 </span>
               ) : (
-                <a
-                  href={ctaHref}
-                  className={`block w-full rounded-lg px-4 py-3 text-center text-sm font-semibold transition-colors ${
-                    isFeatured
-                      ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-                      : 'bg-gray-950 text-white hover:bg-gray-800'
-                  }`}
-                >
-                  {plan.ctaLabel}
-                </a>
+                <PlanChangeForm
+                  planSlug={plan.slug}
+                  ctaLabel={plan.ctaLabel}
+                  isFeatured={isFeatured}
+                />
               )}
             </div>
           </article>

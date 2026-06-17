@@ -1,8 +1,14 @@
 import { render, screen, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { PlanComparisonCards } from './PlanComparisonCards'
 import type { PlanCatalogItem, PlanDetails } from '../types'
+
+vi.mock('./PlanChangeForm', () => ({
+  PlanChangeForm: ({ ctaLabel }: { ctaLabel: string }) => (
+    <button type="button">{ctaLabel}</button>
+  ),
+}))
 
 const basePlan: PlanDetails = {
   id: 'plan-1',
@@ -81,9 +87,6 @@ describe('PlanComparisonCards', () => {
     const proCard = screen.getByRole('article')
 
     expect(within(proCard).getByText('Más popular')).toBeInTheDocument()
-    expect(within(proCard).getByRole('link', { name: 'Mejorar plan' })).toHaveAttribute(
-      'href',
-      '#upgrade-plans'
-    )
+    expect(within(proCard).getByRole('button', { name: 'Mejorar plan' })).toBeInTheDocument()
   })
 })
