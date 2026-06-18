@@ -14,17 +14,26 @@ import { describe, expect, it } from 'vitest'
 import { StoreCatalog } from '@/features/store/components/StoreCatalog'
 import { CartProvider } from '@/features/store/components/CartContext'
 
-const mockProducts = [
+type MockProduct = {
+    id: string
+    name: string
+    description: string | null
+    price: number
+    imageUrl: string | null
+    categories: { category: { name: string; visible: boolean } }[]
+}
+
+const mockProducts: MockProduct[] = [
     { id: 'prod-1', name: 'Pan de Masa Madre', description: 'Pan fresco', price: 3500, imageUrl: null, categories: [{ category: { name: 'Panadería', visible: true } }] },
     { id: 'prod-2', name: 'Torta Tres Leches', description: 'Porción', price: 4500, imageUrl: null, categories: [{ category: { name: 'Pastelería', visible: true } }] }
 ]
 
 describe('StoreCatalog Component', () => {
     // Unificamos: usamos storeId que viene del argumento, con valor por defecto
-    const renderComponent = (productsList = mockProducts, storeId = 'test-store') => {
+    const renderComponent = (productsList: MockProduct[] = mockProducts, storeId = 'test-store') => {
         return render(
             <CartProvider storeId={storeId}>
-                <StoreCatalog products={productsList as any} storeId={storeId} />
+                <StoreCatalog products={productsList} storeId={storeId} />
             </CartProvider>
         )
     }

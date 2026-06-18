@@ -16,10 +16,12 @@ model User {
   email        String   @unique
   name         String?
   passwordHash String
+  platformRole PlatformRole @default(USER)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   memberships StoreMember[]
+  storeAuditLogs StoreAuditLog[]
 }
 
 model Store {
@@ -41,6 +43,7 @@ model Store {
   subscription   StoreSubscription?
   orders         Order[]
   whatsappClicks WhatsappClickEvent[]
+  auditLogs      StoreAuditLog[]
 
   @@index([slug])
 }
@@ -109,6 +112,27 @@ model ProductCategory {
 enum StoreRole {
   OWNER
   EDITOR
+}
+
+enum PlatformRole {
+  USER
+  PLATFORM_ADMIN
+}
+
+model StoreAuditLog {
+  id        String   @id @default(cuid())
+  storeId   String
+  actorId   String
+  action    String
+  reason    String
+  createdAt DateTime @default(now())
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  actor User  @relation(fields: [actorId], references: [id])
+
+  @@index([storeId])
+  @@index([actorId])
+  @@index([action])
 }
 
 // ==========================================

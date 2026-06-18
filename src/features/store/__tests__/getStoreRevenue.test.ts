@@ -1,6 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { OrderStatus, type Order } from '@prisma/client'
 import { getStoreRevenue } from '@/features/store/server/getStoreRevenue' // Ajusta la ruta si es necesario
 import { prisma } from '@/lib/prisma'
+
+function createOrder(totalAmount: number): Order {
+    return {
+        id: `order-${totalAmount}`,
+        storeId: 'store-123',
+        totalAmount,
+        status: OrderStatus.PAID,
+        customerNotes: null,
+        itemsSnapshot: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    }
+}
 
 // 1. Mockeamos el cliente de prisma
 vi.mock('@/lib/prisma', () => ({
@@ -22,11 +36,11 @@ describe('getStoreRevenue', () => {
     it('debe retornar los totales correctamente cuando hay órdenes', async () => {
         // 2. Simulamos la respuesta de Prisma
         const mockOrders = [
-            { totalAmount: 1000 },
-            { totalAmount: 2000 },
+            createOrder(1000),
+            createOrder(2000),
         ]
 
-        vi.mocked(prisma.order.findMany).mockResolvedValue(mockOrders as any)
+        vi.mocked(prisma.order.findMany).mockResolvedValue(mockOrders)
         vi.mocked(prisma.whatsappClickEvent.count).mockResolvedValue(5)
 
         const result = await getStoreRevenue('store-123')
