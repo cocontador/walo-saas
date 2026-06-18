@@ -1,26 +1,75 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { getSalesSummary } from '../actions/getSalesSummary'
 import type { DateRange } from '../schemas/dateRange.schema'
+
+vi.mock('@/server/store', () => ({
+    getUserStoreId: vi.fn(),
+}))
+
+vi.mock('@/lib/prisma', () => ({
+    prisma: {
+        order: {
+            findMany: vi.fn(),
+        },
+    },
+}))
+
+import { getUserStoreId } from '@/server/store'
+import { prisma } from '@/lib/prisma'
 
 const range: DateRange = {
     from: new Date('2026-06-01T00:00:00.000Z'),
     to: new Date('2026-06-17T23:59:59.999Z'),
 }
 
-describe('getSalesSummary (stub hasta merge de feature/pagos)', () => {
-    it('retorna ceros mientras el modelo Order no esté disponible', async () => {
+beforeEach(() => {
+    vi.clearAllMocks()
+})
+
+describe('getSalesSummary', () => {
+    it('retorna ceros si el usuario no tiene tienda asociada', async () => {
+        vi.mocked(getUserStoreId).mockResolvedValue(null)
+
         const result = await getSalesSummary(range)
 
-        expect(result.totalOrders).toBe(0)
-        expect(result.totalRevenue).toBe(0)
-        expect(result.averageOrderValue).toBe(0)
+        expect(result).toEqual({ totalOrders: 0, totalRevenue: 0, averageOrderValue: 0 })
+        expect(prisma.order.findMany).not.toHaveBeenCalled()
     })
 
-    it('acepta cualquier DateRange sin error', async () => {
-        const shortRange: DateRange = {
-            from: new Date('2026-06-17T00:00:00.000Z'),
-            to: new Date('2026-06-17T23:59:59.999Z'),
-        }
-        await expect(getSalesSummary(shortRange)).resolves.toBeDefined()
+    it('retorna ceros si no hay órdenes PAID en el período', async () => {
+        vi.mocked(getUserStoreId).mockResolvedValue('store-1')
+        vi.mocked(prisma.order.findMany).mockResolvedValue([])
+
+        const result = await getSalesSummary(range)
+
+        expect(result).toEqual({ totalOrders: 0, totalRevenue: 0, averageOrderValue: 0 })
+    })
+
+    it('calcula totales correctamente con órdenes PAID', async () => {
+        vi.mocked(getUserStoreId).mockResolvedValue('store-1')
+        vi.mocked(prisma.order.findMany).mockResolvedValue([
+            { totalAmount: 10000 },
+            { totalAmount: 20000 },
+            { totalAmount: 30000 },
+        ] as never)
+
+        const result = await getSalesSummary(range)
+
+        expect(result.totalOrders).toBe(3)
+        expect(result.totalRevenue).toBe(60000)
+        expect(result.averageOrderValue).toBe(20000)
+    })
+
+    it('filtra solo por la tienda del usuario autenticado', async () => {
+        vi.mocked(getUserStoreId).mockResolvedValue('store-abc')
+        vi.mocked(prisma.order.findMany).mockResolvedValue([])
+
+        await getSalesSummary(range)
+
+        expect(prisma.order.findMany).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: expect.objectContaining({ storeId: 'store-abc', status: 'PAID' }),
+            }),
+        )
     })
 })
