@@ -18,11 +18,7 @@ export default async function BillingPage() {
     getPlanUsage(),
     getPlanCatalog(),
   ])
-  const currentPlan = planCatalog.plans.find((plan) => plan.isCurrent) ?? planCatalog.plans[0]
-
-  if (!currentPlan) {
-    throw new Error('No billing plans available')
-  }
+  const currentPlan = planCatalog.plans.find((plan) => plan.isCurrent) ?? planCatalog.plans[0]!
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:py-12">
@@ -54,7 +50,8 @@ export default async function BillingPage() {
               <div className="flex justify-between border-b border-gray-100 pb-2">
                 <dt className="text-gray-500">Ciclo de Cobro</dt>
                 <dd className="font-medium text-gray-950">
-                  {currentPlan?.slug === 'initial' ? 'Sin cobro' : 'Mensual'}
+                  {/* TODO: usar billingCycle real de la suscripción cuando se habilite ciclo anual */}
+                  {currentPlan.slug === 'initial' ? 'Sin cobro' : 'Mensual'}
                 </dd>
               </div>
             </dl>

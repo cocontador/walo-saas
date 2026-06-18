@@ -4,14 +4,13 @@ interface PlanComparisonCardsProps {
   plans: PlanCatalogItem[]
 }
 
+// TODO: Reemplazar soporte@walo.local por el correo real de ventas antes de producción.
+const CTA_HREF = 'mailto:soporte@walo.local'
+
 export function PlanComparisonCards({ plans }: PlanComparisonCardsProps) {
   return (
     <div className="grid gap-5 lg:grid-cols-3">
-      {plans.map((plan) => {
-        // TODO: Reemplazar soporte@walo.local por el correo real de ventas antes de producción.
-        const ctaHref = 'mailto:soporte@walo.local'
-
-        return (
+      {plans.map((plan) => (
           <article
             key={plan.slug}
             className={`relative flex min-h-full flex-col rounded-lg border bg-white p-6 shadow-sm transition-shadow hover:shadow-md ${
@@ -104,7 +103,7 @@ export function PlanComparisonCards({ plans }: PlanComparisonCardsProps) {
                 </span>
               ) : (
                 <a
-                  href={ctaHref}
+                  href={CTA_HREF}
                   className={`block w-full rounded-lg px-4 py-3 text-center text-sm font-semibold transition-colors ${
                     plan.isPopular
                       ? 'bg-emerald-600 text-white hover:bg-emerald-700'
@@ -116,8 +115,7 @@ export function PlanComparisonCards({ plans }: PlanComparisonCardsProps) {
               )}
             </div>
           </article>
-        )
-      })}
+      ))}
     </div>
   )
 }
