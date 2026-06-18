@@ -31,6 +31,8 @@ const validBody = {
   acceptedTerms: true,
 }
 
+type MockTransactionCallback = (tx: typeof mockPrisma) => unknown
+
 describe('/api/auth/register', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -39,7 +41,7 @@ describe('/api/auth/register', () => {
   it('crea usuario y tienda, devuelve 201', async () => {
     mockPrisma.user.findUnique.mockResolvedValue(null)
     mockPrisma.store.findUnique.mockResolvedValue(null)
-    mockPrisma.$transaction.mockImplementation(async (cb: any) => cb(mockPrisma))
+    mockPrisma.$transaction.mockImplementation(async (cb: MockTransactionCallback) => cb(mockPrisma))
     mockPrisma.user.create.mockResolvedValue({ id: 'u1', email: 'ana@ejemplo.com', name: 'Ana Torres' })
     mockPrisma.store.create.mockResolvedValue({ id: 's1', slug: 'tienda-ana', name: 'Tienda Ana' })
 
@@ -54,7 +56,7 @@ describe('/api/auth/register', () => {
   it('normaliza el email a minúsculas antes de buscar/crear', async () => {
     mockPrisma.user.findUnique.mockResolvedValue(null)
     mockPrisma.store.findUnique.mockResolvedValue(null)
-    mockPrisma.$transaction.mockImplementation(async (cb: any) => cb(mockPrisma))
+    mockPrisma.$transaction.mockImplementation(async (cb: MockTransactionCallback) => cb(mockPrisma))
     mockPrisma.user.create.mockResolvedValue({ id: 'u1', email: 'ana@ejemplo.com', name: 'Ana Torres' })
 
     await POST(makeRequest({ ...validBody, email: 'ANA@EJEMPLO.COM' }))

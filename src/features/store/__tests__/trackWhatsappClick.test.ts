@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
+import type { WhatsappClickEvent } from '@prisma/client'
 import { trackWhatsappClick } from '@/features/store/server/trackWhatsappClick'
 import { prisma } from '@/lib/prisma'
 
@@ -18,7 +19,7 @@ describe('WALO-551: Testing métricas WhatsApp', () => {
             id: 'click-123',
             storeId: 'store-1',
             createdAt: new Date(),
-        } as any)
+        } satisfies WhatsappClickEvent)
 
         const result = await trackWhatsappClick('store-1')
 

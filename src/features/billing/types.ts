@@ -18,4 +18,25 @@ export interface PlanUsageInfo {
   shouldUpgrade: boolean // true si at limit o near limit and not unlimited
 }
 
+export interface PlanCatalogItem {
+  slug: string
+  name: string
+  description: string
+  productLimit: number | null
+  price: string
+  priceDetail: string
+  domainLabel: string
+  productLimitLabel: string
+  features: string[]
+  limitations: string[]
+  ctaLabel: string
+  isCurrent: boolean
+  isPopular: boolean
+}
+
+export interface PlanCatalogInfo {
+  plans: PlanCatalogItem[]
+  currentPlanSlug: string
+}
+
 export type { Plan, StoreSubscription, SubscriptionStatus }
