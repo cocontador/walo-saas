@@ -246,6 +246,7 @@ export default async function DashboardPage({ searchParams }: Props) {
                 initialSlug={store.slug}
                 initialDescription={store.description}
                 initialLogoUrl={store.logoUrl}
+                initialWhatsapp={store.whatsappPhone}
               />
             </div>
           </div>
