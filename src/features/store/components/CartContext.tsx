@@ -48,7 +48,12 @@ export const CartProvider = ({
     children: ReactNode
 }) => {
     const CART_KEY = `walo-cart-${storeId}`
-    const [items, setItems] = useState<CartItem[]>(() => getStoredCartItems(CART_KEY))
+    const [items, setItems] = useState<CartItem[]>([])
+
+    useEffect(() => {
+        setItems(getStoredCartItems(CART_KEY))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [CART_KEY])
 
     useEffect(() => {
         window.localStorage.setItem(CART_KEY, JSON.stringify(items))
