@@ -101,8 +101,9 @@ export async function POST(req: NextRequest) {
 
         return new NextResponse("OK", { status: 200 });
 
-    } catch (error: any) {
-        await logKhipu("CRITICAL_ERROR", error.message);
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        await logKhipu("CRITICAL_ERROR", errorMessage);
         return new NextResponse("Internal Server Error", { status: 500 });
     }
 }

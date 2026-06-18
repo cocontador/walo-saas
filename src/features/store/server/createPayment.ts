@@ -9,9 +9,16 @@ import { OrderStatus } from '@prisma/client'
 type PaymentData = {
     storeId: string
     storeName: string
-    items: any[]
+    items: PaymentItem[]
     totalAmount: number
     customerNotes?: string
+}
+
+type PaymentItem = {
+    id: string
+    name: string
+    price: number
+    quantity: number
 }
 
 export async function createPaymentIntent(data: PaymentData) {
