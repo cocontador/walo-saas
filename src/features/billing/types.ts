@@ -19,10 +19,10 @@ export interface PlanUsageInfo {
 }
 
 export interface PlanCatalogItem {
-  plan: PlanDetails
   slug: string
   name: string
   description: string
+  productLimit: number | null
   price: string
   priceDetail: string
   domainLabel: string

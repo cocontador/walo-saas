@@ -2,34 +2,13 @@ import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { PlanComparisonCards } from './PlanComparisonCards'
-import type { PlanCatalogItem, PlanDetails } from '../types'
-
-const basePlan: PlanDetails = {
-  id: 'plan-1',
-  name: 'Inicial',
-  slug: 'initial',
-  description: 'Plan inicial',
-  priceMonthly: 0,
-  priceYearly: 0,
-  currency: 'CLP',
-  productLimit: 15,
-  customDomain: false,
-  analytics: false,
-  premiumTemplates: false,
-  supportLevel: 'basic',
-  features: [],
-  limitations: null,
-  isActive: true,
-  sortOrder: 1,
-  createdAt: new Date(),
-  updatedAt: new Date(),
-}
+import type { PlanCatalogItem } from '../types'
 
 const createCatalogItem = (overrides: Partial<PlanCatalogItem>): PlanCatalogItem => ({
-  plan: overrides.plan ?? basePlan,
   slug: overrides.slug ?? 'initial',
   name: overrides.name ?? 'Inicial',
   description: overrides.description ?? 'Digitalización base para microemprendedores.',
+  productLimit: overrides.productLimit ?? 15,
   price: overrides.price ?? '$0',
   priceDetail: overrides.priceDetail ?? 'gratis para siempre',
   domainLabel: overrides.domainLabel ?? 'walo.cl/[nombre-tienda]',
@@ -83,7 +62,33 @@ describe('PlanComparisonCards', () => {
     expect(within(proCard).getByText('Más popular')).toBeInTheDocument()
     expect(within(proCard).getByRole('link', { name: 'Mejorar plan' })).toHaveAttribute(
       'href',
-      '#upgrade-plans'
+      'mailto:soporte@walo.local'
     )
+  })
+
+  it('mantiene estado vigente y Más popular cuando Pro es el plan actual', () => {
+    render(
+      <PlanComparisonCards
+        plans={[
+          createCatalogItem({
+            slug: 'pro',
+            name: 'Pro',
+            price: '$5.990 CLP',
+            priceDetail: '/ mes',
+            ctaLabel: 'Mejorar plan',
+            isCurrent: true,
+            isPopular: true,
+            limitations: [],
+          }),
+        ]}
+      />
+    )
+
+    const proCard = screen.getByRole('article')
+
+    expect(within(proCard).getByText('Plan actual')).toBeInTheDocument()
+    expect(within(proCard).getByText('Más popular')).toBeInTheDocument()
+    expect(within(proCard).getByText('Vigente')).toBeInTheDocument()
+    expect(within(proCard).queryByRole('link', { name: 'Mejorar plan' })).not.toBeInTheDocument()
   })
 })

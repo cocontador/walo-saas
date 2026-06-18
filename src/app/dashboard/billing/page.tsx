@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 
 import { authOptions } from '@/server/auth'
-import { getCurrentPlan, getPlanCatalog, getPlanUsage } from '@/features/billing/actions'
+import { getPlanCatalog, getPlanUsage } from '@/features/billing/actions'
 import { PlanComparisonCards } from '@/features/billing/components/PlanComparisonCards'
 import { PlanLimitsCard } from '@/features/billing/components/PlanLimitsCard'
 
@@ -14,10 +14,15 @@ export default async function BillingPage() {
     redirect('/login')
   }
 
-  // Fetch plan current data
-  const planInfo = await getCurrentPlan()
-  const usageInfo = await getPlanUsage()
-  const planCatalog = await getPlanCatalog()
+  const [usageInfo, planCatalog] = await Promise.all([
+    getPlanUsage(),
+    getPlanCatalog(),
+  ])
+  const currentPlan = planCatalog.plans.find((plan) => plan.isCurrent) ?? planCatalog.plans[0]
+
+  if (!currentPlan) {
+    throw new Error('No billing plans available')
+  }
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:py-12">
@@ -32,7 +37,7 @@ export default async function BillingPage() {
       <div className="grid gap-8 lg:grid-cols-3">
         {/* Tarjeta de Límites y Consumo actual (toma 2 columnas) */}
         <div className="lg:col-span-2">
-          <PlanLimitsCard plan={planInfo.plan} usage={usageInfo} upgradeHref="#upgrade-plans" />
+          <PlanLimitsCard plan={currentPlan} usage={usageInfo} upgradeHref="#upgrade-plans" />
         </div>
 
         {/* Sección de Soporte o Detalles Adicionales */}
@@ -43,29 +48,15 @@ export default async function BillingPage() {
               <div className="flex justify-between border-b border-gray-100 pb-2">
                 <dt className="text-gray-500">Estado</dt>
                 <dd className="font-semibold text-green-700 bg-green-50 px-2 py-0.5 rounded-full text-xs">
-                  {({ ACTIVE: 'Activa', TRIALING: 'En prueba', PAST_DUE: 'Vencida', CANCELED: 'Cancelada' } as Record<string, string>)[planInfo.subscription?.status ?? ''] ?? 'Plan gratuito'}
+                  {currentPlan?.slug === 'initial' ? 'Plan gratuito' : 'Plan activo'}
                 </dd>
               </div>
               <div className="flex justify-between border-b border-gray-100 pb-2">
                 <dt className="text-gray-500">Ciclo de Cobro</dt>
                 <dd className="font-medium text-gray-950">
-                  {planInfo.subscription
-                    ? planInfo.subscription.billingCycle === 'MONTHLY' ? 'Mensual' : 'Anual'
-                    : 'Sin cobro'}
+                  {currentPlan?.slug === 'initial' ? 'Sin cobro' : 'Mensual'}
                 </dd>
               </div>
-              {planInfo.subscription?.currentPeriodEnd && (
-                <div className="flex justify-between pb-2">
-                  <dt className="text-gray-500">Plan vigente</dt>
-                  <dd className="font-medium text-gray-950">
-                    {new Date(planInfo.subscription.currentPeriodEnd).toLocaleDateString('es-CL', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric',
-                    })}
-                  </dd>
-                </div>
-              )}
             </dl>
           </div>
 

@@ -8,15 +8,14 @@ export function PlanComparisonCards({ plans }: PlanComparisonCardsProps) {
   return (
     <div className="grid gap-5 lg:grid-cols-3">
       {plans.map((plan) => {
-        const isFeatured = plan.isPopular && !plan.isCurrent
         // TODO: Reemplazar soporte@walo.local por el correo real de ventas antes de producción.
-        const ctaHref = plan.slug === 'business' ? 'mailto:soporte@walo.local' : '#upgrade-plans'
+        const ctaHref = 'mailto:soporte@walo.local'
 
         return (
           <article
             key={plan.slug}
             className={`relative flex min-h-full flex-col rounded-lg border bg-white p-6 shadow-sm transition-shadow hover:shadow-md ${
-              isFeatured ? 'border-emerald-500 ring-1 ring-emerald-500' : 'border-gray-200'
+              plan.isPopular ? 'border-emerald-500 ring-1 ring-emerald-500' : 'border-gray-200'
             } ${plan.isCurrent ? 'border-green-500 bg-green-50/40' : ''}`}
           >
             <div className="flex min-h-8 items-center gap-2">
@@ -107,7 +106,7 @@ export function PlanComparisonCards({ plans }: PlanComparisonCardsProps) {
                 <a
                   href={ctaHref}
                   className={`block w-full rounded-lg px-4 py-3 text-center text-sm font-semibold transition-colors ${
-                    isFeatured
+                    plan.isPopular
                       ? 'bg-emerald-600 text-white hover:bg-emerald-700'
                       : 'bg-gray-950 text-white hover:bg-gray-800'
                   }`}

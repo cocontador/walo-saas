@@ -113,6 +113,8 @@ export const PLAN_DETAILS_MAP: Record<
   },
 }
 
+// Fuente de verdad visual del catálogo de planes. El seed mantiene los datos base en BD,
+// pero esta capa define copy, CTA y jerarquía de beneficios para la presentación.
 const FALLBACK_PLAN_DETAILS = {
   price: '$0',
   priceDetail: '',
@@ -138,10 +140,10 @@ export function normalizePlanForCatalog(
   }
 
   return {
-    plan,
     slug,
     name: plan.name,
     description: details.description,
+    productLimit: plan.productLimit,
     price: details.price,
     priceDetail: details.priceDetail,
     domainLabel: details.domainLabel,

@@ -1,25 +1,16 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { getPlanCatalog } from '@/features/billing/actions'
-import { prisma } from '@/lib/prisma'
-import { getUserStoreId } from '@/server/store'
-import type { Plan, StoreSubscription } from '@prisma/client'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { Plan } from '@prisma/client'
 
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    plan: {
-      findMany: vi.fn(),
-      findUnique: vi.fn(),
-      create: vi.fn(),
-    },
-    storeSubscription: {
-      findUnique: vi.fn(),
-      create: vi.fn(),
-    },
-  },
+import { getPlanCatalog } from '@/features/billing/actions/getPlanCatalog'
+import { getAvailablePlans } from '@/features/billing/actions/getAvailablePlans'
+import { getCurrentPlan } from '@/features/billing/actions/getCurrentPlan'
+
+vi.mock('@/features/billing/actions/getAvailablePlans', () => ({
+  getAvailablePlans: vi.fn(),
 }))
 
-vi.mock('@/server/store', () => ({
-  getUserStoreId: vi.fn(),
+vi.mock('@/features/billing/actions/getCurrentPlan', () => ({
+  getCurrentPlan: vi.fn(),
 }))
 
 const createPlan = (overrides: Partial<Plan>): Plan => ({
@@ -30,7 +21,7 @@ const createPlan = (overrides: Partial<Plan>): Plan => ({
   priceMonthly: overrides.priceMonthly ?? 0,
   priceYearly: overrides.priceYearly ?? null,
   currency: overrides.currency ?? 'CLP',
-  productLimit: overrides.productLimit ?? 15,
+  productLimit: overrides.productLimit === undefined ? 15 : overrides.productLimit,
   customDomain: overrides.customDomain ?? false,
   analytics: overrides.analytics ?? false,
   premiumTemplates: overrides.premiumTemplates ?? false,
@@ -72,56 +63,27 @@ const businessPlan = createPlan({
 describe('getPlanCatalog', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(getUserStoreId).mockResolvedValue('store-1')
-    vi.mocked(prisma.plan.findMany).mockResolvedValue([initialPlan, proPlan, businessPlan])
+    vi.mocked(getAvailablePlans).mockResolvedValue([initialPlan, proPlan, businessPlan])
+    vi.mocked(getCurrentPlan).mockResolvedValue({
+      plan: proPlan,
+      subscription: null,
+      isTrialing: false,
+      isExpired: false,
+    })
   })
 
-  it('lista planes activos normalizados en orden visual', async () => {
-    vi.mocked(prisma.storeSubscription.findUnique).mockResolvedValue({
-      id: 'sub-1',
-      storeId: 'store-1',
-      planId: 'pro-id',
-      status: 'ACTIVE',
-      billingCycle: 'MONTHLY',
-      currentPeriodStart: null,
-      currentPeriodEnd: null,
-      cancelAtPeriodEnd: false,
-      canceledAt: null,
-      reactivatedAt: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      plan: proPlan,
-    } as StoreSubscription & { plan: Plan })
-
+  it('devuelve el catálogo normalizado de planes disponibles', async () => {
     const result = await getPlanCatalog()
 
     expect(result.plans.map((plan) => plan.slug)).toEqual(['initial', 'pro', 'business'])
     expect(result.plans[0].features).toContain('Catálogo de hasta 15 productos activos')
     expect(result.plans[1].price).toBe('$5.990 CLP')
+    expect(result.plans[1].productLimit).toBeNull()
     expect(result.plans[2].ctaLabel).toBe('Hablar con ventas')
-    expect(prisma.plan.findMany).toHaveBeenCalledWith({
-      where: { isActive: true },
-      orderBy: { sortOrder: 'asc' },
-    })
+    expect(getAvailablePlans).toHaveBeenCalledTimes(1)
   })
 
-  it('identifica claramente el plan actual del emprendedor', async () => {
-    vi.mocked(prisma.storeSubscription.findUnique).mockResolvedValue({
-      id: 'sub-1',
-      storeId: 'store-1',
-      planId: 'pro-id',
-      status: 'ACTIVE',
-      billingCycle: 'MONTHLY',
-      currentPeriodStart: null,
-      currentPeriodEnd: null,
-      cancelAtPeriodEnd: false,
-      canceledAt: null,
-      reactivatedAt: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      plan: proPlan,
-    } as StoreSubscription & { plan: Plan })
-
+  it('marca el plan actual del emprendedor', async () => {
     const result = await getPlanCatalog()
 
     expect(result.currentPlanSlug).toBe('pro')
@@ -129,15 +91,19 @@ describe('getPlanCatalog', () => {
     expect(result.plans.find((plan) => plan.slug === 'initial')?.isCurrent).toBe(false)
   })
 
-  it('usa fallback seguro a Plan Inicial si no hay suscripción', async () => {
-    vi.mocked(prisma.storeSubscription.findUnique).mockResolvedValue(null)
-    vi.mocked(prisma.plan.findUnique).mockResolvedValue(null)
+  it('incluye el plan actual fallback si no viene entre los disponibles', async () => {
+    vi.mocked(getAvailablePlans).mockResolvedValue([proPlan, businessPlan])
+    vi.mocked(getCurrentPlan).mockResolvedValue({
+      plan: initialPlan,
+      subscription: null,
+      isTrialing: false,
+      isExpired: false,
+    })
 
     const result = await getPlanCatalog()
 
     expect(result.currentPlanSlug).toBe('initial')
+    expect(result.plans.map((plan) => plan.slug)).toEqual(['initial', 'pro', 'business'])
     expect(result.plans.find((plan) => plan.slug === 'initial')?.isCurrent).toBe(true)
-    expect(prisma.plan.create).not.toHaveBeenCalled()
-    expect(prisma.storeSubscription.create).not.toHaveBeenCalled()
   })
 })

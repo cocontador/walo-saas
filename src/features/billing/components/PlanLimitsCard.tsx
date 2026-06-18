@@ -4,8 +4,13 @@ import React from 'react'
 import type { PlanDetails, PlanUsageInfo } from '../types'
 import { PLAN_DETAILS_MAP } from '../utils/limits'
 
+type PlanLimitDetails = Pick<
+  PlanDetails,
+  'slug' | 'name' | 'description' | 'productLimit' | 'features' | 'limitations'
+>
+
 interface PlanLimitsCardProps {
-  plan: PlanDetails
+  plan: PlanLimitDetails
   usage: PlanUsageInfo
   upgradeHref?: string
 }
