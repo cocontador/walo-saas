@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
-import { BarChart3, FolderTree, LayoutDashboard, Menu, Package, Sparkles, Wallet, X } from 'lucide-react'
+import { BarChart3, FolderTree, LayoutDashboard, Menu, Package, Wallet, X } from 'lucide-react'
 
 import { SignOutButton } from '@/features/auth/components/SignOutButton'
 
@@ -44,6 +44,12 @@ const navItems: NavItem[] = [
     href: '/dashboard/billing',
     description: 'Límites y suscripción',
     icon: Wallet,
+  },
+  {
+    label: 'Analíticas',
+    href: '/dashboard/analytics',
+    description: 'Visitas y ventas',
+    icon: BarChart3,
   },
 ]
 
@@ -132,16 +138,7 @@ export function DashboardShell({ userName, userEmail, children }: DashboardShell
         })}
       </nav>
 
-      <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50 p-4">
-        <div className="mb-4 flex items-center gap-3">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-emerald-700 shadow-sm">
-            <BarChart3 className="h-4 w-4" />
-          </span>
-          <div>
-            <p className="text-sm font-semibold text-gray-950">Demo lista</p>
-            <p className="text-xs text-gray-500">Tu vitrina online al día</p>
-          </div>
-        </div>
+      <div className="mt-6 border-t border-gray-200 pt-4">
         <SignOutButton />
       </div>
     </div>
@@ -192,10 +189,6 @@ export function DashboardShell({ userName, userEmail, children }: DashboardShell
                 <div>
                   <p className="text-xs font-bold uppercase tracking-widest text-emerald-700">Dashboard WALO</p>
                   <p className="mt-1 text-sm text-gray-500">Administra tu vitrina, productos y crecimiento desde un solo lugar.</p>
-                </div>
-                <div className="flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-800">
-                  <Sparkles className="h-4 w-4" />
-                  Demo visual
                 </div>
               </div>
               {children}

@@ -3,12 +3,16 @@ import Link from 'next/link'
 export default function LandingPage() {
   return (
     <div
-      className="min-h-screen bg-[#f8f9fa] text-[#191c1d]"
+      className="bg-[#f8f9fa] text-[#191c1d]"
       style={{ fontFamily: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}
     >
       <nav className="fixed top-0 z-50 w-full border-b border-[rgba(0,0,0,0.06)] bg-[rgba(248,249,250,0.85)] backdrop-blur-[20px]">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 md:px-12">
-          <span className="text-xl font-bold tracking-[-0.04em] text-[#191c1d]">WALO</span>
+          <Link href="/" className="text-xl font-bold tracking-[-0.04em] text-[#191c1d]">WALO</Link>
+
+          <div className="hidden items-center gap-8 md:flex">
+            <Link href="/pricing" className="text-sm font-medium text-[#6b7280] hover:text-[#191c1d]">Precios</Link>
+          </div>
 
           <div className="flex items-center gap-3">
             <Link

@@ -14,8 +14,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className="h-full antialiased">
-      <body className="min-h-full bg-neutral-50 text-neutral-950">
-        <div className="min-h-[calc(100vh-4rem)]">{children}</div>
+      <body className="flex min-h-screen flex-col bg-neutral-50 text-neutral-950">
+        <div className="flex-1">{children}</div>
         <footer className="border-t border-gray-200 bg-white py-4 text-center text-sm text-gray-500">
           <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-2 px-6 text-sm text-gray-500">
             <span>© 2026 WALO · Hecho para microemprendedores</span>

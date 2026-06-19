@@ -41,9 +41,9 @@ type Product = {
 
 type Props = {
     products: Product[]
-    storeName?: string              // <-- Agregado para el flujo de WhatsApp
-    whatsappPhone?: string | null   // <-- Agregado para el flujo de WhatsApp
-    storeId: string          // <-- Agregado para la creación de órdenes y pagos
+    storeName?: string
+    whatsappPhone?: string | null
+    storeId: string
 }
 
 export function StoreCatalog({ products, storeName = 'La Tienda', whatsappPhone, storeId }: Props) {
@@ -126,8 +126,6 @@ export function StoreCatalog({ products, storeName = 'La Tienda', whatsappPhone,
                                 price={product.price}
                                 imageUrl={product.imageUrl}
                                 category={firstVisibleCategory?.category?.name}
-                                storeName={storeName}          // <-- Transferido a la tarjeta
-                                whatsappPhone={whatsappPhone}  // <-- Transferido a la tarjeta
                                 priority={index === 0}
                                 onAddToCart={() => addItem({   // <-- Callback reactivo inmediato
                                     id: product.id,
