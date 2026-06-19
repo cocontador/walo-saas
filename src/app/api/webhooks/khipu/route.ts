@@ -48,21 +48,40 @@ export async function POST(req: NextRequest) {
         const { notification_token } = parsedData.data;
 
         const khipuEndpoint = `${khipuConfig.apiUrl}/payments`;
-        const toSign = `GET&${encodeURI(khipuEndpoint)}&notification_token=${notification_token}`;
-        const hash = crypto.createHmac("sha256", khipuConfig.secret).update(toSign).digest("hex");
-        const authorizationHeader = `${khipuConfig.receiverId}:${hash}`;
+        const toSign = `GET&${encodeURIComponent(khipuEndpoint)}&${encodeURIComponent("notification_token")}=${encodeURIComponent(notification_token)}`;
 
-        const khipuResponse = await fetch(`${khipuEndpoint}?notification_token=${notification_token}`, {
-            method: "GET",
-            headers: { "Authorization": authorizationHeader },
-        });
-
-        if (!khipuResponse.ok) {
-            await logKhipu("VERIFICATION_FAILED", `Status: ${khipuResponse.status}`, notificationToken || "N/A");
-            return new NextResponse("Verification failed", { status: 400 });
+        async function verifyWithCredentials(receiverId: string, secret: string) {
+            const hash = crypto.createHmac("sha256", secret).update(toSign).digest("hex");
+            const resp = await fetch(`${khipuEndpoint}?notification_token=${notification_token}`, {
+                method: "GET",
+                headers: { "Authorization": `${receiverId}:${hash}` },
+            });
+            if (!resp.ok) return null;
+            return resp.json();
         }
 
-        const paymentData = await khipuResponse.json();
+        // Intentar con credenciales de la plataforma primero, luego con cada tienda
+        let paymentData = null;
+
+        if (khipuConfig.receiverId && khipuConfig.secret) {
+            paymentData = await verifyWithCredentials(khipuConfig.receiverId, khipuConfig.secret);
+        }
+
+        if (!paymentData) {
+            const stores = await prisma.store.findMany({
+                where: { khipuReceiverId: { not: null }, khipuSecret: { not: null } },
+                select: { khipuReceiverId: true, khipuSecret: true },
+            });
+            for (const store of stores) {
+                paymentData = await verifyWithCredentials(store.khipuReceiverId!, store.khipuSecret!);
+                if (paymentData) break;
+            }
+        }
+
+        if (!paymentData) {
+            await logKhipu("VERIFICATION_FAILED", "Ninguna credencial pudo verificar el token", notificationToken || "N/A");
+            return new NextResponse("Verification failed", { status: 400 });
+        }
         const { payment_id, status } = paymentData;
 
         const paymentAttempt = await prisma.paymentAttempt.findUnique({

@@ -37,6 +37,9 @@ model Store {
   updatedAt     DateTime @updatedAt
   acceptedTermsAt DateTime?
 
+  khipuReceiverId String?
+  khipuSecret     String?
+
   memberships    StoreMember[]
   products       Product[]
   categories     Category[]

@@ -61,5 +61,6 @@ docker run --rm -i \
     -U "$DB_USER" \
     -d "$DB_NAME" \
     --no-password \
+    -v ON_ERROR_STOP=1 \
   < "$BACKUP_FILE"
 echo "✅ Restauración completada"

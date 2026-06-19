@@ -1,7 +1,6 @@
 import type { MetadataRoute } from "next"
 
 import { getBaseUrl } from "@/lib/getBaseUrl"
-import { prisma } from "@/lib/prisma"
 
 export const dynamic = "force-dynamic"
 
@@ -10,6 +9,9 @@ type Props = {
 }
 
 export default async function sitemap({ params }: Props): Promise<MetadataRoute.Sitemap> {
+  if (!process.env.DATABASE_URL) return []
+
+  const { prisma } = await import("@/lib/prisma")
   const { slug } = await params
   const baseUrl = getBaseUrl()
 
