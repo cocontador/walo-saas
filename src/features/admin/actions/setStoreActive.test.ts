@@ -52,6 +52,8 @@ const store: Store = {
   logoKey: null,
   isActive: false,
   acceptedTermsAt: null,
+  khipuReceiverId: null,
+  khipuSecret: null,
   createdAt: new Date(),
   updatedAt: new Date(),
 }
