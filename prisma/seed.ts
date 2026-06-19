@@ -1,14 +1,20 @@
 import 'dotenv/config'
 import { Pool } from 'pg'
+import { parse } from 'pg-connection-string'
 import { PrismaClient } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 
 const connectionString = process.env.DATABASE_URL!
+const { host, port, user, password, database } = parse(connectionString)
+const needsSsl = connectionString.includes('ssl')
+
 const pool = new Pool({
-  connectionString,
-  ssl: connectionString.includes('sslmode=require')
-    ? { rejectUnauthorized: false }
-    : false,
+  host: host ?? undefined,
+  port: port ? Number(port) : undefined,
+  user: user ?? undefined,
+  password: password ?? undefined,
+  database: database ?? undefined,
+  ssl: needsSsl ? { rejectUnauthorized: false } : false,
 })
 const adapter = new PrismaPg(pool)
 const prisma = new PrismaClient({ adapter })
