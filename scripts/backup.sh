@@ -35,7 +35,7 @@ echo "▶ Creando backup: $BACKUP_FILE"
 docker run --rm \
   -e PGPASSWORD="$DB_PASSWORD" \
   -e PGSSLMODE=require \
-  postgres:16-alpine \
+  postgres:18-alpine \
   pg_dump \
     -h "$DB_HOST" \
     -p "$DB_PORT" \

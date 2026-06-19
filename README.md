@@ -1,38 +1,141 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# WALO — Plataforma SaaS para microemprendedores
 
-## Getting Started
+Plataforma SaaS multitenant para la digitalización de microemprendedores chilenos. Permite crear una vitrina digital con catálogo de productos, integración de pedidos por WhatsApp y pagos en línea con Khipu, todo optimizado para SEO desde el servidor.
 
-First, run the development server:
+Proyecto de Título — Duoc UC, Viña del Mar.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## Descripción
+
+WALO permite a cualquier emprendedor tener su tienda online en minutos, sin conocimientos técnicos. Cada tienda obtiene una URL pública (`walo.app/mi-tienda`), catálogo de productos con imágenes, carrito de compras, integración con WhatsApp y opción de pago con Khipu. Los dueños de tienda gestionan todo desde un panel de administración con métricas de ventas y clics a WhatsApp.
+
+### Funcionalidades principales
+
+- Registro y autenticación de emprendedores
+- Vitrina pública por tienda con catálogo y carrito
+- Pedidos por WhatsApp con mensaje estructurado
+- Pago en línea con Khipu (con webhook de confirmación)
+- Panel de administración: productos, categorías, métricas, plan
+- Sistema de planes y suscripciones (Inicial, Pro, Business)
+- Panel de analíticas con filtro de período
+- Moderación de tiendas por administrador
+- Página pública de precios
+
+---
+
+## Tecnologías
+
+| Capa | Tecnología |
+|------|-----------|
+| Framework | Next.js 16 (App Router, React Server Components) |
+| Lenguaje | TypeScript |
+| Base de datos | PostgreSQL (DigitalOcean Managed DB en producción) |
+| ORM | Prisma v7 con driver adapter `@prisma/adapter-pg` |
+| Autenticación | Auth.js (NextAuth) |
+| Estilos | Tailwind CSS |
+| Validación | Zod |
+| Storage de imágenes | Cloudflare R2 (S3-compatible) |
+| Pagos | Khipu |
+| Testing | Vitest + MSW |
+| Infraestructura | Docker + DigitalOcean Droplet |
+| CI/CD | GitHub Actions |
+
+---
+
+## Estructura del proyecto
+
+```
+src/
+├── app/                        # Rutas Next.js (App Router)
+│   ├── [slug]/                 # Vitrina pública de cada tienda
+│   ├── dashboard/              # Panel del emprendedor (autenticado)
+│   │   ├── analytics/          # Métricas y estadísticas
+│   │   ├── billing/            # Plan y suscripción
+│   │   ├── categories/         # Gestión de categorías
+│   │   └── products/           # Gestión de productos
+│   ├── admin/                  # Panel de moderación
+│   ├── pago/[id]/              # Estado de pago post-Khipu
+│   ├── pricing/                # Página pública de precios
+│   ├── login/ register/        # Autenticación
+│   └── api/                    # API Routes (webhooks, store, auth)
+├── features/                   # Módulos por dominio
+│   ├── auth/                   # Registro, login, sesión
+│   ├── billing/                # Planes, suscripciones, límites
+│   ├── dashboard/              # Métricas, filtro de período
+│   ├── store/                  # Catálogo, carrito, pagos, tracking
+│   └── admin/                  # Moderación de tiendas
+├── lib/                        # Clientes globales (prisma, logger, khipu)
+└── server/                     # Utilidades de servidor (auth, store)
+prisma/
+├── schema.prisma               # Modelo de datos
+├── migrations/                 # Migraciones de BD
+└── seed.ts                     # Datos iniciales (planes)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Desarrollo local
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Requisitos
 
-## Learn More
+- Node.js 20+
+- Docker y Docker Compose
+- Cuenta Cloudflare R2 (para imágenes)
 
-To learn more about Next.js, take a look at the following resources:
+### Setup
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+# 1. Instalar dependencias
+npm install
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# 2. Copiar variables de entorno
+cp .env.example .env
+# Completar DATABASE_URL, NEXTAUTH_SECRET, R2_*, KHIPU_*
 
-## Deploy on Vercel
+# 3. Levantar base de datos
+docker compose up -d
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# 4. Aplicar migraciones y seed
+npx prisma migrate dev
+npx tsx prisma/seed.ts
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# walo-saas
-Plataforma SaaS para la digitalización de microemprendedores chilenos mediante catálogos optimizados (SEO) e integración con WhatsApp. Proyecto de Título Duoc UC.
+# 5. Iniciar servidor de desarrollo
+npm run dev
+```
+
+### Comandos útiles
+
+```bash
+npm run dev          # Servidor de desarrollo
+npm run build        # Build de producción
+npm run test         # Tests con Vitest
+npx prisma studio    # Explorador visual de BD
+npx prisma migrate dev --name <nombre>   # Nueva migración
+```
+
+---
+
+## Infraestructura
+
+La aplicación corre en un **DigitalOcean Droplet** con Docker. La base de datos es un **DigitalOcean Managed PostgreSQL**. Las imágenes se almacenan en **Cloudflare R2**.
+
+```bash
+# Deploy en el droplet
+git pull origin dev
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+El entrypoint del contenedor ejecuta `prisma migrate deploy` automáticamente al iniciar.
+
+---
+
+## Equipo
+
+Portafolio de Título — Analista Programador, Duoc UC
+
+| Nombre | Rol |
+|--------|-----|
+| Constanza Contador Moraga | Development Team · Scrum Master |
+| César Mongez Durán | Development Team  Tech Lead|
+| Paulina Zúñiga Alarcón | Development Team · Full Stack |
