@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
         const { notification_token } = parsedData.data;
 
         const khipuEndpoint = `${khipuConfig.apiUrl}/payments`;
-        const toSign = `GET&${encodeURI(khipuEndpoint)}&notification_token=${notification_token}`;
+        const toSign = `GET&${encodeURIComponent(khipuEndpoint)}&${encodeURIComponent("notification_token")}=${encodeURIComponent(notification_token)}`;
         const hash = crypto.createHmac("sha256", khipuConfig.secret).update(toSign).digest("hex");
         const authorizationHeader = `${khipuConfig.receiverId}:${hash}`;
 

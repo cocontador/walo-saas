@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
-import { BarChart3, FolderTree, LayoutDashboard, Menu, Package, Wallet, X } from 'lucide-react'
+import { BarChart3, FolderTree, LayoutDashboard, Menu, Package, Settings, ShoppingBag, Wallet, X } from 'lucide-react'
 
 import { SignOutButton } from '@/features/auth/components/SignOutButton'
 
@@ -46,10 +46,22 @@ const navItems: NavItem[] = [
     icon: Wallet,
   },
   {
+    label: 'Pedidos',
+    href: '/dashboard/orders',
+    description: 'Compras de tus clientes',
+    icon: ShoppingBag,
+  },
+  {
     label: 'Analíticas',
     href: '/dashboard/analytics',
     description: 'Visitas y ventas',
     icon: BarChart3,
+  },
+  {
+    label: 'Configuración',
+    href: '/dashboard/settings',
+    description: 'Khipu y pagos',
+    icon: Settings,
   },
 ]
 

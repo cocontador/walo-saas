@@ -2,7 +2,7 @@
 
 import crypto from 'crypto'
 import { prisma } from '@/lib/prisma'
-import { khipuConfig, validateKhipuConfig } from '@/lib/khipu'
+import { khipuConfig } from '@/lib/khipu'
 import { logError } from '@/lib/logger'
 import { OrderStatus } from '@prisma/client'
 
@@ -23,7 +23,17 @@ type PaymentItem = {
 
 export async function createPaymentIntent(data: PaymentData) {
     try {
-        validateKhipuConfig()
+        const store = await prisma.store.findUnique({
+            where: { id: data.storeId },
+            select: { khipuReceiverId: true, khipuSecret: true },
+        })
+
+        const receiverId = store?.khipuReceiverId
+        const secret = store?.khipuSecret
+
+        if (!receiverId || !secret) {
+            return { success: false, error: 'Esta tienda aún no tiene Khipu configurado. El dueño debe ingresar sus credenciales en Configuración.' }
+        }
 
         const result = await prisma.$transaction(async (tx) => {
             const order = await tx.order.create({
@@ -59,11 +69,11 @@ export async function createPaymentIntent(data: PaymentData) {
             })
 
             const hash = crypto
-                .createHmac('sha256', khipuConfig.secret)
+                .createHmac('sha256', secret)
                 .update(toSign)
                 .digest('hex')
 
-            const authorization = `${khipuConfig.receiverId}:${hash}`
+            const authorization = `${receiverId}:${hash}`
 
             const response = await fetch(endpoint, {
                 method: 'POST',
