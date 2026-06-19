@@ -6,6 +6,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/server/auth'
 import { getUserStoreId } from '@/server/store'
 import { prisma } from '@/lib/prisma'
+import { logError } from '@/lib/logger'
 
 export type ActionResult<T> =
   | { success: true; data: T }
@@ -18,6 +19,9 @@ export type ProductDetail = {
   description: string | null
   visible: boolean
   storeId: string
+  imageUrl: string | null
+  imageKey: string | null
+  categories: { id: string; name: string }[]
   createdAt: Date
   updatedAt: Date
 }
@@ -45,11 +49,8 @@ export async function getProductById(productId: string): Promise<ActionResult<Pr
     }
 
     // Fetch product and validate it belongs to user's store
-    const product = await prisma.product.findFirst({
-      where: {
-        id: productId,
-        storeId,
-      },
+    const raw = await prisma.product.findFirst({
+      where: { id: productId, storeId },
       select: {
         id: true,
         name: true,
@@ -57,12 +58,21 @@ export async function getProductById(productId: string): Promise<ActionResult<Pr
         description: true,
         visible: true,
         storeId: true,
+        imageUrl: true,
+        imageKey: true,
         createdAt: true,
         updatedAt: true,
+        categories: {
+          select: {
+            category: {
+              select: { id: true, name: true },
+            },
+          },
+        },
       },
     })
 
-    if (!product) {
+    if (!raw) {
       return {
         success: false,
         error: 'Producto no encontrado o no tienes permiso para acceder a él.',
@@ -71,10 +81,19 @@ export async function getProductById(productId: string): Promise<ActionResult<Pr
 
     return {
       success: true,
-      data: product,
+      data: {
+        ...raw,
+        categories: raw.categories.map(pc => pc.category),
+      },
     }
   } catch (error) {
-    console.error('Error fetching product:', error)
+    logError({
+      event: 'product.get.failed',
+      scope: 'product',
+      message: 'Fallo al obtener producto',
+      errorCode: 'PRODUCT_GET_FAILED',
+      meta: { errorName: error instanceof Error ? error.name : 'UnknownError' },
+    })
     return {
       success: false,
       error: 'Ocurrió un error al obtener el producto. Por favor intenta nuevamente.',

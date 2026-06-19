@@ -1,0 +1,38 @@
+{
+  "id": "8d9f0f8f-8c0f-4f2c-9f5d-walo-local-env",
+  "name": "WALO Local Demo Environment",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "publicSlug",
+      "value": "tienda-demo-walo",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "storeId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "productId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "categoryId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment",
+  "_postman_exported_using": "Postman/11.0.0"
+}

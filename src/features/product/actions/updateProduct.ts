@@ -7,6 +7,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/server/auth'
 import { getUserStoreId } from '@/server/store'
 import { prisma } from '@/lib/prisma'
+import { logError } from '@/lib/logger'
 import { updateProductSchema, type UpdateProductInput } from '@/features/product/schemas'
 
 export type ActionResult<T> =
@@ -42,13 +43,8 @@ export async function updateProduct(
 
     // Check if the product exists and belongs to the user's store
     const existingProduct = await prisma.product.findFirst({
-      where: {
-        id: productId,
-        storeId,
-      },
-      select: {
-        id: true,
-      },
+      where: { id: productId, storeId },
+      select: { id: true },
     })
 
     if (!existingProduct) {
@@ -61,31 +57,34 @@ export async function updateProduct(
     // Validate input data
     const validatedData = updateProductSchema.parse(input)
 
+    if (validatedData.categoryIds !== undefined && validatedData.categoryIds.length > 0) {
+      const validCategories = await prisma.category.findMany({
+        where: { id: { in: validatedData.categoryIds }, storeId },
+        select: { id: true },
+      })
+
+      if (validCategories.length !== validatedData.categoryIds.length) {
+        return {
+          success: false,
+          error: 'Una o más categorías no existen o no pertenecen a tu tienda.',
+        }
+      }
+    }
+
     // Update the product in the database
-    const updateResult = await prisma.product.updateMany({
-      where: {
-        id: productId,
-        storeId,
-      },
+    const product = await prisma.product.update({
+      where: { id: productId },
       data: {
         ...(validatedData.name !== undefined && { name: validatedData.name }),
         ...(validatedData.price !== undefined && { price: validatedData.price }),
         ...(validatedData.description !== undefined && { description: validatedData.description }),
         ...(validatedData.visible !== undefined && { visible: validatedData.visible }),
-      },
-    })
-
-    if (updateResult.count === 0) {
-      return {
-        success: false,
-        error: 'Producto no encontrado o no tienes permiso para editarlo.',
-      }
-    }
-
-    const product = await prisma.product.findFirst({
-      where: {
-        id: productId,
-        storeId,
+        ...(validatedData.categoryIds !== undefined && {
+          categories: {
+            deleteMany: {},
+            create: validatedData.categoryIds.map(id => ({ categoryId: id })),
+          },
+        }),
       },
       select: {
         id: true,
@@ -95,13 +94,6 @@ export async function updateProduct(
         visible: true,
       },
     })
-
-    if (!product) {
-      return {
-        success: false,
-        error: 'No se pudo recuperar el producto actualizado.',
-      }
-    }
 
     return {
       success: true,
@@ -117,7 +109,13 @@ export async function updateProduct(
       }
     }
 
-    console.error('Error updating product:', error)
+    logError({
+      event: 'product.update.failed',
+      scope: 'product',
+      message: 'Fallo al actualizar producto',
+      errorCode: 'PRODUCT_UPDATE_FAILED',
+      meta: { errorName: error instanceof Error ? error.name : 'UnknownError' },
+    })
     return {
       success: false,
       error: 'Ocurrió un error al actualizar el producto. Por favor intenta nuevamente.',

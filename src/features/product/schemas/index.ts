@@ -4,3 +4,5 @@ export {
   type CreateProductInput,
   type UpdateProductInput,
 } from './productSchema'
+
+export { validateProductImageFile } from './imageSchema'

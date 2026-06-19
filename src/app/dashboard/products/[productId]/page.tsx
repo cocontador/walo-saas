@@ -1,4 +1,4 @@
-﻿import { getServerSession } from 'next-auth'
+import { getServerSession } from 'next-auth'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 
@@ -102,6 +102,15 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
           {/* Content */}
           <div className="px-8 py-8">
             {/* Price */}
+            {product.imageUrl && (
+              <div className="mb-8">
+                <img
+                  src={product.imageUrl}
+                  alt={product.name}
+                  className="w-full rounded-3xl border border-gray-200 object-cover"
+                />
+              </div>
+            )}
             <div className="mb-8">
               <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-600">
                 Precio

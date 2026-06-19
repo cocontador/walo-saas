@@ -12,32 +12,59 @@ datasource db {
 }
 
 model User {
-  id           String        @id @default(cuid())
-  email        String        @unique
+  id           String   @id @default(cuid())
+  email        String   @unique
   name         String?
   passwordHash String
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  platformRole PlatformRole @default(USER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  memberships  StoreMember[]
+  memberships StoreMember[]
+  storeAuditLogs StoreAuditLog[]
 }
 
 model Store {
-  id            String        @id @default(cuid())
-  slug          String        @unique
+  id            String   @id @default(cuid())
+  slug          String   @unique
   name          String
   description   String?
   whatsappPhone String?
   logoUrl       String?
   logoKey       String?
-  isActive      Boolean       @default(true)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  acceptedTermsAt DateTime?
 
-  memberships   StoreMember[]
-  products      Product[]
+  khipuReceiverId String?
+  khipuSecret     String?
+
+  memberships    StoreMember[]
+  products       Product[]
+  categories     Category[]
+  subscription   StoreSubscription?
+  orders         Order[]
+  whatsappClicks WhatsappClickEvent[]
+  auditLogs      StoreAuditLog[]
 
   @@index([slug])
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  storeId   String
+  name      String
+  isActive  Boolean  @default(true)
+  visible   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store    Store             @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  products ProductCategory[]
+
+  @@unique([storeId, name])
+  @@index([storeId])
 }
 
 model StoreMember {
@@ -47,8 +74,8 @@ model StoreMember {
   role      StoreRole @default(OWNER)
   createdAt DateTime  @default(now())
 
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  store     Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
 
   @@unique([userId, storeId])
   @@index([userId])
@@ -61,17 +88,175 @@ model Product {
   name        String
   description String?
   price       Int
+  imageUrl    String?
+  imageKey    String?
   visible     Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  store      Store             @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  categories ProductCategory[]
 
   @@index([storeId])
   @@index([storeId, visible])
 }
 
+model ProductCategory {
+  productId  String
+  categoryId String
+
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([productId, categoryId])
+  @@index([categoryId])
+}
+
 enum StoreRole {
   OWNER
   EDITOR
+}
+
+enum PlatformRole {
+  USER
+  PLATFORM_ADMIN
+}
+
+model StoreAuditLog {
+  id        String   @id @default(cuid())
+  storeId   String
+  actorId   String
+  action    String
+  reason    String
+  createdAt DateTime @default(now())
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  actor User  @relation(fields: [actorId], references: [id])
+
+  @@index([storeId])
+  @@index([actorId])
+  @@index([action])
+}
+
+// ==========================================
+// SPRINT 3: PLANES Y SUSCRIPCIONES
+// ==========================================
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  TRIALING
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+}
+
+model Plan {
+  id               String   @id @default(cuid())
+  name             String
+  slug             String   @unique
+  description      String?
+  priceMonthly     Int
+  priceYearly      Int?
+  currency         String   @default("CLP")
+  productLimit     Int?
+  customDomain     Boolean  @default(false)
+  analytics        Boolean  @default(false)
+  premiumTemplates Boolean  @default(false)
+  supportLevel     String   @default("basic")
+  features         Json     @default("[]")
+  limitations      Json?
+  isActive         Boolean  @default(true)
+  sortOrder        Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  subscriptions StoreSubscription[]
+
+  @@index([isActive])
+  @@index([slug])
+}
+
+model StoreSubscription {
+  id                 String             @id @default(cuid())
+  storeId            String             @unique
+  planId             String
+  status             SubscriptionStatus @default(ACTIVE)
+  billingCycle       BillingCycle       @default(MONTHLY)
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean            @default(false)
+  canceledAt         DateTime?
+  reactivatedAt      DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  plan  Plan  @relation(fields: [planId], references: [id])
+
+  @@index([storeId])
+  @@index([planId])
+  @@index([status])
+}
+
+// ==========================================
+// SPRINT 3: PAGOS, WEBHOOKS Y ANALÍTICA
+// ==========================================
+
+model Order {
+  id              String           @id @default(cuid())
+  storeId         String
+  store           Store            @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  totalAmount     Int
+  status          OrderStatus      @default(PENDING)
+  customerNotes   String?
+  itemsSnapshot   Json
+  paymentAttempts PaymentAttempt[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([storeId])
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELED
+}
+
+model PaymentAttempt {
+  id              String   @id @default(cuid())
+  orderId         String
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  khipuPaymentId  String   @unique
+  khipuPaymentUrl String
+  status          String   @default("pending")
+  amount          Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([orderId])
+}
+
+model KhipuLog {
+  id        String   @id @default(cuid())
+  orderId   String?
+  context   String
+  message   String
+  createdAt DateTime @default(now())
+
+  @@index([orderId])
+}
+
+model WhatsappClickEvent {
+  id        String   @id @default(cuid())
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([storeId])
 }
