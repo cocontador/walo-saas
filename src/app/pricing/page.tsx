@@ -3,6 +3,8 @@ import { Check, X, Zap, Globe, BarChart3 } from 'lucide-react'
 import { getAvailablePlans } from '@/features/billing/actions/getAvailablePlans'
 import { normalizePlanForCatalog } from '@/features/billing/utils/limits'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   title: 'Precios — WALO',
   description: 'Planes simples y transparentes para tu tienda online. Empieza gratis y crece a tu ritmo.',
