@@ -32,6 +32,7 @@ export function ProductCard({
                         src={imageUrl}
                         alt={name}
                         fill
+                        unoptimized
                         sizes="(max-width: 640px) 50vw, 33vw"
                         loading={priority ? 'eager' : 'lazy'}
                         className="object-cover"
