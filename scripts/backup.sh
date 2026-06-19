@@ -19,5 +19,5 @@ BACKUP_FILE="${BACKUP_DIR}/walo_${TIMESTAMP}.sql"
 mkdir -p "$BACKUP_DIR"
 
 echo "▶ Creando backup: $BACKUP_FILE"
-pg_dump "$DATABASE_URL" > "$BACKUP_FILE"
+docker run --rm postgres:16-alpine pg_dump "$DATABASE_URL" > "$BACKUP_FILE"
 echo "✅ Backup guardado en $BACKUP_FILE"

@@ -4,7 +4,7 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'WALO SaaS',
-  description: 'Base técnica inicial del MVP multitenant de WALO',
+  description: 'Catálogo digital para microemprendedores',
 }
 
 export default function RootLayout({
