@@ -14,9 +14,10 @@ if [ ! -f "$BACKUP_FILE" ]; then
   exit 1
 fi
 
-# Carga DATABASE_URL desde .env si no está en el entorno
 if [ -z "$DATABASE_URL" ] && [ -f .env ]; then
-  DATABASE_URL=$(grep -v '^#' .env | grep '^DATABASE_URL=' | cut -d '=' -f2-)
+  RAW=$(grep -v '^#' .env | grep '^DATABASE_URL=' | cut -d '=' -f2-)
+  DATABASE_URL="${RAW//\"/}"
+  DATABASE_URL="${DATABASE_URL//\'/}"
   export DATABASE_URL
 fi
 
@@ -25,6 +26,27 @@ if [ -z "$DATABASE_URL" ]; then
   exit 1
 fi
 
+STRIPPED="${DATABASE_URL#*://}"
+USERINFO="${STRIPPED%%@*}"
+DB_USER="${USERINFO%%:*}"
+DB_PASSWORD="${USERINFO#*:}"
+HOSTPART="${STRIPPED#*@}"
+DB_HOST="${HOSTPART%%:*}"
+PORTDB="${HOSTPART#*:}"
+DB_PORT="${PORTDB%%/*}"
+DBPATH="${PORTDB#*/}"
+DB_NAME="${DBPATH%%\?*}"
+
 echo "▶ Restaurando desde $BACKUP_FILE..."
-psql "$DATABASE_URL" < "$BACKUP_FILE"
+docker run --rm -i \
+  -e PGPASSWORD="$DB_PASSWORD" \
+  -e PGSSLMODE=require \
+  postgres:18-alpine \
+  psql \
+    -h "$DB_HOST" \
+    -p "$DB_PORT" \
+    -U "$DB_USER" \
+    -d "$DB_NAME" \
+    --no-password \
+  < "$BACKUP_FILE"
 echo "✅ Restauración completada"
