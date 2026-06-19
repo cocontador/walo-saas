@@ -42,5 +42,13 @@ docker run --rm \
     -U "$DB_USER" \
     -d "$DB_NAME" \
     --no-password \
+    --no-owner \
+    --no-acl \
   > "$BACKUP_FILE"
+
+if [ ! -s "$BACKUP_FILE" ]; then
+  echo "Error: el backup quedó vacío. Revisa la conexión a la base de datos."
+  rm -f "$BACKUP_FILE"
+  exit 1
+fi
 echo "✅ Backup guardado en $BACKUP_FILE"
