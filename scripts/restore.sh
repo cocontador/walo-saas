@@ -37,6 +37,19 @@ DB_PORT="${PORTDB%%/*}"
 DBPATH="${PORTDB#*/}"
 DB_NAME="${DBPATH%%\?*}"
 
+echo "▶ Limpiando schema existente..."
+docker run --rm \
+  -e PGPASSWORD="$DB_PASSWORD" \
+  -e PGSSLMODE=require \
+  postgres:18-alpine \
+  psql \
+    -h "$DB_HOST" \
+    -p "$DB_PORT" \
+    -U "$DB_USER" \
+    -d "$DB_NAME" \
+    --no-password \
+    -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO $DB_USER; GRANT ALL ON SCHEMA public TO public;"
+
 echo "▶ Restaurando desde $BACKUP_FILE..."
 docker run --rm -i \
   -e PGPASSWORD="$DB_PASSWORD" \
