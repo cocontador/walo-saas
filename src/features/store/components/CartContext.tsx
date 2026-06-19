@@ -51,8 +51,8 @@ export const CartProvider = ({
     const [items, setItems] = useState<CartItem[]>([])
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setItems(getStoredCartItems(CART_KEY))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [CART_KEY])
 
     useEffect(() => {
