@@ -3,6 +3,8 @@ import type { MetadataRoute } from "next"
 import { getBaseUrl } from "@/lib/getBaseUrl"
 import { prisma } from "@/lib/prisma"
 
+export const dynamic = "force-dynamic"
+
 type Props = {
   params: Promise<{ slug: string }>
 }
