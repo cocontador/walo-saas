@@ -1,6 +1,5 @@
 'use server'
 
-import { prisma } from '@/lib/prisma'
 import { getUserStoreId } from '@/server/store'
 import type { DateRange } from '../schemas/dateRange.schema'
 
@@ -11,6 +10,8 @@ export type WhatsAppMetrics = {
 export async function getWhatsAppMetrics(range: DateRange): Promise<WhatsAppMetrics> {
     const storeId = await getUserStoreId()
     if (!storeId) return { clicks: 0 }
+
+    const { prisma } = await import('@/lib/prisma')
 
     const clicks = await prisma.whatsappClickEvent.count({
         where: {

@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import Link from 'next/link'
 import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
@@ -139,7 +140,9 @@ export default async function DashboardPage({ searchParams }: Props) {
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-semibold text-gray-900">Métricas del período</h2>
-              <DateRangeFilter currentFrom={params.from} currentTo={params.to} />
+              <Suspense fallback={<div className="h-9 w-64 animate-pulse rounded-xl bg-gray-100" />}>
+                <DateRangeFilter currentFrom={params.from} currentTo={params.to} />
+              </Suspense>
             </div>
 
             {sales && whatsapp && (

@@ -54,7 +54,7 @@ export default async function AnalyticsPage({ searchParams }: Props) {
                         Métricas de tu tienda en el período seleccionado
                     </p>
                 </div>
-                <Suspense>
+                <Suspense fallback={<div className="h-9 w-64 animate-pulse rounded-xl bg-gray-100" />}>
                     <DateRangeFilter currentFrom={params.from} currentTo={params.to} />
                 </Suspense>
             </div>

@@ -32,9 +32,9 @@ export function parseDateRange(params: { from?: string; to?: string }): DateRang
         return { from, to }
     }
 
-    const from = new Date(result.data.from)
-    from.setHours(0, 0, 0, 0)
-    const to = new Date(result.data.to)
-    to.setHours(23, 59, 59, 999)
+    const [fy, fm, fd] = result.data.from.split('-').map(Number)
+    const from = new Date(fy, fm - 1, fd, 0, 0, 0, 0)
+    const [ty, tm, td] = result.data.to.split('-').map(Number)
+    const to = new Date(ty, tm - 1, td, 23, 59, 59, 999)
     return { from, to }
 }
