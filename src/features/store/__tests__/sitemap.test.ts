@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.hoisted(() => {
   vi.stubEnv('NEXTAUTH_URL', 'https://test.walo.app')
+  vi.stubEnv('DATABASE_URL', 'postgresql://test:test@localhost:5432/test')
 })
 
 const mockPrisma = vi.hoisted(() => ({

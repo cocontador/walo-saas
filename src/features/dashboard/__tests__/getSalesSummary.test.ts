@@ -9,7 +9,7 @@ vi.mock('@/server/store', () => ({
 vi.mock('@/lib/prisma', () => ({
     prisma: {
         order: {
-            findMany: vi.fn(),
+            aggregate: vi.fn(),
         },
     },
 }))
@@ -33,12 +33,12 @@ describe('getSalesSummary', () => {
         const result = await getSalesSummary(range)
 
         expect(result).toEqual({ totalOrders: 0, totalRevenue: 0, averageOrderValue: 0 })
-        expect(prisma.order.findMany).not.toHaveBeenCalled()
+        expect(prisma.order.aggregate).not.toHaveBeenCalled()
     })
 
     it('retorna ceros si no hay órdenes PAID en el período', async () => {
         vi.mocked(getUserStoreId).mockResolvedValue('store-1')
-        vi.mocked(prisma.order.findMany).mockResolvedValue([])
+        vi.mocked(prisma.order.aggregate).mockResolvedValue({ _count: { _all: 0 }, _sum: { totalAmount: null } } as never)
 
         const result = await getSalesSummary(range)
 
@@ -47,11 +47,7 @@ describe('getSalesSummary', () => {
 
     it('calcula totales correctamente con órdenes PAID', async () => {
         vi.mocked(getUserStoreId).mockResolvedValue('store-1')
-        vi.mocked(prisma.order.findMany).mockResolvedValue([
-            { totalAmount: 10000 },
-            { totalAmount: 20000 },
-            { totalAmount: 30000 },
-        ] as never)
+        vi.mocked(prisma.order.aggregate).mockResolvedValue({ _count: { _all: 3 }, _sum: { totalAmount: 60000 } } as never)
 
         const result = await getSalesSummary(range)
 
@@ -62,11 +58,11 @@ describe('getSalesSummary', () => {
 
     it('filtra solo por la tienda del usuario autenticado', async () => {
         vi.mocked(getUserStoreId).mockResolvedValue('store-abc')
-        vi.mocked(prisma.order.findMany).mockResolvedValue([])
+        vi.mocked(prisma.order.aggregate).mockResolvedValue({ _count: { _all: 0 }, _sum: { totalAmount: null } } as never)
 
         await getSalesSummary(range)
 
-        expect(prisma.order.findMany).toHaveBeenCalledWith(
+        expect(prisma.order.aggregate).toHaveBeenCalledWith(
             expect.objectContaining({
                 where: expect.objectContaining({ storeId: 'store-abc', status: 'PAID' }),
             }),
