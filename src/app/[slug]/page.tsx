@@ -116,6 +116,9 @@ export default async function StorePage({ params }: Props) {
                         storeName={store.name}
                         whatsappPhone={store.whatsappPhone}
                         storeId={store.id}
+                        allowPickup={store.allowPickup}
+                        allowDelivery={store.allowDelivery}
+                        deliveryCost={store.deliveryCost}
                     />
                 </main>
             </div>

@@ -250,6 +250,10 @@ export default async function DashboardPage({ searchParams }: Props) {
                 initialDescription={store.description}
                 initialLogoUrl={store.logoUrl}
                 initialWhatsapp={store.whatsappPhone}
+                initialAllowPickup={false}
+                initialAllowDelivery={false}
+                initialPickupAddress={null}
+                initialDeliveryCost={null}
               />
             </div>
           </div>

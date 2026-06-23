@@ -44,25 +44,35 @@ type Props = {
     storeName?: string
     whatsappPhone?: string | null
     storeId: string
+    allowPickup?: boolean
+    allowDelivery?: boolean
+    deliveryCost?: number
 }
 
-export function StoreCatalog({ products, storeName = 'La Tienda', whatsappPhone, storeId }: Props) {
+export function StoreCatalog({
+    products,
+    storeName = 'La Tienda',
+    whatsappPhone,
+    storeId,
+    allowPickup = true,
+    allowDelivery = false,
+    deliveryCost = 0,
+}: Props) {
     const [selectedCategory, setSelectedCategory] = useState('Todos')
     const [cartOpen, setCartOpen] = useState(false)
 
-    // Extraemos addItem para la mutación instantánea del estado
     const { items, total, itemCount, addItem, updateQuantity, removeItem, clearCart } = useCart()
 
     const visibleCategories = Array.from(
         new Set(
             (products || []).reduce<string[]>((acc, p) => {
-                const cats = p.categories || [];
+                const cats = p.categories || []
                 cats.forEach(pc => {
                     if (pc?.category?.visible && pc?.category?.name) {
-                        acc.push(pc.category.name);
+                        acc.push(pc.category.name)
                     }
-                });
-                return acc;
+                })
+                return acc
             }, [])
         )
     )
@@ -79,7 +89,6 @@ export function StoreCatalog({ products, storeName = 'La Tienda', whatsappPhone,
 
     return (
         <div>
-            {/* Filtro de Categorías */}
             {visibleCategories.length > 0 && (
                 <div className="flex gap-2 overflow-x-auto pb-2 mb-6 no-scrollbar">
                     {categories.map(cat => (
@@ -98,7 +107,6 @@ export function StoreCatalog({ products, storeName = 'La Tienda', whatsappPhone,
                 </div>
             )}
 
-            {/* Listado de Productos */}
             {filteredProducts.length === 0 ? (
                 <div className="flex flex-col items-center justify-center gap-2 py-20 text-center">
                     <p className="text-4xl">🔍</p>
@@ -127,7 +135,7 @@ export function StoreCatalog({ products, storeName = 'La Tienda', whatsappPhone,
                                 imageUrl={product.imageUrl}
                                 category={firstVisibleCategory?.category?.name}
                                 priority={index === 0}
-                                onAddToCart={() => addItem({   // <-- Callback reactivo inmediato
+                                onAddToCart={() => addItem({
                                     id: product.id,
                                     name: product.name,
                                     price: product.price
@@ -138,7 +146,6 @@ export function StoreCatalog({ products, storeName = 'La Tienda', whatsappPhone,
                 </div>
             )}
 
-            {/* Componentes del Carrito */}
             <CartFloatingButton
                 itemCount={itemCount}
                 onClick={() => setCartOpen(true)}
@@ -155,6 +162,9 @@ export function StoreCatalog({ products, storeName = 'La Tienda', whatsappPhone,
                 storeName={storeName}
                 whatsappPhone={whatsappPhone}
                 storeId={storeId}
+                allowPickup={allowPickup}
+                allowDelivery={allowDelivery}
+                deliveryPrice={deliveryCost}
             />
         </div>
     )

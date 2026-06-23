@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { CartItem } from './CartContext'
+import { CartItem, useCart, ShippingMethod } from './CartContext'
 import { createPaymentIntent } from "@/features/store/server/createPayment"
 import { trackWhatsappClick } from "@/features/store/server/trackWhatsappClick"
 
@@ -9,12 +9,20 @@ export function buildWhatsAppMessageText(
     storeName: string,
     items: CartItem[],
     total: number,
+    shippingMethod: ShippingMethod,
+    email: string,
+    shippingAddress: string,
     notes?: string
 ): string {
     const formatter = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' })
-
     const lines: string[] = []
+
     lines.push(`Hola, me gustaría hacer un pedido en *${storeName}*: \n`)
+    lines.push(`*Método de entrega:* ${shippingMethod === 'pickup' ? 'Retiro en tienda' : 'Envío a domicilio'}`)
+    if (shippingMethod === 'delivery' && shippingAddress) {
+        lines.push(`*Dirección de envío:* ${shippingAddress}`)
+    }
+    lines.push(`*Email de contacto:* ${email || 'No proporcionado'}`)
 
     items.forEach((item) => {
         const itemTotal = item.price * item.quantity
@@ -36,11 +44,15 @@ export function buildWhatsAppMessage(
     storeName: string,
     items: CartItem[],
     total: number,
+    shippingMethod: ShippingMethod,
+    email: string,
+    shippingAddress: string,
     notes?: string
 ): string {
     if (!phone) return '#'
     const cleanPhone = phone.replace(/[^\d+]/g, '')
-    return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(buildWhatsAppMessageText(storeName, items, total, notes))}`
+    const text = buildWhatsAppMessageText(storeName, items, total, shippingMethod, email, shippingAddress, notes)
+    return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`
 }
 
 interface Props {
@@ -54,21 +66,63 @@ interface Props {
     storeName?: string
     whatsappPhone?: string | null
     storeId: string
+    allowPickup?: boolean
+    allowDelivery?: boolean
+    deliveryPrice?: number
 }
 
 export function CartDrawer({
-    isOpen, onClose, items, total, onUpdateQuantity, onRemoveItem, onClearCart,
-    storeName = 'La Tienda', whatsappPhone, storeId
+    isOpen,
+    onClose,
+    items,
+    total: subtotal,
+    onUpdateQuantity,
+    onRemoveItem,
+    onClearCart,
+    storeName = 'La Tienda',
+    whatsappPhone,
+    storeId,
+    allowPickup = true,
+    allowDelivery = false,
+    deliveryPrice = 0,
 }: Props) {
     const [orderNotes, setOrderNotes] = useState('')
+    const [customerEmail, setCustomerEmail] = useState('')
+    const [shippingAddress, setShippingAddress] = useState('')
     const [isLoadingKhipu, setIsLoadingKhipu] = useState(false)
     const [khipuError, setKhipuError] = useState<string | null>(null)
+    const { shippingMethod, setShippingMethod } = useCart()
+
+    const effectiveMethod: ShippingMethod =
+        !allowPickup && allowDelivery ? 'delivery'
+        : !allowDelivery && allowPickup ? 'pickup'
+        : shippingMethod
+
+    const shippingCost = effectiveMethod === 'delivery' ? deliveryPrice : 0
+    const finalTotal = subtotal + shippingCost
+
+    const formatter = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' })
 
     async function handleKhipuPayment() {
         setIsLoadingKhipu(true)
         setKhipuError(null)
         try {
-            const result = await createPaymentIntent({ storeId, storeName, items, totalAmount: total, customerNotes: orderNotes })
+            const noteParts: string[] = []
+            if (effectiveMethod === 'delivery' && shippingAddress) {
+                noteParts.push(`Dirección: ${shippingAddress}`)
+            }
+            if (orderNotes.trim()) noteParts.push(`Notas: ${orderNotes.trim()}`)
+
+            const result = await createPaymentIntent({
+                storeId,
+                storeName,
+                items,
+                totalAmount: finalTotal,
+                shippingMethod: effectiveMethod,
+                customerEmail,
+                customerNotes: noteParts.join(' | ') || undefined,
+            })
+
             if (result.success && result.paymentUrl) {
                 window.location.href = result.paymentUrl
             } else {
@@ -81,150 +135,170 @@ export function CartDrawer({
         }
     }
 
-    return (
-        <>
-            {/* Overlay */}
-            {isOpen && (
-                <div
-                    className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm transition-opacity"
-                    onClick={onClose}
-                />
-            )}
+    const bothAvailable = allowPickup && allowDelivery
 
-            {/* Drawer */}
-            <div className={`fixed right-0 top-0 z-50 flex h-full w-full max-w-sm flex-col bg-white shadow-xl transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-                {/* Header */}
-                <div className="flex items-center justify-between border-b border-gray-100 px-4 py-4">
-                    <h2 className="text-lg font-bold text-gray-900">Tu carrito</h2>
-                    <button onClick={onClose} className="cursor-pointer rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
-                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
+    return (
+        <div className={`fixed right-0 top-0 z-50 flex h-full w-full max-w-sm flex-col bg-white shadow-xl transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-gray-100 px-4 py-4">
+                <h2 className="text-base font-bold text-gray-900">Tu carrito</h2>
+                <button
+                    type="button"
+                    onClick={onClose}
+                    className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                >
+                    ✕
+                </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
 
                 {/* Items */}
-                <div className="flex-1 overflow-y-auto px-4 py-4">
-                    {items.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center gap-2 py-20 text-center">
-                            <p className="text-4xl">🛒</p>
-                            <p className="text-gray-500">Tu carrito está vacío</p>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col gap-4">
-                            {items.map((item) => (
-                                <div key={item.id} className="flex items-center justify-between border-b border-gray-50 pb-4">
-                                    <div className="flex-1">
-                                        <h3 className="text-sm font-semibold text-gray-900">{item.name}</h3>
-                                        <p className="text-sm font-medium text-green-600">
-                                            {(item.price * item.quantity).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                                        </p>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            onClick={() => item.quantity === 1 ? onRemoveItem(item.id) : onUpdateQuantity(item.id, item.quantity - 1)}
-                                            className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:border-red-400 hover:text-red-600 transition-colors"
-                                        >
-                                            {item.quantity === 1 ? (
-                                                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                </svg>
-                                            ) : '−'}
-                                        </button>
-                                        <span className="w-5 text-center text-sm font-semibold">{item.quantity}</span>
-                                        <button
-                                            onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                                            className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:border-green-400 hover:text-green-600 transition-colors"
-                                        >
-                                            +
-                                        </button>
-                                    </div>
+                {items.length === 0 ? (
+                    <p className="py-10 text-center text-sm text-gray-400">Tu carrito está vacío.</p>
+                ) : (
+                    <div className="space-y-3">
+                        {items.map((item) => (
+                            <div key={item.id} className="flex items-center justify-between gap-2 text-sm">
+                                <span className="flex-1 text-gray-700">{item.name}</span>
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
+                                        className="flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:bg-gray-50"
+                                    >−</button>
+                                    <span className="w-5 text-center font-medium">{item.quantity}</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                                        className="flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:bg-gray-50"
+                                    >+</button>
                                 </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                {/* Footer */}
-                {items.length > 0 && (
-                    <div className="border-t border-gray-100 px-4 py-4 flex flex-col gap-3">
-
-                        {/* Instrucciones */}
-                        <div className="mb-2">
-                            <label htmlFor="notes" className="mb-1.5 block text-xs font-semibold text-gray-600">
-                                Instrucciones especiales (Opcional)
-                            </label>
-                            <textarea
-                                id="notes"
-                                value={orderNotes}
-                                onChange={(e) => setOrderNotes(e.target.value)}
-                                placeholder="Ej: Por favor sin mayonesa, el timbre está malo..."
-                                rows={2}
-                                className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-green-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-green-500 transition-colors"
-                            />
-                        </div>
-
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm text-gray-500">Total</span>
-                            <span className="text-lg font-bold text-gray-900">
-                                {total.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                            </span>
-                        </div>
-
-                        {/* Vista previa del mensaje */}
-                        <div>
-                            <p className="mb-1 text-xs font-semibold text-gray-600">Vista previa del mensaje</p>
-                            <pre className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700 whitespace-pre-wrap max-h-36 overflow-y-auto">
-                                {buildWhatsAppMessageText(storeName, items, total, orderNotes)}
-                            </pre>
-                        </div>
-
-                        {/* Botón Khipu */}
-                        <button
-                            onClick={handleKhipuPayment}
-                            disabled={isLoadingKhipu}
-                            className="cursor-pointer w-full rounded-full bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
-                        >
-                            {isLoadingKhipu ? 'Procesando...' : 'Pagar con Khipu'}
-                        </button>
-
-                        {khipuError && (
-                            <p className="text-center text-xs text-red-600">{khipuError}</p>
-                        )}
-
-                        {/* Botón WhatsApp */}
-                        {whatsappPhone ? (
-                            <a
-                                href={buildWhatsAppMessage(whatsappPhone, storeName, items, total, orderNotes)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={() => trackWhatsappClick(storeId)}
-                                className="cursor-pointer w-full rounded-full bg-green-500 py-3 text-sm font-semibold text-white hover:bg-green-600 transition-colors flex items-center justify-center gap-2 shadow-sm"
-                            >
-                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
-                                    <path d="M12 0C5.373 0 0 5.373 0 12c0 2.135.561 4.14 1.535 5.876L0 24l6.324-1.507A11.95 11.95 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.006-1.371l-.36-.214-3.731.889.924-3.638-.235-.374A9.818 9.818 0 1112 21.818z" />
-                                </svg>
-                                Pedir por WhatsApp
-                            </a>
-                        ) : (
-                            <div className="rounded-lg bg-yellow-50 p-3 text-center text-xs font-medium text-yellow-800 border border-yellow-200">
-                                Esta tienda no tiene un número configurado para recibir pedidos.
+                                <span className="w-20 text-right font-semibold text-gray-900">
+                                    {formatter.format(item.price * item.quantity)}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => onRemoveItem(item.id)}
+                                    className="text-gray-300 hover:text-red-400"
+                                >✕</button>
                             </div>
-                        )}
-
-                        <button
-                            onClick={onClearCart}
-                            className="cursor-pointer w-full rounded-full border border-gray-200 bg-white py-2.5 text-xs font-semibold text-gray-500 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-colors flex items-center justify-center gap-1.5"
-                        >
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                            Vaciar carrito
-                        </button>
+                        ))}
                     </div>
                 )}
+
+                {/* Método de entrega */}
+                {(allowPickup || allowDelivery) && (
+                    <div>
+                        <label className="mb-2 block text-xs font-semibold text-gray-600">Método de entrega</label>
+                        {bothAvailable ? (
+                            <div className="grid grid-cols-2 gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setShippingMethod('pickup')}
+                                    className={`rounded-lg border py-2 text-xs font-medium transition ${effectiveMethod === 'pickup' ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
+                                >Retiro</button>
+                                <button
+                                    type="button"
+                                    onClick={() => setShippingMethod('delivery')}
+                                    className={`rounded-lg border py-2 text-xs font-medium transition ${effectiveMethod === 'delivery' ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
+                                >Envío</button>
+                            </div>
+                        ) : (
+                            <p className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600">
+                                {allowDelivery ? 'Envío a domicilio' : 'Retiro en tienda'}
+                            </p>
+                        )}
+                    </div>
+                )}
+
+                {/* Dirección */}
+                {effectiveMethod === 'delivery' && (
+                    <div>
+                        <label className="mb-1 block text-xs font-semibold text-gray-600">Dirección de envío</label>
+                        <textarea
+                            value={shippingAddress}
+                            onChange={(e) => setShippingAddress(e.target.value)}
+                            rows={2}
+                            placeholder="Ej: Av. Principal 123, Viña del Mar..."
+                            className="w-full rounded-lg border border-gray-200 p-2 text-sm text-gray-700 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                        />
+                    </div>
+                )}
+
+                {/* Email */}
+                <div>
+                    <label className="mb-1 block text-xs font-semibold text-gray-600">Email para el voucher</label>
+                    <input
+                        type="email"
+                        value={customerEmail}
+                        onChange={(e) => setCustomerEmail(e.target.value)}
+                        placeholder="tu@email.com"
+                        className="w-full rounded-lg border border-gray-200 p-2 text-sm text-gray-700 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                    />
+                </div>
+
+                {/* Notas */}
+                <div>
+                    <label className="mb-1 block text-xs font-semibold text-gray-600">Notas del pedido (opcional)</label>
+                    <textarea
+                        value={orderNotes}
+                        onChange={(e) => setOrderNotes(e.target.value)}
+                        rows={2}
+                        placeholder="Instrucciones especiales..."
+                        className="w-full rounded-lg border border-gray-200 p-2 text-sm text-gray-700 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                    />
+                </div>
+
+                {/* Resumen */}
+                <div className="space-y-1 border-t border-gray-100 pt-3">
+                    <div className="flex justify-between text-sm text-gray-600">
+                        <span>Subtotal</span>
+                        <span>{formatter.format(subtotal)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-gray-600">
+                        <span>Costo de envío</span>
+                        <span>
+                            {effectiveMethod === 'delivery'
+                                ? shippingCost === 0 ? 'Gratis' : formatter.format(shippingCost)
+                                : '—'}
+                        </span>
+                    </div>
+                    <div className="flex justify-between border-t border-gray-100 pt-2 font-bold text-gray-900">
+                        <span>Total a pagar</span>
+                        <span>{formatter.format(finalTotal)}</span>
+                    </div>
+                </div>
+
+                {/* Error */}
+                {khipuError && (
+                    <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+                        {khipuError}
+                    </p>
+                )}
+
+                {/* Botones */}
+                <div className="space-y-3 pt-1">
+                    <button
+                        type="button"
+                        onClick={handleKhipuPayment}
+                        disabled={items.length === 0 || isLoadingKhipu}
+                        className="w-full rounded-full bg-blue-600 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                        {isLoadingKhipu ? 'Procesando...' : 'Pagar con Khipu'}
+                    </button>
+
+                    {whatsappPhone && (
+                        <a  
+                            href={buildWhatsAppMessage(whatsappPhone, storeName, items, finalTotal, effectiveMethod, customerEmail, shippingAddress, orderNotes)}
+                            onClick={() => trackWhatsappClick(storeId)}
+                            className="flex w-full items-center justify-center rounded-full bg-green-500 py-3 text-sm font-semibold text-white transition hover:bg-green-600"
+                        >
+                            Pedir por WhatsApp
+                        </a>
+                    )}
+                </div>
             </div>
-        </>
+        </div>
     )
 }

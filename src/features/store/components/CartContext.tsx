@@ -15,10 +15,16 @@ export type NewCartItem = {
     price: number
 }
 
+// 1. Exportamos el tipo para poder usarlo en otros archivos
+export type ShippingMethod = 'pickup' | 'delivery'
+
 interface CartContextValue {
     items: CartItem[]
     total: number
     itemCount: number
+    // 2. Agregamos las nuevas propiedades a la interfaz
+    shippingMethod: ShippingMethod
+    setShippingMethod: (method: ShippingMethod) => void
     addItem: (item: NewCartItem) => void
     updateQuantity: (id: string, quantity: number) => void
     removeItem: (id: string) => void
@@ -28,10 +34,7 @@ interface CartContextValue {
 const CartContext = createContext<CartContextValue | undefined>(undefined)
 
 function getStoredCartItems(cartKey: string): CartItem[] {
-    if (typeof window === 'undefined') {
-        return []
-    }
-
+    if (typeof window === 'undefined') return []
     try {
         const stored = window.localStorage.getItem(cartKey)
         return stored ? (JSON.parse(stored) as CartItem[]) : []
@@ -49,9 +52,10 @@ export const CartProvider = ({
 }) => {
     const CART_KEY = `walo-cart-${storeId}`
     const [items, setItems] = useState<CartItem[]>([])
+    // 3. Estado inicial del método de entrega
+    const [shippingMethod, setShippingMethod] = useState<ShippingMethod>('pickup')
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setItems(getStoredCartItems(CART_KEY))
     }, [CART_KEY])
 
@@ -83,7 +87,18 @@ export const CartProvider = ({
     const total = useMemo(() => items.reduce((acc, item) => acc + item.price * item.quantity, 0), [items])
 
     return (
-        <CartContext.Provider value={{ items, total, itemCount, addItem, updateQuantity, removeItem, clearCart }}>
+        // 4. Pasamos shippingMethod y setShippingMethod al Provider
+        <CartContext.Provider value={{
+            items,
+            total,
+            itemCount,
+            shippingMethod,
+            setShippingMethod,
+            addItem,
+            updateQuantity,
+            removeItem,
+            clearCart
+        }}>
             {children}
         </CartContext.Provider>
     )
