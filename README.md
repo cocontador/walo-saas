@@ -6,6 +6,17 @@ Proyecto de Título — Duoc UC, Viña del Mar.
 
 ---
 
+## Contexto del proyecto
+
+| | |
+|---|---|
+| **Rubro** | Retail digital — comercio electrónico |
+| **Segmento** | Microemprendedores y pequeños negocios |
+| **Modelo** | SaaS multitenant B2B2C |
+| **Mercado objetivo** | Chile |
+
+---
+
 ## Descripción
 
 WALO permite a cualquier emprendedor tener su tienda online en minutos, sin conocimientos técnicos. Cada tienda obtiene una URL pública (`walo.app/mi-tienda`), catálogo de productos con imágenes, carrito de compras, integración con WhatsApp y opción de pago con Khipu. Los dueños de tienda gestionan todo desde un panel de administración con métricas de ventas y clics a WhatsApp.
