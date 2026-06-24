@@ -10,6 +10,8 @@ function createOrder(totalAmount: number): Order {
         totalAmount,
         status: OrderStatus.PAID,
         customerNotes: null,
+        customerEmail: null,
+        shippingMethod: null,
         itemsSnapshot: [],
         createdAt: new Date(),
         updatedAt: new Date(),

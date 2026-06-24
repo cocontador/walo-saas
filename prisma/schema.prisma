@@ -201,16 +201,18 @@ model StoreSubscription {
 }
 
 model Order {
-  id            String      @id @default(cuid())
-  storeId       String
-  store         Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  totalAmount   Int
-  status        OrderStatus @default(PENDING)
-  customerNotes String?
-  itemsSnapshot Json
+  id              String      @id @default(cuid())
+  storeId         String
+  store           Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  totalAmount     Int
+  status          OrderStatus @default(PENDING)
+  customerNotes   String?
+  customerEmail   String?
+  shippingMethod  String?
+  itemsSnapshot   Json
   paymentAttempts PaymentAttempt[]
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
   @@index([storeId])
 }

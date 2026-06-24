@@ -56,6 +56,7 @@ export const CartProvider = ({
     const [shippingMethod, setShippingMethod] = useState<ShippingMethod>('pickup')
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setItems(getStoredCartItems(CART_KEY))
     }, [CART_KEY])
 

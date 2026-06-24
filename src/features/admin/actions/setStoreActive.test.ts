@@ -54,6 +54,10 @@ const store: Store = {
   acceptedTermsAt: null,
   khipuReceiverId: null,
   khipuSecret: null,
+  allowPickup: true,
+  allowDelivery: false,
+  deliveryCost: 0,
+  pickupAddress: null,
   createdAt: new Date(),
   updatedAt: new Date(),
 }
