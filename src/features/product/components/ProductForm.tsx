@@ -348,7 +348,7 @@ export function ProductForm({ mode = 'create', initialValues, initialImageUrl, c
         />
 
         {isEditMode ? (
-          <div className="rounded-2xl border border-gray-200 bg-white p-4">
+          <div data-tour="product-image-section" className="rounded-2xl border border-gray-200 bg-white p-4">
             <div className="mb-4 flex items-center justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
@@ -415,7 +415,7 @@ export function ProductForm({ mode = 'create', initialValues, initialImageUrl, c
             )}
           </div>
         ) : (
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 text-sm text-gray-500">
+          <div data-tour="product-image-section" className="rounded-2xl border border-gray-200 bg-white p-4 text-sm text-gray-500">
             Guarda el producto para agregar una imagen.
           </div>
         )}

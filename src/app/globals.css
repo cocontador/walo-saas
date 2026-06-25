@@ -18,3 +18,53 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.walo-driver-popover {
+  max-width: 360px;
+  border-radius: 18px;
+  border: 1px solid #d1fae5;
+  box-shadow: 0 24px 60px rgb(15 23 42 / 18%);
+}
+
+.walo-driver-popover .driver-popover-title {
+  color: #064e3b;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.walo-driver-popover .driver-popover-description {
+  color: #4b5563;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.walo-driver-popover .driver-popover-progress-text {
+  color: #6b7280;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.walo-driver-popover .driver-popover-prev-btn,
+.walo-driver-popover .driver-popover-next-btn {
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-shadow: none;
+}
+
+.walo-driver-popover .driver-popover-next-btn {
+  border-color: #059669;
+  background: #059669;
+  color: #ffffff;
+}
+
+.walo-driver-popover .driver-popover-prev-btn {
+  background: #ffffff;
+  color: #374151;
+}
+
+.walo-driver-popover .driver-popover-close-btn {
+  color: #6b7280;
+}

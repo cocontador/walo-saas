@@ -11,9 +11,10 @@ type FieldProps = {
   placeholder: string
   value: string
   onChange: (value: string) => void
+  tourKey?: string
 }
 
-function Field({ label, id, type, placeholder, value, onChange }: FieldProps) {
+function Field({ label, id, type, placeholder, value, onChange, tourKey }: FieldProps) {
   return (
     <div>
       <label htmlFor={id} className="mb-1 block text-xs font-semibold tracking-widest text-gray-500">
@@ -21,6 +22,7 @@ function Field({ label, id, type, placeholder, value, onChange }: FieldProps) {
       </label>
       <input
         id={id}
+        data-tour={tourKey}
         type={type}
         placeholder={placeholder}
         value={value}
@@ -100,7 +102,7 @@ export function RegisterForm() {
   }
 
   return (
-    <div className="w-full max-w-md">
+    <div className="w-full">
       <button
         onClick={() => router.push('/')}
         className="cursor-pointer mb-8 flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-gray-800"
@@ -116,8 +118,16 @@ export function RegisterForm() {
 
       {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <Field label="TU NOMBRE" id="name" type="text" placeholder="María González" value={name} onChange={setName} />
+      <form data-tour="register-form" onSubmit={handleSubmit} className="space-y-4">
+        <Field
+          label="TU NOMBRE"
+          id="name"
+          type="text"
+          placeholder="María González"
+          value={name}
+          onChange={setName}
+          tourKey="register-name"
+        />
         <Field
           label="NOMBRE DE TU TIENDA"
           id="storeName"
@@ -190,6 +200,7 @@ export function RegisterForm() {
           placeholder="tucorreo@ejemplo.com"
           value={email}
           onChange={setEmail}
+          tourKey="register-email"
         />
         <Field
           label="CONTRASEÑA"
@@ -198,6 +209,7 @@ export function RegisterForm() {
           placeholder="Mínimo 6 caracteres"
           value={password}
           onChange={setPassword}
+          tourKey="register-password"
         />
 
         <div className="flex items-start gap-3 rounded-3xl border border-gray-200 bg-white px-4 py-4">
@@ -220,6 +232,7 @@ export function RegisterForm() {
 
         <button
           type="submit"
+          data-tour="register-submit"
           disabled={loading}
           className="cursor-pointer mt-2 w-full rounded-xl bg-green-500 px-4 py-3 font-semibold text-white transition-all hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-60"
         >
@@ -229,6 +242,12 @@ export function RegisterForm() {
 
       <p className="mt-4 text-center text-xs text-gray-400">
         Al registrarte aceptas nuestros Términos y Condiciones de uso de WALO.
+      </p>
+      <p className="mt-3 text-center text-sm text-gray-500">
+        ¿Ya tienes cuenta?{' '}
+        <Link href="/login" data-tour="login-link" className="font-semibold text-green-600 hover:text-green-700">
+          Iniciar sesión
+        </Link>
       </p>
     </div>
   )

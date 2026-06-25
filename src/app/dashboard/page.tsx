@@ -2,7 +2,7 @@ import { Suspense } from 'react'
 import Link from 'next/link'
 import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
-import { ArrowRight, ExternalLink, FolderTree, Package, Settings, Store, Wallet } from 'lucide-react'
+import { ArrowRight, CheckCircle2, ExternalLink, FolderTree, Package, Settings, Store, Wallet } from 'lucide-react'
 
 import { StoreStatusButton } from '@/features/store/components/StoreStatusButton'
 import { ShareButton } from '@/features/store/components/ShareButton'
@@ -23,6 +23,7 @@ type QuickAction = {
   href: string
   icon: React.ComponentType<{ className?: string }>
   external?: boolean
+  tourKey?: string
 }
 
 type Props = {
@@ -73,6 +74,7 @@ export default async function DashboardPage({ searchParams }: Props) {
           description: 'Agrega, edita y ordena tu catálogo.',
           href: '/dashboard/products',
           icon: Package,
+          tourKey: 'products-link',
         },
         {
           title: 'Ordenar categorías',
@@ -86,6 +88,7 @@ export default async function DashboardPage({ searchParams }: Props) {
           href: `/${store.slug}`,
           icon: ExternalLink,
           external: true,
+          tourKey: 'public-catalog-link',
         },
         {
           title: 'Mi plan',
@@ -98,7 +101,10 @@ export default async function DashboardPage({ searchParams }: Props) {
 
   return (
     <div className="space-y-8">
-      <div className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-white p-6 shadow-sm md:p-8">
+      <div
+        data-tour="dashboard-title"
+        className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-white p-6 shadow-sm md:p-8"
+      >
         <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-emerald-100/70 blur-3xl" />
         <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-lime-100/70 blur-3xl" />
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
@@ -115,16 +121,18 @@ export default async function DashboardPage({ searchParams }: Props) {
             </p>
           </div>
 
-          {store && (
-            <Link
-              href={`/${store.slug}`}
-              target="_blank"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
-            >
-              Ver tienda pública
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          )}
+          <div className="flex flex-wrap items-center gap-3">
+            {store && (
+              <Link
+                href={`/${store.slug}`}
+                target="_blank"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+              >
+                Ver tienda pública
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            )}
+          </div>
         </div>
       </div>
 
@@ -157,13 +165,44 @@ export default async function DashboardPage({ searchParams }: Props) {
                     {formatter.format(sales.totalRevenue)}
                   </p>
                 </div>
-                <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                <div data-tour="whatsapp-orders" className="rounded-xl border border-gray-100 bg-gray-50 p-4">
                   <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Clics WhatsApp</p>
                   <p className="mt-1 text-2xl font-bold text-gray-900">{whatsapp.clicks}</p>
                 </div>
               </div>
             )}
           </div>
+
+          <section data-tour="onboarding-checklist" className="rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-emerald-700">
+                  Primeros pasos
+                </p>
+                <h2 className="mt-2 text-lg font-black text-gray-950">Checklist de preparación</h2>
+                <p className="mt-1 text-sm leading-6 text-gray-500">
+                  Usa esta guía rápida para dejar tu tienda lista antes de compartirla.
+                </p>
+              </div>
+              <div className="grid flex-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                {[
+                  'Configurar tienda',
+                  'Crear primer producto',
+                  'Agregar imagen',
+                  'Revisar catálogo público',
+                  'Compartir por WhatsApp',
+                ].map((item) => (
+                  <div
+                    key={item}
+                    className="flex items-center gap-2 rounded-xl border border-gray-100 bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-700"
+                  >
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
 
           <section className="grid gap-4 lg:grid-cols-4">
             {quickActions.map((action) => {
@@ -174,6 +213,7 @@ export default async function DashboardPage({ searchParams }: Props) {
                   key={action.href}
                   href={action.href}
                   target={action.external ? '_blank' : undefined}
+                  data-tour={action.tourKey}
                   className="group rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md"
                 >
                   <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 transition group-hover:bg-emerald-600 group-hover:text-white">
@@ -190,7 +230,7 @@ export default async function DashboardPage({ searchParams }: Props) {
             })}
           </section>
 
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
+          <div data-tour="store-summary" className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
             <div className="flex flex-col gap-5 border-b border-gray-100 pb-6 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex items-center gap-4">
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-sm">
@@ -228,6 +268,7 @@ export default async function DashboardPage({ searchParams }: Props) {
                   <Link
                     href={`/${store.slug}`}
                     target="_blank"
+                    data-tour="public-catalog-link"
                     className="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-950 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-gray-800"
                   >
                     Ver catálogo

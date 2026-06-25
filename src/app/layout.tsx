@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import 'driver.js/dist/driver.css'
 import './globals.css'
 
 export const metadata: Metadata = {
