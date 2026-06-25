@@ -2,16 +2,19 @@
 
 import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-
 import { removeLogo, replaceLogo, uploadLogo } from '@/features/store/actions'
 
-interface StoreFormProps {
+export interface StoreFormProps {
   storeId: string
   initialName: string
   initialSlug: string
   initialDescription: string | null
   initialLogoUrl: string | null
   initialWhatsapp: string | null
+  initialAllowPickup: boolean
+  initialAllowDelivery: boolean
+  initialDeliveryCost: number | null
+  initialPickupAddress: string | null
 }
 
 function sanitizeSlug(value: string): string {
@@ -37,6 +40,10 @@ export function StoreForm({
   initialDescription,
   initialLogoUrl,
   initialWhatsapp,
+  initialAllowPickup,
+  initialAllowDelivery,
+  initialDeliveryCost,
+  initialPickupAddress,
 }: StoreFormProps) {
   const router = useRouter()
   const [name, setName] = useState(initialName)
@@ -44,6 +51,13 @@ export function StoreForm({
   const [description, setDescription] = useState(initialDescription ?? '')
   const [logoUrl, setLogoUrl] = useState(initialLogoUrl)
   const [whatsappDigits, setWhatsappDigits] = useState(() => extractWhatsappDigits(initialWhatsapp))
+  const [allowPickup, setAllowPickup] = useState(initialAllowPickup)
+  const [pickupAddress, setPickupAddress] = useState(initialPickupAddress ?? '')
+  const [allowDelivery, setAllowDelivery] = useState(initialAllowDelivery)
+  const [deliveryCost, setDeliveryCost] = useState(
+    initialDeliveryCost != null ? String(initialDeliveryCost) : ''
+  )
+
   const [loading, setLoading] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -65,6 +79,10 @@ export function StoreForm({
           slug,
           description,
           whatsappPhone: whatsappDigits.length === 8 ? `+569${whatsappDigits}` : null,
+          allowPickup,
+          pickupAddress,
+          allowDelivery,
+          deliveryCost: deliveryCost !== '' ? Number(deliveryCost) : 0,
         }),
       })
 
@@ -85,7 +103,6 @@ export function StoreForm({
 
   const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
-
     if (!selectedFile) return
 
     setError(null)
@@ -110,9 +127,7 @@ export function StoreForm({
       setError('No se pudo procesar el logo.')
     } finally {
       setIsUploading(false)
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
-      }
+      if (fileInputRef.current) fileInputRef.current.value = ''
     }
   }
 
@@ -140,6 +155,7 @@ export function StoreForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Nombre */}
       <div>
         <label className="mb-1 block text-xs font-semibold tracking-widest text-gray-500">
           NOMBRE DE LA TIENDA
@@ -154,6 +170,7 @@ export function StoreForm({
         />
       </div>
 
+      {/* Slug */}
       <div>
         <label className="mb-1 block text-xs font-semibold tracking-widest text-gray-500">
           URL DE LA TIENDA
@@ -170,6 +187,7 @@ export function StoreForm({
         <p className="mt-1 text-xs text-gray-500">Se verá como: walo.app/{slug || 'mi-tienda'}</p>
       </div>
 
+      {/* Descripción */}
       <div>
         <label className="mb-1 block text-xs font-semibold tracking-widest text-gray-500">
           DESCRIPCIÓN
@@ -184,6 +202,7 @@ export function StoreForm({
         />
       </div>
 
+      {/* WhatsApp */}
       <div>
         <label className="mb-1 block text-xs font-semibold tracking-widest text-gray-500">
           NÚMERO DE WHATSAPP
@@ -201,7 +220,11 @@ export function StoreForm({
             type="tel"
             inputMode="numeric"
             placeholder="1234 5678"
-            value={whatsappDigits.length > 4 ? `${whatsappDigits.slice(0, 4)} ${whatsappDigits.slice(4)}` : whatsappDigits}
+            value={
+              whatsappDigits.length > 4
+                ? `${whatsappDigits.slice(0, 4)} ${whatsappDigits.slice(4)}`
+                : whatsappDigits
+            }
             onChange={(e) => {
               const digits = e.target.value.replace(/\D/g, '').slice(0, 8)
               setWhatsappDigits(digits)
@@ -213,6 +236,76 @@ export function StoreForm({
         <p className="mt-1 text-xs text-gray-400">Tus clientes te enviarán pedidos a este número.</p>
       </div>
 
+      {/* Configuración de envío */}
+      <div className="rounded-xl border border-gray-200 p-4 space-y-4">
+        <p className="text-xs font-semibold tracking-widest text-gray-500">CONFIGURACIÓN DE ENVÍO</p>
+
+        {/* Retiro en tienda */}
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={allowPickup}
+            onChange={(e) => setAllowPickup(e.target.checked)}
+            disabled={loading || isUploading}
+            className="h-4 w-4 rounded border-gray-300 text-green-500 focus:ring-green-500"
+          />
+          <span className="text-sm text-gray-700">Habilitar retiro en tienda</span>
+        </label>
+
+        {allowPickup && (
+          <div>
+            <label className="mb-1 block text-xs font-semibold tracking-widest text-gray-500">
+              DIRECCIÓN DE RETIRO
+            </label>
+            <input
+              type="text"
+              value={pickupAddress}
+              onChange={(e) => setPickupAddress(e.target.value)}
+              placeholder="Ej: Av. Principal 123, Viña del Mar"
+              disabled={loading || isUploading}
+              className="w-full rounded-xl border border-transparent bg-gray-100 px-4 py-3 text-gray-900 placeholder-gray-400 focus:border-green-500 focus:bg-white focus:outline-none disabled:cursor-not-allowed disabled:opacity-70"
+            />
+          </div>
+        )}
+
+        {/* Envío a domicilio */}
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={allowDelivery}
+            onChange={(e) => setAllowDelivery(e.target.checked)}
+            disabled={loading || isUploading}
+            className="h-4 w-4 rounded border-gray-300 text-green-500 focus:ring-green-500"
+          />
+          <span className="text-sm text-gray-700">Habilitar envío a domicilio</span>
+        </label>
+
+        {allowDelivery && (
+          <div>
+            <label className="mb-1 block text-xs font-semibold tracking-widest text-gray-500">
+              COSTO DE ENVÍO (CLP)
+            </label>
+            <div className="flex items-center rounded-xl border border-transparent bg-gray-100 transition-all focus-within:border-green-500 focus-within:bg-white">
+              <span className="pl-4 pr-2 text-sm font-medium text-gray-500">$</span>
+              <span className="self-stretch border-l border-gray-300" />
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="0 = envío gratis"
+                value={deliveryCost}
+                onChange={(e) => setDeliveryCost(e.target.value.replace(/\D/g, ''))}
+                disabled={loading || isUploading}
+                className="min-w-0 flex-1 bg-transparent py-3 pl-3 pr-4 text-gray-900 placeholder-gray-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-70"
+              />
+            </div>
+            <p className="mt-1 text-xs text-gray-400">
+              Se mostrará a tus clientes al momento de hacer el pedido. Ingresa 0 para envío gratis.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Logo */}
       <div className="rounded-xl border border-gray-200 p-4">
         <p className="mb-3 text-xs font-semibold tracking-widest text-gray-500">LOGO DE TIENDA</p>
 
@@ -223,7 +316,6 @@ export function StoreForm({
               alt="Logo actual de la tienda"
               className="h-20 w-20 rounded-lg border border-gray-200 object-cover"
             />
-
             <div className="flex flex-wrap gap-2">
               <label className="inline-flex cursor-pointer items-center rounded-xl bg-green-500 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-green-600">
                 {isUploading ? 'Procesando...' : 'Reemplazar logo'}
@@ -236,7 +328,6 @@ export function StoreForm({
                   className="hidden"
                 />
               </label>
-
               <button
                 type="button"
                 onClick={handleRemoveLogo}
@@ -262,12 +353,12 @@ export function StoreForm({
         )}
       </div>
 
+      {/* Feedback */}
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
           {error}
         </div>
       )}
-
       {success && (
         <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
           {success}

@@ -61,6 +61,7 @@ export async function retryPayment(orderId: string) {
             items: cartItems,
             totalAmount: Number(order.totalAmount),
             customerNotes: order.customerNotes ? String(order.customerNotes) : undefined,
+            shippingMethod: (order.shippingMethod as 'pickup' | 'delivery') ?? 'pickup',
         })
 
     } catch {

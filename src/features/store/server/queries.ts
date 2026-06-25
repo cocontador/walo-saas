@@ -20,6 +20,9 @@ export async function getStoreBySlug(slug: string) {
             logoUrl: true,
             whatsappPhone: true,
             isActive: true,
+            allowPickup: true,
+            allowDelivery: true,
+            deliveryCost: true,
         },
     })
 

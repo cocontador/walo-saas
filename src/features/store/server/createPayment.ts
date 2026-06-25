@@ -1,18 +1,9 @@
 'use server'
 
 import crypto from 'crypto'
-import { prisma } from '@/lib/prisma'
-import { khipuConfig } from '@/lib/khipu'
 import { logError } from '@/lib/logger'
 import { OrderStatus } from '@prisma/client'
-
-type PaymentData = {
-    storeId: string
-    storeName: string
-    items: PaymentItem[]
-    totalAmount: number
-    customerNotes?: string
-}
+import { khipuConfig } from '@/lib/khipu'
 
 type PaymentItem = {
     id: string
@@ -21,8 +12,20 @@ type PaymentItem = {
     quantity: number
 }
 
+type PaymentData = {
+    storeId: string
+    storeName: string
+    items: PaymentItem[]
+    totalAmount: number
+    customerNotes?: string
+    customerEmail?: string
+    shippingMethod: 'pickup' | 'delivery'
+}
+
 export async function createPaymentIntent(data: PaymentData) {
     try {
+        const { prisma } = await import('@/lib/prisma')
+
         const store = await prisma.store.findUnique({
             where: { id: data.storeId },
             select: { khipuReceiverId: true, khipuSecret: true },
@@ -32,7 +35,10 @@ export async function createPaymentIntent(data: PaymentData) {
         const secret = store?.khipuSecret
 
         if (!receiverId || !secret) {
-            return { success: false, error: 'Esta tienda aún no tiene Khipu configurado. El dueño debe ingresar sus credenciales en Configuración.' }
+            return {
+                success: false,
+                error: 'Esta tienda aún no tiene Khipu configurado. El dueño debe ingresar sus credenciales en Configuración.',
+            }
         }
 
         const result = await prisma.$transaction(async (tx) => {
@@ -41,8 +47,10 @@ export async function createPaymentIntent(data: PaymentData) {
                     storeId: data.storeId,
                     totalAmount: data.totalAmount,
                     customerNotes: data.customerNotes || null,
+                    customerEmail: data.customerEmail || null,
                     itemsSnapshot: data.items,
                     status: OrderStatus.PENDING,
+                    shippingMethod: data.shippingMethod,
                 },
             })
 
@@ -57,6 +65,7 @@ export async function createPaymentIntent(data: PaymentData) {
                 return_url: `${appUrl}/pago/${order.id}`,
                 subject: `Compra en ${data.storeName}`,
                 transaction_id: order.id,
+                ...(data.customerEmail ? { payer_email: data.customerEmail } : {}),
             }
 
             const sortedKeys = Object.keys(payload).sort()
@@ -73,12 +82,10 @@ export async function createPaymentIntent(data: PaymentData) {
                 .update(toSign)
                 .digest('hex')
 
-            const authorization = `${receiverId}:${hash}`
-
             const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
-                    Authorization: authorization,
+                    Authorization: `${receiverId}:${hash}`,
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
                 body: bodyParams.toString(),
