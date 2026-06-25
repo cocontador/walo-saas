@@ -10,10 +10,10 @@ export default function RetryButton({ orderId }: { orderId: string }) {
         setIsRetrying(true)
         try {
             const result = await retryPayment(orderId)
-            if (result.success && result.paymentUrl) {
-                window.location.href = result.paymentUrl
+            if (result.success && 'paymentUrl' in result && result.paymentUrl) {
+                window.location.href = result.paymentUrl as string
             } else {
-                alert(result.error || "No pudimos reintentar el pago.")
+                alert(('error' in result ? result.error : null) || "No pudimos reintentar el pago.")
                 setIsRetrying(false)
             }
         } catch {

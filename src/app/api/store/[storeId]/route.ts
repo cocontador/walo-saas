@@ -17,15 +17,17 @@ const storeUpdateSchema = z.object({
       'El slug solo permite minúsculas, números y guiones (sin espacios).'
     ),
   description: z.string().optional().nullable(),
-  whatsappPhone: z.string().regex(/^\+569\d{8}$/, 'El número de WhatsApp debe tener 8 dígitos.').optional().nullable(),
+  whatsappPhone: z
+    .string()
+    .regex(/^\+569\d{8}$/, 'El número de WhatsApp debe tener 8 dígitos.')
+    .optional()
+    .nullable(),
+  allowPickup: z.boolean().optional(),
+  allowDelivery: z.boolean().optional(),
+  deliveryCost: z.number().int().min(0, 'El costo de envío no puede ser negativo.').optional(),
+  pickupAddress: z.string().optional().nullable(),
 })
 
-/**
- * Actualiza los datos de una tienda validando sesión, membresía y unicidad de slug.
- * @param req Request HTTP con payload de actualización.
- * @param params Parámetro dinámico de ruta con `storeId`.
- * @returns Respuesta JSON con la tienda actualizada o error controlado.
- */
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ storeId: string }> }
@@ -78,6 +80,10 @@ export async function PATCH(
         slug: normalizedSlug,
         description: validatedData.description?.trim() ?? null,
         whatsappPhone: validatedData.whatsappPhone?.trim() ?? null,
+        allowPickup: validatedData.allowPickup ?? false,
+        allowDelivery: validatedData.allowDelivery ?? false,
+        deliveryCost: validatedData.deliveryCost ?? 0,
+        pickupAddress: validatedData.pickupAddress?.trim() ?? null,
       },
     })
 

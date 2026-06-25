@@ -27,7 +27,7 @@ describe('CartDrawer - WhatsApp Link Builder (WALO-55 / WALO-56)', () => {
         const phone = '+56987654321'
         const storeName = 'La Cocina de Juan'
 
-        const url = buildWhatsAppMessage(phone, storeName, mockItems, total)
+        const url = buildWhatsAppMessage(phone, storeName, mockItems, total, 'pickup', '', '')
         expect(url).toContain('https://wa.me/+56987654321')
 
         const urlObj = new URL(url)
@@ -42,7 +42,7 @@ describe('CartDrawer - WhatsApp Link Builder (WALO-55 / WALO-56)', () => {
     it('debe insertar las instrucciones especiales al final', () => {
         const mockItems: CartItem[] = [{ id: '1', name: 'Pan de Masa Madre', price: 3000, quantity: 1 }]
         const notes = 'Por favor, enviar por la entrada lateral.'
-        const url = buildWhatsAppMessage('+56912345678', 'Tienda Test', mockItems, 3000, notes)
+        const url = buildWhatsAppMessage('+56912345678', 'Tienda Test', mockItems, 3000, 'pickup', '', '', notes)
         const decodedText = decodeURIComponent(new URL(url).searchParams.get('text') || '')
         
         expect(decodedText).toContain('*Instrucciones especiales:*')
@@ -56,8 +56,8 @@ describe('CartDrawer - WhatsApp Link Builder (WALO-55 / WALO-56)', () => {
         ]
         const notes = 'Sin cebolla por favor'
 
-        const text = buildWhatsAppMessageText('La Cocina', mockItems, 5000, notes)
-        const url = buildWhatsAppMessage('+56987654321', 'La Cocina', mockItems, 5000, notes)
+        const text = buildWhatsAppMessageText('La Cocina', mockItems, 5000, 'pickup', '', '', notes)
+        const url = buildWhatsAppMessage('+56987654321', 'La Cocina', mockItems, 5000, 'pickup', '', '', notes)
 
         // El texto de la preview debe ser idéntico al que viaja dentro de la URL
         const decodedFromUrl = decodeURIComponent(new URL(url).searchParams.get('text') || '')
