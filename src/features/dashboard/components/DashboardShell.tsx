@@ -130,7 +130,7 @@ export function DashboardShell({ userName, userEmail, children }: DashboardShell
             <Link
               key={item.href}
               href={item.href}
-              data-tour={item.href === '/dashboard/products' ? 'products-link' : undefined}
+              data-tour={item.href === '/dashboard/products' ? 'sidebar-products-link' : undefined}
               className={navItemClasses(isActive)}
               onClick={() => setIsMobileOpen(false)}
             >
@@ -188,7 +188,7 @@ export function DashboardShell({ userName, userEmail, children }: DashboardShell
               <span className="text-lg font-black tracking-tight text-gray-950">WALO</span>
             </Link>
             <div className="flex items-center gap-2">
-              <DashboardGuidedTour compact />
+              <DashboardGuidedTour compact autoStart={false} />
               <button
                 type="button"
                 onClick={() => setIsMobileOpen(true)}

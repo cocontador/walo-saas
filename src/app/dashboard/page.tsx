@@ -74,7 +74,7 @@ export default async function DashboardPage({ searchParams }: Props) {
           description: 'Agrega, edita y ordena tu catálogo.',
           href: '/dashboard/products',
           icon: Package,
-          tourKey: 'products-link',
+          tourKey: 'dashboard-products-card',
         },
         {
           title: 'Ordenar categorías',
@@ -88,7 +88,7 @@ export default async function DashboardPage({ searchParams }: Props) {
           href: `/${store.slug}`,
           icon: ExternalLink,
           external: true,
-          tourKey: 'public-catalog-link',
+          tourKey: 'dashboard-public-catalog-card',
         },
         {
           title: 'Mi plan',
@@ -268,7 +268,7 @@ export default async function DashboardPage({ searchParams }: Props) {
                   <Link
                     href={`/${store.slug}`}
                     target="_blank"
-                    data-tour="public-catalog-link"
+                    data-tour="store-summary-public-catalog-link"
                     className="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-950 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-gray-800"
                   >
                     Ver catálogo

@@ -3,8 +3,6 @@
 import { HelpCircle } from 'lucide-react'
 import { driver, type DriveStep } from 'driver.js'
 
-const PUBLIC_TOUR_STORAGE_KEY = 'walo-public-tour-completed'
-
 type PublicTourStep = DriveStep & {
   element: string
 }
@@ -123,14 +121,6 @@ function getFirstVisibleElement(selector: string) {
   })
 }
 
-function markPublicTourAsCompleted() {
-  try {
-    window.localStorage.setItem(PUBLIC_TOUR_STORAGE_KEY, 'true')
-  } catch {
-    // El recorrido público no debe fallar si localStorage no está disponible.
-  }
-}
-
 export function PublicRegisterTour({
   label = 'Ver cómo registrarme',
   compact = false,
@@ -139,7 +129,6 @@ export function PublicRegisterTour({
     const availableSteps = getAvailableSteps()
 
     if (availableSteps.length === 0) {
-      markPublicTourAsCompleted()
       return
     }
 
@@ -157,7 +146,6 @@ export function PublicRegisterTour({
       nextBtnText: 'Siguiente',
       prevBtnText: 'Anterior',
       doneBtnText: 'Finalizar',
-      onDestroyed: markPublicTourAsCompleted,
     })
 
     publicTour.drive()

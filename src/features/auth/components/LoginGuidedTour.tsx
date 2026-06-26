@@ -3,8 +3,6 @@
 import { HelpCircle } from 'lucide-react'
 import { driver, type DriveStep } from 'driver.js'
 
-const LOGIN_TOUR_STORAGE_KEY = 'walo-login-tour-completed'
-
 type LoginTourStep = DriveStep & {
   element: string
 }
@@ -81,20 +79,11 @@ function getFirstVisibleElement(selector: string) {
   })
 }
 
-function markLoginTourAsCompleted() {
-  try {
-    window.localStorage.setItem(LOGIN_TOUR_STORAGE_KEY, 'true')
-  } catch {
-    // El recorrido no debe fallar si el navegador bloquea localStorage.
-  }
-}
-
 export function LoginGuidedTour() {
   const startTour = () => {
     const availableSteps = getAvailableSteps()
 
     if (availableSteps.length === 0) {
-      markLoginTourAsCompleted()
       return
     }
 
@@ -112,7 +101,6 @@ export function LoginGuidedTour() {
       nextBtnText: 'Siguiente',
       prevBtnText: 'Anterior',
       doneBtnText: 'Finalizar',
-      onDestroyed: markLoginTourAsCompleted,
     })
 
     loginTour.drive()

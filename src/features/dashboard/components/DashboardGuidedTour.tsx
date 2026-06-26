@@ -32,7 +32,7 @@ const tourSteps: TourStepDefinition[] = [
     },
   },
   {
-    element: '[data-tour="products-link"]',
+    element: '[data-tour="dashboard-products-card"]',
     popover: {
       title: 'Productos',
       description: 'En esta sección puedes crear, editar y administrar los productos que verán tus clientes.',
@@ -59,7 +59,7 @@ const tourSteps: TourStepDefinition[] = [
     },
   },
   {
-    element: '[data-tour="public-catalog-link"]',
+    element: '[data-tour="store-summary-public-catalog-link"]',
     popover: {
       title: 'Catálogo público',
       description: 'Este enlace te permite revisar cómo tus clientes ven tu tienda.',
@@ -129,9 +129,13 @@ function hasCompletedTour() {
 
 type DashboardGuidedTourProps = {
   compact?: boolean
+  autoStart?: boolean
 }
 
-export function DashboardGuidedTour({ compact = false }: DashboardGuidedTourProps) {
+export function DashboardGuidedTour({
+  compact = false,
+  autoStart = true,
+}: DashboardGuidedTourProps) {
   const hasAutoStarted = useRef(false)
 
   const startTour = useCallback(() => {
@@ -163,7 +167,7 @@ export function DashboardGuidedTour({ compact = false }: DashboardGuidedTourProp
   }, [])
 
   useEffect(() => {
-    if (hasAutoStarted.current || hasCompletedTour()) {
+    if (!autoStart || hasAutoStarted.current || hasCompletedTour()) {
       return
     }
 
@@ -171,7 +175,7 @@ export function DashboardGuidedTour({ compact = false }: DashboardGuidedTourProp
     const timer = window.setTimeout(startTour, 600)
 
     return () => window.clearTimeout(timer)
-  }, [startTour])
+  }, [startTour, autoStart])
 
   return (
     <button
