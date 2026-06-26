@@ -1,9 +1,11 @@
 import { Suspense } from 'react'
+import Link from 'next/link'
 import { BarChart3, DollarSign, MessageCircle, ShoppingBag, TrendingUp } from 'lucide-react'
 import { getSalesSummary } from '@/features/dashboard/actions/getSalesSummary'
 import { getWhatsAppMetrics } from '@/features/dashboard/actions/getWhatsAppMetrics'
 import { parseDateRange } from '@/features/dashboard/schemas/dateRange.schema'
 import { DateRangeFilter } from '@/features/dashboard/components/DateRangeFilter'
+import { getCurrentPlan } from '@/features/billing/actions'
 
 export const metadata = { title: 'Analíticas — WALO' }
 
@@ -15,10 +17,32 @@ export default async function AnalyticsPage({ searchParams }: Props) {
     const params = await searchParams
     const dateRange = parseDateRange(params)
 
-    const [sales, whatsapp] = await Promise.all([
+    const [sales, whatsapp, { plan }] = await Promise.all([
         getSalesSummary(dateRange),
         getWhatsAppMetrics(dateRange),
+        getCurrentPlan(),
     ])
+
+    if (!plan.analytics) {
+        return (
+            <div className="flex flex-col items-center justify-center py-24 text-center">
+                <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50">
+                    <BarChart3 className="h-8 w-8 text-emerald-600" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-950">Analíticas disponibles en el Plan Pro</h2>
+                <p className="mt-3 max-w-sm text-sm leading-relaxed text-gray-500">
+                    Accede a métricas de ingresos, pedidos pagados, ticket promedio y clics a WhatsApp
+                    con filtro por período, disponibles desde el Plan Pro.
+                </p>
+                <Link
+                    href="/dashboard/billing"
+                    className="mt-6 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-emerald-700"
+                >
+                    Ver Plan Pro →
+                </Link>
+            </div>
+        )
+    }
 
     const hasData = sales.totalOrders > 0 || whatsapp.clicks > 0
 

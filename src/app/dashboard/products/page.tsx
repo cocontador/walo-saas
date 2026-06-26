@@ -4,6 +4,7 @@ import Link from 'next/link'
 
 import { authOptions } from '@/server/auth'
 import { getProducts, hideProduct, reactivateProduct } from '@/features/product/actions'
+import { getPlanUsage } from '@/features/billing/actions'
 
 type ProductsPageProps = {
   searchParams: Promise<{
@@ -21,7 +22,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const { q } = await searchParams
   const searchTerm = q?.trim() || null
 
-  const result = await getProducts(searchTerm)
+  const [result, usage] = await Promise.all([getProducts(searchTerm), getPlanUsage()])
 
   if (!result.success) {
     return (
@@ -70,6 +71,27 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             + Nuevo producto
           </Link>
         </div>
+
+        {/* Banner de límite de plan */}
+        {usage.shouldUpgrade && !usage.isUnlimited && (
+          <div className={`mb-6 flex items-center justify-between gap-4 rounded-xl border px-4 py-3 text-sm ${
+            usage.activeProducts >= (usage.productLimit ?? 0)
+              ? 'border-red-200 bg-red-50 text-red-800'
+              : 'border-amber-200 bg-amber-50 text-amber-800'
+          }`}>
+            <span>
+              {usage.activeProducts >= (usage.productLimit ?? 0)
+                ? `Límite alcanzado: ${usage.activeProducts} / ${usage.productLimit ?? 0} productos activos. No puedes crear más.`
+                : `Cerca del límite: ${usage.activeProducts} / ${usage.productLimit ?? 0} productos activos.`}
+            </span>
+            <Link
+              href="/dashboard/billing"
+              className="shrink-0 font-bold underline underline-offset-2"
+            >
+              Ver Plan Pro →
+            </Link>
+          </div>
+        )}
 
         {/* Search Bar */}
         <div className="mb-8">

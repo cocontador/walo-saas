@@ -1,23 +1,17 @@
 import 'dotenv/config'
-import { Pool } from 'pg'
-import { parse } from 'pg-connection-string'
+
 import { PrismaClient } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 
-const connectionString = process.env.DATABASE_URL!
-const { host, port, user, password, database } = parse(connectionString)
-const needsSsl = connectionString.includes('ssl')
+const connectionString = process.env.DATABASE_URL
 
-const pool = new Pool({
-  host: host ?? undefined,
-  port: port ? Number(port) : undefined,
-  user: user ?? undefined,
-  password: password ?? undefined,
-  database: database ?? undefined,
-  ssl: needsSsl ? { rejectUnauthorized: false } : false,
+if (!connectionString) {
+  throw new Error('DATABASE_URL is not defined')
+}
+
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString }),
 })
-const adapter = new PrismaPg(pool)
-const prisma = new PrismaClient({ adapter })
 
 async function main() {
   console.log('🌱 Iniciando seed de la base de datos...')

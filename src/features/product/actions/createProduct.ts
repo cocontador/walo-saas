@@ -9,6 +9,7 @@ import { getUserStoreId } from '@/server/store'
 import { prisma } from '@/lib/prisma'
 import { logError } from '@/lib/logger'
 import { createProductSchema, type CreateProductInput } from '@/features/product/schemas'
+import { getPlanUsage } from '@/features/billing/actions'
 
 export type ActionResult<T> =
   | { success: true; data: T }
@@ -37,6 +38,14 @@ export async function createProduct(
       return {
         success: false,
         error: 'No tienes una tienda asociada. Contacta a soporte.',
+      }
+    }
+
+    const usage = await getPlanUsage()
+    if (!usage.isUnlimited && usage.activeProducts >= (usage.productLimit ?? 0)) {
+      return {
+        success: false,
+        error: `Alcanzaste el límite de ${usage.productLimit ?? 0} productos de tu plan. Sube al Plan Pro para agregar más.`,
       }
     }
 
