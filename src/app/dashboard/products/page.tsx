@@ -66,6 +66,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
           </div>
           <Link
             href="/dashboard/products/create"
+            data-tour="create-product-button"
             className="rounded-xl bg-green-500 px-6 py-3 font-semibold text-white transition-all hover:bg-green-600"
           >
             + Nuevo producto
@@ -143,6 +144,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             </p>
             <Link
               href="/dashboard/products/create"
+              data-tour="create-product-button"
               className="inline-block rounded-xl bg-green-500 px-6 py-3 font-semibold text-white transition-all hover:bg-green-600"
             >
               {searchTerm ? 'Crear nuevo producto' : 'Crear primer producto'}
@@ -201,7 +203,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                           {product.description || '—'}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4" data-tour="product-status">
                         {product.visible ? (
                           <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
                             Visible
