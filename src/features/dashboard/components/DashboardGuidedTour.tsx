@@ -41,24 +41,6 @@ const tourSteps: TourStepDefinition[] = [
     },
   },
   {
-    element: '[data-tour="product-image-section"]',
-    popover: {
-      title: 'Imágenes de producto',
-      description: 'Agrega imágenes para que tu catálogo se vea más atractivo y profesional.',
-      side: 'top',
-      align: 'start',
-    },
-  },
-  {
-    element: '[data-tour="product-status"]',
-    popover: {
-      title: 'Estado del producto',
-      description: 'Puedes mostrar, ocultar o desactivar productos según lo que quieras publicar en tu catálogo.',
-      side: 'left',
-      align: 'center',
-    },
-  },
-  {
     element: '[data-tour="store-summary-public-catalog-link"]',
     popover: {
       title: 'Catálogo público',
