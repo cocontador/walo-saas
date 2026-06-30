@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { BarChart3, FolderTree, LayoutDashboard, Menu, Package, Settings, ShoppingBag, Wallet, X } from 'lucide-react'
 
 import { SignOutButton } from '@/features/auth/components/SignOutButton'
+import { DashboardGuidedTour } from '@/features/dashboard/components/DashboardGuidedTour'
 
 type DashboardShellProps = {
   userName: string
@@ -129,6 +130,7 @@ export function DashboardShell({ userName, userEmail, children }: DashboardShell
             <Link
               key={item.href}
               href={item.href}
+              data-tour={item.href === '/dashboard/products' ? 'sidebar-products-link' : undefined}
               className={navItemClasses(isActive)}
               onClick={() => setIsMobileOpen(false)}
             >
@@ -178,21 +180,24 @@ export function DashboardShell({ userName, userEmail, children }: DashboardShell
         )}
 
         <div className="flex min-h-screen flex-1 flex-col">
-          <header className="sticky top-0 z-30 flex items-center justify-between border-b border-gray-200 bg-white/90 px-4 py-4 backdrop-blur lg:hidden">
+          <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-gray-200 bg-white/90 px-4 py-4 backdrop-blur lg:hidden">
             <Link href="/dashboard" className="flex items-center gap-2">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-sm font-black text-white">
                 W
               </span>
               <span className="text-lg font-black tracking-tight text-gray-950">WALO</span>
             </Link>
-            <button
-              type="button"
-              onClick={() => setIsMobileOpen(true)}
-              className="cursor-pointer rounded-lg border border-gray-200 bg-white p-2 text-gray-600 shadow-sm hover:bg-gray-50"
-              aria-label="Abrir menú"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              <DashboardGuidedTour compact autoStart={false} />
+              <button
+                type="button"
+                onClick={() => setIsMobileOpen(true)}
+                className="cursor-pointer rounded-lg border border-gray-200 bg-white p-2 text-gray-600 shadow-sm hover:bg-gray-50"
+                aria-label="Abrir menú"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+            </div>
           </header>
 
           <main className="flex-1 p-4 sm:p-6 md:p-8 xl:p-10">
@@ -202,6 +207,7 @@ export function DashboardShell({ userName, userEmail, children }: DashboardShell
                   <p className="text-xs font-bold uppercase tracking-widest text-emerald-700">Dashboard WALO</p>
                   <p className="mt-1 text-sm text-gray-500">Administra tu vitrina, productos y crecimiento desde un solo lugar.</p>
                 </div>
+                <DashboardGuidedTour />
               </div>
               {children}
             </div>

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { LoginGuidedTour } from '@/features/auth/components/LoginGuidedTour';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
@@ -86,6 +87,7 @@ export default function LoginPage() {
                         </button>
                         <button
                             onClick={() => router.push('/register')}
+                            data-tour="login-register-link"
                             className="cursor-pointer flex-1 py-2 text-sm font-medium rounded-full text-gray-500 hover:text-gray-700 transition-all"
                         >
                             Crear cuenta
@@ -94,28 +96,32 @@ export default function LoginPage() {
 
                     <h2 className="text-3xl font-bold text-gray-900 mb-1">Bienvenido de vuelta</h2>
                     <p className="text-gray-500 mb-8">Ingresa a tu cuenta para continuar.</p>
+                    <div className="mb-5">
+                        <LoginGuidedTour />
+                    </div>
 
                     {error && (
                         <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700 border border-red-200">{error}</div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form data-tour="login-form" onSubmit={handleSubmit} className="space-y-4">
                         <div>
                             <label htmlFor="email" className="block text-xs font-semibold text-gray-500 tracking-widest mb-1">CORREO ELECTRÓNICO</label>
-                            <input id="email" type="email" placeholder="tucorreo@ejemplo.com" value={email} required
+                            <input id="email" data-tour="login-email" type="email" placeholder="tucorreo@ejemplo.com" value={email} required
                                 onChange={(e) => setEmail(e.target.value)}
                                 className="w-full rounded-xl bg-gray-100 border border-transparent px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 focus:bg-white transition-all"
                             />
                         </div>
                         <div>
                             <label htmlFor="password" className="block text-xs font-semibold text-gray-500 tracking-widest mb-1">CONTRASEÑA</label>
-                            <input id="password" type="password" placeholder="••••••••" value={password} required
+                            <input id="password" data-tour="login-password" type="password" placeholder="••••••••" value={password} required
                                 onChange={(e) => setPassword(e.target.value)}
                                 className="w-full rounded-xl bg-gray-100 border border-transparent px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 focus:bg-white transition-all"
                             />
                         </div>
                         <button
                             type="submit" disabled={loading}
+                            data-tour="login-submit"
                             className="cursor-pointer w-full py-3 px-4 rounded-xl font-semibold text-white bg-gray-900 hover:bg-gray-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed mt-2"
                         >
                             {loading ? 'Verificando...' : 'Iniciar sesión'}

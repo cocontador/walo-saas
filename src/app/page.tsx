@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { PublicRegisterTour } from '@/features/auth/components/PublicRegisterTour'
 
 export default function LandingPage() {
   return (
@@ -17,6 +18,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/login"
+              data-tour="login-link"
               className="text-sm font-semibold text-[#6b7280] transition-colors hover:text-[#191c1d]"
             >
               Iniciar sesión
@@ -33,7 +35,7 @@ export default function LandingPage() {
 
       <main>
         <section className="mx-auto grid max-w-7xl items-center gap-16 px-6 pb-24 pt-36 lg:grid-cols-2">
-          <div className="space-y-8">
+          <div data-tour="public-hero" className="space-y-8">
             <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(0,0,0,0.06)] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#22C55E] shadow-sm">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#22C55E] opacity-60" />
@@ -54,6 +56,7 @@ export default function LandingPage() {
             <div className="flex flex-col gap-4 sm:flex-row">
               <Link
                 href="/register"
+                data-tour="public-register-cta"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-br from-[#16A34A] to-[#22C55E] px-8 py-3.5 text-lg font-bold text-white shadow-[0_4px_15px_rgba(34,197,94,0.25)] transition-all hover:-translate-y-px hover:shadow-[0_8px_25px_rgba(34,197,94,0.35)]"
               >
                 <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-white/20 text-sm">
@@ -63,10 +66,12 @@ export default function LandingPage() {
               </Link>
               <Link
                 href="/login"
+                data-tour="login-link"
                 className="inline-flex items-center justify-center gap-2 rounded-full border border-[rgba(0,0,0,0.06)] bg-white px-8 py-3.5 text-lg font-semibold text-[#191c1d] transition-colors hover:bg-[#f3f4f5]"
               >
                 Ya tengo cuenta
               </Link>
+              <PublicRegisterTour label="Conoce cómo empezar" />
             </div>
 
             <div className="flex items-center gap-4 pt-4">
@@ -88,7 +93,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="relative hidden lg:block">
+          <div data-tour="catalog-preview" className="relative hidden lg:block">
             <div className="rounded-[2.5rem] border border-[rgba(0,0,0,0.04)] bg-white p-4 shadow-2xl shadow-black/5">
               <img
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuAbkj9BxokDECKjA2dJUSbFXwMRUA_THoGLpP4KlfsCVAJMdQ0l6LB80o0wkW6-ZVsJdXMKuIIkwt-bAF69y04EUgqa-hkL3vGC7WJTZ06GTASmuLb8rg6GAlle-3sXzkJEmBtQExdljaYbfwU_AooFw8w4Rqm8KefXgP5oKZbwYP604t_QaFa8uTNpCXjGZETySyC41OdQbyumsHtauIiptu2G3uWRYEh-bTArxef2A-A0kLwdQHmeM7l4DoOmAkLYV0l8vBk9z4I"
