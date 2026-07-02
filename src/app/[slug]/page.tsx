@@ -4,7 +4,6 @@ import { getServerSession } from "next-auth"
 import { notFound } from "next/navigation"
 
 import { StoreCatalog } from "@/features/store/components/StoreCatalog"
-import { CartProvider } from "@/features/store/components/CartContext"
 import { StorePublicHeader } from "@/features/store/components/StorePublicHeader"
 import { DEFAULT_SEO_METADATA, getSeoMetadata } from "@/features/store/server/getSeoMetadata"
 import {
@@ -69,9 +68,7 @@ export default async function StorePage({ params }: Props) {
         session?.user?.id ? await canManageStoreByUser(store.id, session.user.id) : false
 
     return (
-        // Usamos key={store.id} para asegurar que el carrito se limpie si cambias de tienda
-        <CartProvider key={store.id} storeId={store.id}>
-            <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50">
                 <header className="sticky top-0 z-10 border-b border-gray-100 bg-white">
                     <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
                         <StorePublicHeader name={store.name} logoUrl={store.logoUrl} />
@@ -124,7 +121,6 @@ export default async function StorePage({ params }: Props) {
                         hasKhipu={!!store.khipuReceiverId && store.subscription?.plan?.slug !== 'initial'}
                     />
                 </main>
-            </div>
-        </CartProvider>
+        </div>
     )
 }

@@ -1,8 +1,9 @@
 import "server-only"
+import { cache } from "react"
 import { logInfo, logWarn } from "@/lib/logger"
 import { prisma } from "@/lib/prisma"
 
-export async function getStoreBySlug(slug: string) {
+export const getStoreBySlug = cache(async function getStoreBySlug(slug: string) {
     logInfo({
         event: "public_catalog.request",
         scope: "store",
@@ -54,7 +55,7 @@ export async function getStoreBySlug(slug: string) {
     }
 
     return store
-}
+})
 
 export async function getVisibleProducts(storeId: string) {
     const products = await prisma.product.findMany({

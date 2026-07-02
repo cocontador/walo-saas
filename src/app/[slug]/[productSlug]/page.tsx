@@ -3,7 +3,6 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
-import { CartProvider } from '@/features/store/components/CartContext'
 import { ProductAddToCart } from '@/features/store/components/ProductAddToCart'
 import { StorePublicHeader } from '@/features/store/components/StorePublicHeader'
 import { getPublicProductBySlug, getStoreBySlug } from '@/features/store/server/queries'
@@ -40,8 +39,7 @@ export default async function ProductDetailPage({ params }: Props) {
         .map(pc => pc.category!.name) ?? []
 
     return (
-        <CartProvider key={store.id} storeId={store.id}>
-            <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50">
                 <header className="sticky top-0 z-10 border-b border-gray-100 bg-white">
                     <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
                         <Link href={`/${store.slug}`} className="hover:opacity-80 transition-opacity">
@@ -115,7 +113,6 @@ export default async function ProductDetailPage({ params }: Props) {
                         </div>
                     </div>
                 </main>
-            </div>
-        </CartProvider>
+        </div>
     )
 }

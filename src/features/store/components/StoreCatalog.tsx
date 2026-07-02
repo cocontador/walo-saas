@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { ShoppingCart } from 'lucide-react'
 import { ProductCard } from './ProductCard'
 import { CartDrawer } from './CartDrawer'
 import { useCart } from "@/features/store/components/CartContext"
@@ -17,8 +18,8 @@ function CartFloatingButton({ itemCount, onClick }: CartFloatingButtonProps) {
             onClick={onClick}
             className="fixed bottom-6 right-6 z-50 inline-flex items-center gap-2 rounded-full bg-green-600 px-4 py-3 text-white shadow-lg transition hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
         >
+            <ShoppingCart className="h-5 w-5" />
             <span>{itemCount}</span>
-            <span>Ver carrito</span>
         </button>
     )
 }
