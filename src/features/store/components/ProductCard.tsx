@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import Link from 'next/link'
 
 type Props = {
     id: string
@@ -7,6 +8,8 @@ type Props = {
     price: number
     imageUrl?: string | null
     category?: string
+    slug?: string | null
+    storeSlug: string
     onAddToCart: () => void
     priority?: boolean
 }
@@ -17,16 +20,19 @@ export function ProductCard({
     price,
     imageUrl,
     category,
+    slug,
+    storeSlug,
     onAddToCart,
     priority = false,
+    id,
 }: Props) {
-
     const formatter = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' })
+    const detailHref = `/${storeSlug}/${slug ?? id}`
 
     return (
         <div className="group rounded-2xl border border-gray-100 bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col h-full">
             {/* Imagen del Producto */}
-            <div className="relative bg-gray-50 aspect-square overflow-hidden">
+            <Link href={detailHref} className="relative bg-gray-50 aspect-square overflow-hidden block">
                 {imageUrl ? (
                     <Image
                         src={imageUrl}
@@ -35,7 +41,7 @@ export function ProductCard({
                         unoptimized
                         sizes="(max-width: 640px) 50vw, 33vw"
                         loading={priority ? 'eager' : 'lazy'}
-                        className="object-cover"
+                        className="object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                 ) : (
                     <div className="flex h-full items-center justify-center">
@@ -47,12 +53,14 @@ export function ProductCard({
                         {category}
                     </span>
                 )}
-            </div>
+            </Link>
 
             {/* Detalles del Producto */}
             <div className="p-4 flex flex-col flex-grow">
                 <div className="flex items-start justify-between gap-2 mb-1">
-                    <h3 className="font-semibold text-gray-900 text-sm leading-tight">{name}</h3>
+                    <Link href={detailHref} className="hover:text-green-700 transition-colors">
+                        <h3 className="font-semibold text-gray-900 text-sm leading-tight">{name}</h3>
+                    </Link>
                     <p className="font-bold text-gray-900 text-sm whitespace-nowrap">
                         {formatter.format(price)}
                     </p>
@@ -72,7 +80,6 @@ export function ProductCard({
                         </svg>
                         Agregar al carrito
                     </button>
-
                 </div>
             </div>
         </div>

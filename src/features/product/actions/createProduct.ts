@@ -10,6 +10,7 @@ import { prisma } from '@/lib/prisma'
 import { logError } from '@/lib/logger'
 import { createProductSchema, type CreateProductInput } from '@/features/product/schemas'
 import { getPlanUsage } from '@/features/billing/actions'
+import { generateSlug } from '@/lib/slug'
 
 export type ActionResult<T> =
   | { success: true; data: T }
@@ -49,6 +50,12 @@ export async function createProduct(
       }
     }
 
+    let slug = generateSlug(validatedData.name)
+    let suffix = 1
+    while (await prisma.product.findFirst({ where: { storeId, slug }, select: { id: true } })) {
+      slug = `${generateSlug(validatedData.name)}-${suffix++}`
+    }
+
     const categoryIds = validatedData.categoryIds ?? []
 
     if (categoryIds.length > 0) {
@@ -70,6 +77,7 @@ export async function createProduct(
       data: {
         storeId,
         name: validatedData.name,
+        slug,
         price: validatedData.price,
         description: validatedData.description || null,
         visible: true,

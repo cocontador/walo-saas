@@ -10,7 +10,7 @@ vi.mock('next-auth', () => ({ getServerSession: vi.fn() }))
 vi.mock('@/server/store', () => ({ getUserStoreId: vi.fn() }))
 vi.mock('@/lib/prisma', () => ({
   prisma: {
-    product: { create: vi.fn() },
+    product: { create: vi.fn(), findFirst: vi.fn().mockResolvedValue(null) },
     category: { findMany: vi.fn() },
   },
 }))

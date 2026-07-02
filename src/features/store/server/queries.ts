@@ -1,8 +1,9 @@
 import "server-only"
+import { cache } from "react"
 import { logInfo, logWarn } from "@/lib/logger"
 import { prisma } from "@/lib/prisma"
 
-export async function getStoreBySlug(slug: string) {
+export const getStoreBySlug = cache(async function getStoreBySlug(slug: string) {
     logInfo({
         event: "public_catalog.request",
         scope: "store",
@@ -23,6 +24,12 @@ export async function getStoreBySlug(slug: string) {
             allowPickup: true,
             allowDelivery: true,
             deliveryCost: true,
+            khipuReceiverId: true,
+            subscription: {
+                select: {
+                    plan: { select: { slug: true } },
+                },
+            },
         },
     })
 
@@ -48,7 +55,7 @@ export async function getStoreBySlug(slug: string) {
     }
 
     return store
-}
+})
 
 export async function getVisibleProducts(storeId: string) {
     const products = await prisma.product.findMany({
@@ -59,6 +66,7 @@ export async function getVisibleProducts(storeId: string) {
         select: {
             id: true,
             name: true,
+            slug: true,
             description: true,
             price: true,
             imageUrl: true,
@@ -86,6 +94,31 @@ export async function getVisibleProducts(storeId: string) {
     })
 
     return products
+}
+
+export async function getPublicProductBySlug(slugOrId: string, storeId: string) {
+    return await prisma.product.findFirst({
+        where: {
+            storeId,
+            visible: true,
+            OR: [{ slug: slugOrId }, { id: slugOrId }],
+        },
+        select: {
+            id: true,
+            name: true,
+            slug: true,
+            description: true,
+            price: true,
+            imageUrl: true,
+            categories: {
+                select: {
+                    category: {
+                        select: { name: true, visible: true },
+                    },
+                },
+            },
+        },
+    })
 }
 
 export async function canManageStoreByUser(storeId: string, userId: string) {

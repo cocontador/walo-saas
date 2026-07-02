@@ -109,7 +109,7 @@ describe('normalizePlansForCatalog', () => {
       isCurrent: true,
       isPopular: true,
     })
-    expect(result[0].features).toContain('Motor de plantillas premium')
+    expect(result[0].features).toContain('Motor de plantillas premium (Próximamente)')
   })
 
   it('incluye el plan actual fallback si no viene en los planes activos', () => {

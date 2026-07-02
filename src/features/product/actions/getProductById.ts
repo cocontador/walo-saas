@@ -15,6 +15,7 @@ export type ActionResult<T> =
 export type ProductDetail = {
   id: string
   name: string
+  slug: string | null
   price: number
   description: string | null
   visible: boolean
@@ -54,6 +55,7 @@ export async function getProductById(productId: string): Promise<ActionResult<Pr
       select: {
         id: true,
         name: true,
+        slug: true,
         price: true,
         description: true,
         visible: true,

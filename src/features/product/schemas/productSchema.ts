@@ -27,6 +27,13 @@ export const updateProductSchema = baseProductSchema
   .extend({
     visible: z.boolean().optional(),
     categoryIds: z.array(z.string().trim()).optional(),
+    slug: z
+      .string()
+      .trim()
+      .min(1, 'El slug no puede estar vacío')
+      .max(100, 'El slug no puede exceder 100 caracteres')
+      .regex(/^[a-z0-9-]+$/, 'El slug solo puede contener letras minúsculas, números y guiones')
+      .optional(),
   })
   .partial()
   .strict()

@@ -71,11 +71,22 @@ export async function updateProduct(
       }
     }
 
+    if (validatedData.slug !== undefined) {
+      const slugConflict = await prisma.product.findFirst({
+        where: { storeId, slug: validatedData.slug, NOT: { id: productId } },
+        select: { id: true },
+      })
+      if (slugConflict) {
+        return { success: false, error: 'Ese slug ya está en uso por otro producto de tu tienda.' }
+      }
+    }
+
     // Update the product in the database
     const product = await prisma.product.update({
       where: { id: productId },
       data: {
         ...(validatedData.name !== undefined && { name: validatedData.name }),
+        ...(validatedData.slug !== undefined && { slug: validatedData.slug }),
         ...(validatedData.price !== undefined && { price: validatedData.price }),
         ...(validatedData.description !== undefined && { description: validatedData.description }),
         ...(validatedData.visible !== undefined && { visible: validatedData.visible }),
