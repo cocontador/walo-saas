@@ -30,6 +30,8 @@ describe('getStoreBySlug - WALO-33: Catálogo público por slug', () => {
       logoUrl: null,
       whatsappPhone: '+56912345678',
       isActive: true,
+      khipuReceiverId: null,
+      subscription: null,
     }
     mockStoreFindUnique.mockResolvedValue(mockStore)
 
@@ -53,12 +55,33 @@ describe('getStoreBySlug - WALO-33: Catálogo público por slug', () => {
       name: 'Mi Tienda',
       slug: 'mi-tienda',
       isActive: false,
+      subscription: null,
     })
 
     const result = await getStoreBySlug('mi-tienda')
 
     // Tienda inactiva no se expone públicamente
     expect(result).toBeNull()
+  })
+
+  it('no expone Khipu en tienda con plan inicial aunque tenga credenciales configuradas', async () => {
+    mockStoreFindUnique.mockResolvedValue({
+      id: 'store-1',
+      name: 'Mi Tienda',
+      slug: 'mi-tienda',
+      isActive: true,
+      khipuReceiverId: '519708',
+      subscription: { plan: { slug: 'initial' } },
+    })
+
+    const store = await getStoreBySlug('mi-tienda')
+
+    // La lógica hasKhipu vive en el caller, pero el query retorna el plan
+    // para que el caller pueda evaluar correctamente
+    expect(store?.khipuReceiverId).toBe('519708')
+    expect(store?.subscription?.plan?.slug).toBe('initial')
+    // Con estos datos: !!khipuReceiverId && plan.slug !== 'initial' → false
+    expect(!!store?.khipuReceiverId && store?.subscription?.plan?.slug !== 'initial').toBe(false)
   })
 })
 

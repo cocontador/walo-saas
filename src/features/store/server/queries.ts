@@ -24,6 +24,11 @@ export async function getStoreBySlug(slug: string) {
             allowDelivery: true,
             deliveryCost: true,
             khipuReceiverId: true,
+            subscription: {
+                select: {
+                    plan: { select: { slug: true } },
+                },
+            },
         },
     })
 

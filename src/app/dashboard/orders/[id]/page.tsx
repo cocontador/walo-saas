@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/server/auth'
 import { getUserStoreId } from '@/server/store'
+import { OrderStatusSelect } from './OrderStatusSelect'
 
 type OrderItem = { id: string; name: string; price: number; quantity: number }
 
@@ -71,6 +72,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 <span className={`inline-flex items-center rounded-xl border px-4 py-2 text-sm font-semibold ${s.cls}`}>
                     {s.label}
                 </span>
+            </div>
+
+            <div className="rounded-2xl border border-gray-200 bg-white px-6 py-5 shadow-sm">
+                <OrderStatusSelect orderId={order.id} currentStatus={order.status} />
             </div>
 
             <div className="grid gap-6 lg:grid-cols-3">

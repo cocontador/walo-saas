@@ -110,7 +110,7 @@ export default async function ProductDetailPage({ params }: Props) {
                                 allowPickup={store.allowPickup}
                                 allowDelivery={store.allowDelivery}
                                 deliveryCost={store.deliveryCost}
-                                hasKhipu={!!store.khipuReceiverId}
+                                hasKhipu={!!store.khipuReceiverId && store.subscription?.plan?.slug !== 'initial'}
                             />
                         </div>
                     </div>

@@ -12,7 +12,8 @@ export function buildWhatsAppMessageText(
     shippingMethod: ShippingMethod,
     email: string,
     shippingAddress: string,
-    notes?: string
+    notes?: string,
+    shippingCost?: number
 ): string {
     const formatter = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' })
     const lines: string[] = []
@@ -24,10 +25,15 @@ export function buildWhatsAppMessageText(
     }
     lines.push(`*Email de contacto:* ${email || 'No proporcionado'}`)
 
+    lines.push('')
     items.forEach((item) => {
         const itemTotal = item.price * item.quantity
         lines.push(`• ${item.quantity}x ${item.name} (${formatter.format(itemTotal)})`)
     })
+
+    if (shippingMethod === 'delivery' && shippingCost != null) {
+        lines.push(`• Costo de envío: ${shippingCost === 0 ? 'Gratis' : formatter.format(shippingCost)}`)
+    }
 
     lines.push(`\n*Total a pagar: ${formatter.format(total)}*`)
 
@@ -47,11 +53,12 @@ export function buildWhatsAppMessage(
     shippingMethod: ShippingMethod,
     email: string,
     shippingAddress: string,
-    notes?: string
+    notes?: string,
+    shippingCost?: number
 ): string {
     if (!phone) return '#'
     const cleanPhone = phone.replace(/[^\d+]/g, '')
-    const text = buildWhatsAppMessageText(storeName, items, total, shippingMethod, email, shippingAddress, notes)
+    const text = buildWhatsAppMessageText(storeName, items, total, shippingMethod, email, shippingAddress, notes, shippingCost)
     return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`
 }
 
@@ -93,6 +100,7 @@ export function CartDrawer({
     const [shippingAddress, setShippingAddress] = useState('')
     const [isLoadingKhipu, setIsLoadingKhipu] = useState(false)
     const [khipuError, setKhipuError] = useState<string | null>(null)
+    const [whatsappError, setWhatsappError] = useState<string | null>(null)
     const { shippingMethod, setShippingMethod } = useCart()
 
     const effectiveMethod: ShippingMethod =
@@ -230,11 +238,14 @@ export function CartDrawer({
                         <label className="mb-1 block text-xs font-semibold text-gray-600">Dirección de envío</label>
                         <textarea
                             value={shippingAddress}
-                            onChange={(e) => setShippingAddress(e.target.value)}
+                            onChange={(e) => { setShippingAddress(e.target.value); setWhatsappError(null) }}
                             rows={2}
                             placeholder="Ej: Av. Principal 123, Viña del Mar..."
-                            className="w-full rounded-lg border border-gray-200 p-2 text-sm text-gray-700 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                            className={`w-full rounded-lg border p-2 text-sm text-gray-700 focus:outline-none focus:ring-1 ${whatsappError ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : 'border-gray-200 focus:border-green-500 focus:ring-green-500'}`}
                         />
+                        {whatsappError && (
+                            <p className="mt-1 text-xs text-red-600">{whatsappError}</p>
+                        )}
                     </div>
                 )}
 
@@ -308,13 +319,25 @@ export function CartDrawer({
                     )}
 
                     {whatsappPhone && (
-                        <a  
-                            href={buildWhatsAppMessage(whatsappPhone, storeName, items, finalTotal, effectiveMethod, customerEmail, shippingAddress, orderNotes)}
-                            onClick={() => trackWhatsappClick(storeId)}
-                            className="flex w-full items-center justify-center rounded-full bg-green-500 py-3 text-sm font-semibold text-white transition hover:bg-green-600"
+                        <button
+                            type="button"
+                            disabled={items.length === 0}
+                            onClick={() => {
+                                setWhatsappError(null)
+                                if (effectiveMethod === 'delivery' && !shippingAddress.trim()) {
+                                    setWhatsappError('Ingresa tu dirección de envío para continuar.')
+                                    return
+                                }
+                                trackWhatsappClick(storeId)
+                                window.open(
+                                    buildWhatsAppMessage(whatsappPhone, storeName, items, finalTotal, effectiveMethod, customerEmail, shippingAddress, orderNotes, shippingCost),
+                                    '_blank'
+                                )
+                            }}
+                            className="flex w-full items-center justify-center rounded-full bg-green-500 py-3 text-sm font-semibold text-white transition hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             Pedir por WhatsApp
-                        </a>
+                        </button>
                     )}
                 </div>
             </div>
