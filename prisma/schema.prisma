@@ -115,6 +115,7 @@ model Product {
   id          String   @id @default(cuid())
   storeId     String
   name        String
+  slug        String?
   description String?
   price       Int
   imageUrl    String?
@@ -125,6 +126,7 @@ model Product {
   store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   categories  ProductCategory[]
 
+  @@unique([storeId, slug])
   @@index([storeId])
   @@index([storeId, visible])
 }

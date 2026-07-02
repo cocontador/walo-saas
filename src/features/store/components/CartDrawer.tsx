@@ -69,6 +69,7 @@ interface Props {
     allowPickup?: boolean
     allowDelivery?: boolean
     deliveryPrice?: number
+    hasKhipu?: boolean
 }
 
 export function CartDrawer({
@@ -85,6 +86,7 @@ export function CartDrawer({
     allowPickup = true,
     allowDelivery = false,
     deliveryPrice = 0,
+    hasKhipu = false,
 }: Props) {
     const [orderNotes, setOrderNotes] = useState('')
     const [customerEmail, setCustomerEmail] = useState('')
@@ -104,8 +106,18 @@ export function CartDrawer({
     const formatter = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' })
 
     async function handleKhipuPayment() {
-        setIsLoadingKhipu(true)
         setKhipuError(null)
+
+        if (!customerEmail.trim()) {
+            setKhipuError('El correo electrónico es requerido para pagar con Khipu.')
+            return
+        }
+        if (effectiveMethod === 'delivery' && !shippingAddress.trim()) {
+            setKhipuError('La dirección de envío es requerida para continuar.')
+            return
+        }
+
+        setIsLoadingKhipu(true)
         try {
             const noteParts: string[] = []
             if (effectiveMethod === 'delivery' && shippingAddress) {
@@ -228,7 +240,9 @@ export function CartDrawer({
 
                 {/* Email */}
                 <div>
-                    <label className="mb-1 block text-xs font-semibold text-gray-600">Email para el voucher</label>
+                    <label className="mb-1 block text-xs font-semibold text-gray-600">
+                        Correo electrónico {hasKhipu && <span className="text-red-500">*</span>}
+                    </label>
                     <input
                         type="email"
                         value={customerEmail}
@@ -236,6 +250,9 @@ export function CartDrawer({
                         placeholder="tu@email.com"
                         className="w-full rounded-lg border border-gray-200 p-2 text-sm text-gray-700 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
                     />
+                    {hasKhipu && (
+                        <p className="mt-1 text-xs text-gray-400">Requerido para procesar el pago en línea</p>
+                    )}
                 </div>
 
                 {/* Notas */}
@@ -279,14 +296,16 @@ export function CartDrawer({
 
                 {/* Botones */}
                 <div className="space-y-3 pt-1">
-                    <button
-                        type="button"
-                        onClick={handleKhipuPayment}
-                        disabled={items.length === 0 || isLoadingKhipu}
-                        className="w-full rounded-full bg-blue-600 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                        {isLoadingKhipu ? 'Procesando...' : 'Pagar con Khipu'}
-                    </button>
+                    {hasKhipu && (
+                        <button
+                            type="button"
+                            onClick={handleKhipuPayment}
+                            disabled={items.length === 0 || isLoadingKhipu}
+                            className="w-full rounded-full bg-blue-600 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            {isLoadingKhipu ? 'Procesando...' : 'Pagar con Khipu'}
+                        </button>
+                    )}
 
                     {whatsappPhone && (
                         <a  

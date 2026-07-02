@@ -5,6 +5,7 @@ import { notFound } from "next/navigation"
 
 import { StoreCatalog } from "@/features/store/components/StoreCatalog"
 import { CartProvider } from "@/features/store/components/CartContext"
+import { StorePublicHeader } from "@/features/store/components/StorePublicHeader"
 import { DEFAULT_SEO_METADATA, getSeoMetadata } from "@/features/store/server/getSeoMetadata"
 import {
     canManageStoreByUser,
@@ -73,7 +74,7 @@ export default async function StorePage({ params }: Props) {
             <div className="min-h-screen bg-gray-50">
                 <header className="sticky top-0 z-10 border-b border-gray-100 bg-white">
                     <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-                        <span className="text-lg font-bold tracking-tight text-gray-900">WALO</span>
+                        <StorePublicHeader name={store.name} logoUrl={store.logoUrl} />
                         <nav className="hidden items-center gap-6 text-sm font-medium text-gray-500 sm:flex">
                             {isOwner && (
                                 <Link href="/dashboard" className="transition-colors hover:text-gray-900">
@@ -114,11 +115,13 @@ export default async function StorePage({ params }: Props) {
                     <StoreCatalog
                         products={products}
                         storeName={store.name}
+                        storeSlug={store.slug}
                         whatsappPhone={store.whatsappPhone}
                         storeId={store.id}
                         allowPickup={store.allowPickup}
                         allowDelivery={store.allowDelivery}
                         deliveryCost={store.deliveryCost}
+                        hasKhipu={!!store.khipuReceiverId}
                     />
                 </main>
             </div>

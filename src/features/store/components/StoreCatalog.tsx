@@ -33,6 +33,7 @@ type ProductCategory = {
 type Product = {
     id: string
     name: string
+    slug?: string | null
     description: string | null
     price: number
     imageUrl?: string | null
@@ -42,23 +43,28 @@ type Product = {
 type Props = {
     products: Product[]
     storeName?: string
+    storeSlug: string
     whatsappPhone?: string | null
     storeId: string
     allowPickup?: boolean
     allowDelivery?: boolean
     deliveryCost?: number
+    hasKhipu?: boolean
 }
 
 export function StoreCatalog({
     products,
     storeName = 'La Tienda',
+    storeSlug,
     whatsappPhone,
     storeId,
     allowPickup = true,
     allowDelivery = false,
     deliveryCost = 0,
+    hasKhipu = false,
 }: Props) {
     const [selectedCategory, setSelectedCategory] = useState('Todos')
+    const [searchQuery, setSearchQuery] = useState('')
     const [cartOpen, setCartOpen] = useState(false)
 
     const { items, total, itemCount, addItem, updateQuantity, removeItem, clearCart } = useCart()
@@ -79,16 +85,54 @@ export function StoreCatalog({
 
     const categories = ['Todos', ...visibleCategories]
 
-    const filteredProducts = selectedCategory === 'Todos'
-        ? products
-        : (products || []).filter(p =>
+    const normalizedQuery = searchQuery.trim().toLowerCase()
+
+    const filteredProducts = (products || []).filter(p => {
+        const matchesCategory = selectedCategory === 'Todos' ||
             (p.categories || []).some(
                 pc => pc?.category?.visible && pc?.category?.name === selectedCategory
             )
-        )
+        const matchesSearch = !normalizedQuery ||
+            p.name.toLowerCase().includes(normalizedQuery) ||
+            (p.description?.toLowerCase().includes(normalizedQuery) ?? false)
+
+        return matchesCategory && matchesSearch
+    })
+
+    const hasActiveFilters = normalizedQuery || selectedCategory !== 'Todos'
 
     return (
         <div>
+            {/* Buscador */}
+            <div className="relative mb-4">
+                <svg
+                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                    type="search"
+                    role="searchbox"
+                    aria-label="Buscar productos"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    placeholder="Buscar productos..."
+                    className="w-full rounded-full border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-700 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                />
+                {searchQuery && (
+                    <button
+                        type="button"
+                        onClick={() => setSearchQuery('')}
+                        aria-label="Limpiar búsqueda"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                        ✕
+                    </button>
+                )}
+            </div>
+
             {visibleCategories.length > 0 && (
                 <div className="flex gap-2 overflow-x-auto pb-2 mb-6 no-scrollbar">
                     {categories.map(cat => (
@@ -110,14 +154,20 @@ export function StoreCatalog({
             {filteredProducts.length === 0 ? (
                 <div className="flex flex-col items-center justify-center gap-2 py-20 text-center">
                     <p className="text-4xl">🔍</p>
-                    <p className="text-gray-500">No hay productos en esta categoría.</p>
-                    <button
-                        type="button"
-                        onClick={() => setSelectedCategory('Todos')}
-                        className="cursor-pointer mt-2 text-sm font-semibold text-green-600 hover:underline"
-                    >
-                        Ver todos los productos
-                    </button>
+                    <p className="text-gray-500">
+                        {normalizedQuery
+                            ? `No se encontraron productos para "${searchQuery}".`
+                            : 'No hay productos en esta categoría.'}
+                    </p>
+                    {hasActiveFilters && (
+                        <button
+                            type="button"
+                            onClick={() => { setSelectedCategory('Todos'); setSearchQuery('') }}
+                            className="cursor-pointer mt-2 text-sm font-semibold text-green-600 hover:underline"
+                        >
+                            Ver todos los productos
+                        </button>
+                    )}
                 </div>
             ) : (
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
@@ -130,6 +180,8 @@ export function StoreCatalog({
                                 key={product.id}
                                 id={product.id}
                                 name={product.name}
+                                slug={product.slug}
+                                storeSlug={storeSlug}
                                 description={product.description}
                                 price={product.price}
                                 imageUrl={product.imageUrl}
@@ -165,6 +217,7 @@ export function StoreCatalog({
                 allowPickup={allowPickup}
                 allowDelivery={allowDelivery}
                 deliveryPrice={deliveryCost}
+                hasKhipu={hasKhipu}
             />
         </div>
     )

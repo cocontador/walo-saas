@@ -33,7 +33,7 @@ describe('StoreCatalog Component', () => {
     const renderComponent = (productsList: MockProduct[] = mockProducts, storeId = 'test-store') => {
         return render(
             <CartProvider storeId={storeId}>
-                <StoreCatalog products={productsList} storeId={storeId} />
+                <StoreCatalog products={productsList} storeId={storeId} storeSlug="test-tienda" />
             </CartProvider>
         )
     }
@@ -50,5 +50,41 @@ describe('StoreCatalog Component', () => {
         fireEvent.click(categoryButton)
         expect(screen.getByText('Pan de Masa Madre')).toBeDefined()
         expect(screen.queryByText('Torta Tres Leches')).toBeNull()
+    })
+
+    it('busca productos por nombre (sin distinción de mayúsculas)', () => {
+        renderComponent()
+        const searchInput = screen.getByRole('searchbox', { name: /buscar productos/i })
+        fireEvent.change(searchInput, { target: { value: 'masa madre' } })
+        expect(screen.getByText('Pan de Masa Madre')).toBeDefined()
+        expect(screen.queryByText('Torta Tres Leches')).toBeNull()
+    })
+
+    it('muestra estado vacío cuando la búsqueda no tiene coincidencias', () => {
+        renderComponent()
+        const searchInput = screen.getByRole('searchbox', { name: /buscar productos/i })
+        fireEvent.change(searchInput, { target: { value: 'producto inexistente xyz' } })
+        expect(screen.queryByText('Pan de Masa Madre')).toBeNull()
+        expect(screen.queryByText('Torta Tres Leches')).toBeNull()
+        expect(screen.getByText(/No se encontraron productos/i)).toBeDefined()
+    })
+
+    it('combina filtro de categoría y búsqueda correctamente', () => {
+        renderComponent()
+        const categoryButton = screen.getByRole('button', { name: 'Panadería' })
+        fireEvent.click(categoryButton)
+        const searchInput = screen.getByRole('searchbox', { name: /buscar productos/i })
+        fireEvent.change(searchInput, { target: { value: 'torta' } })
+        expect(screen.queryByText('Pan de Masa Madre')).toBeNull()
+        expect(screen.queryByText('Torta Tres Leches')).toBeNull()
+    })
+
+    it('restaura todos los productos al limpiar la búsqueda', () => {
+        renderComponent()
+        const searchInput = screen.getByRole('searchbox', { name: /buscar productos/i })
+        fireEvent.change(searchInput, { target: { value: 'pan' } })
+        expect(screen.queryByText('Torta Tres Leches')).toBeNull()
+        fireEvent.change(searchInput, { target: { value: '' } })
+        expect(screen.getByText('Torta Tres Leches')).toBeDefined()
     })
 })

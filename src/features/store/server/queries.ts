@@ -23,6 +23,7 @@ export async function getStoreBySlug(slug: string) {
             allowPickup: true,
             allowDelivery: true,
             deliveryCost: true,
+            khipuReceiverId: true,
         },
     })
 
@@ -59,6 +60,7 @@ export async function getVisibleProducts(storeId: string) {
         select: {
             id: true,
             name: true,
+            slug: true,
             description: true,
             price: true,
             imageUrl: true,
@@ -86,6 +88,31 @@ export async function getVisibleProducts(storeId: string) {
     })
 
     return products
+}
+
+export async function getPublicProductBySlug(slugOrId: string, storeId: string) {
+    return await prisma.product.findFirst({
+        where: {
+            storeId,
+            visible: true,
+            OR: [{ slug: slugOrId }, { id: slugOrId }],
+        },
+        select: {
+            id: true,
+            name: true,
+            slug: true,
+            description: true,
+            price: true,
+            imageUrl: true,
+            categories: {
+                select: {
+                    category: {
+                        select: { name: true, visible: true },
+                    },
+                },
+            },
+        },
+    })
 }
 
 export async function canManageStoreByUser(storeId: string, userId: string) {
