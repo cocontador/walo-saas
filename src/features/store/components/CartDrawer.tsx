@@ -12,7 +12,8 @@ export function buildWhatsAppMessageText(
     shippingMethod: ShippingMethod,
     email: string,
     shippingAddress: string,
-    notes?: string
+    notes?: string,
+    shippingCost?: number
 ): string {
     const formatter = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' })
     const lines: string[] = []
@@ -24,10 +25,15 @@ export function buildWhatsAppMessageText(
     }
     lines.push(`*Email de contacto:* ${email || 'No proporcionado'}`)
 
+    lines.push('')
     items.forEach((item) => {
         const itemTotal = item.price * item.quantity
         lines.push(`• ${item.quantity}x ${item.name} (${formatter.format(itemTotal)})`)
     })
+
+    if (shippingMethod === 'delivery' && shippingCost != null) {
+        lines.push(`• Costo de envío: ${shippingCost === 0 ? 'Gratis' : formatter.format(shippingCost)}`)
+    }
 
     lines.push(`\n*Total a pagar: ${formatter.format(total)}*`)
 
@@ -47,11 +53,12 @@ export function buildWhatsAppMessage(
     shippingMethod: ShippingMethod,
     email: string,
     shippingAddress: string,
-    notes?: string
+    notes?: string,
+    shippingCost?: number
 ): string {
     if (!phone) return '#'
     const cleanPhone = phone.replace(/[^\d+]/g, '')
-    const text = buildWhatsAppMessageText(storeName, items, total, shippingMethod, email, shippingAddress, notes)
+    const text = buildWhatsAppMessageText(storeName, items, total, shippingMethod, email, shippingAddress, notes, shippingCost)
     return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`
 }
 
@@ -69,6 +76,7 @@ interface Props {
     allowPickup?: boolean
     allowDelivery?: boolean
     deliveryPrice?: number
+    hasKhipu?: boolean
 }
 
 export function CartDrawer({
@@ -85,12 +93,14 @@ export function CartDrawer({
     allowPickup = true,
     allowDelivery = false,
     deliveryPrice = 0,
+    hasKhipu = false,
 }: Props) {
     const [orderNotes, setOrderNotes] = useState('')
     const [customerEmail, setCustomerEmail] = useState('')
     const [shippingAddress, setShippingAddress] = useState('')
     const [isLoadingKhipu, setIsLoadingKhipu] = useState(false)
     const [khipuError, setKhipuError] = useState<string | null>(null)
+    const [whatsappError, setWhatsappError] = useState<string | null>(null)
     const { shippingMethod, setShippingMethod } = useCart()
 
     const effectiveMethod: ShippingMethod =
@@ -104,8 +114,18 @@ export function CartDrawer({
     const formatter = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' })
 
     async function handleKhipuPayment() {
-        setIsLoadingKhipu(true)
         setKhipuError(null)
+
+        if (!customerEmail.trim()) {
+            setKhipuError('El correo electrónico es requerido para pagar con Khipu.')
+            return
+        }
+        if (effectiveMethod === 'delivery' && !shippingAddress.trim()) {
+            setKhipuError('La dirección de envío es requerida para continuar.')
+            return
+        }
+
+        setIsLoadingKhipu(true)
         try {
             const noteParts: string[] = []
             if (effectiveMethod === 'delivery' && shippingAddress) {
@@ -218,17 +238,22 @@ export function CartDrawer({
                         <label className="mb-1 block text-xs font-semibold text-gray-600">Dirección de envío</label>
                         <textarea
                             value={shippingAddress}
-                            onChange={(e) => setShippingAddress(e.target.value)}
+                            onChange={(e) => { setShippingAddress(e.target.value); setWhatsappError(null) }}
                             rows={2}
                             placeholder="Ej: Av. Principal 123, Viña del Mar..."
-                            className="w-full rounded-lg border border-gray-200 p-2 text-sm text-gray-700 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                            className={`w-full rounded-lg border p-2 text-sm text-gray-700 focus:outline-none focus:ring-1 ${whatsappError ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : 'border-gray-200 focus:border-green-500 focus:ring-green-500'}`}
                         />
+                        {whatsappError && (
+                            <p className="mt-1 text-xs text-red-600">{whatsappError}</p>
+                        )}
                     </div>
                 )}
 
                 {/* Email */}
                 <div>
-                    <label className="mb-1 block text-xs font-semibold text-gray-600">Email para el voucher</label>
+                    <label className="mb-1 block text-xs font-semibold text-gray-600">
+                        Correo electrónico {hasKhipu && <span className="text-red-500">*</span>}
+                    </label>
                     <input
                         type="email"
                         value={customerEmail}
@@ -236,6 +261,9 @@ export function CartDrawer({
                         placeholder="tu@email.com"
                         className="w-full rounded-lg border border-gray-200 p-2 text-sm text-gray-700 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
                     />
+                    {hasKhipu && (
+                        <p className="mt-1 text-xs text-gray-400">Requerido para procesar el pago en línea</p>
+                    )}
                 </div>
 
                 {/* Notas */}
@@ -279,23 +307,37 @@ export function CartDrawer({
 
                 {/* Botones */}
                 <div className="space-y-3 pt-1">
-                    <button
-                        type="button"
-                        onClick={handleKhipuPayment}
-                        disabled={items.length === 0 || isLoadingKhipu}
-                        className="w-full rounded-full bg-blue-600 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                        {isLoadingKhipu ? 'Procesando...' : 'Pagar con Khipu'}
-                    </button>
+                    {hasKhipu && (
+                        <button
+                            type="button"
+                            onClick={handleKhipuPayment}
+                            disabled={items.length === 0 || isLoadingKhipu}
+                            className="w-full rounded-full bg-blue-600 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            {isLoadingKhipu ? 'Procesando...' : 'Pagar con Khipu'}
+                        </button>
+                    )}
 
                     {whatsappPhone && (
-                        <a  
-                            href={buildWhatsAppMessage(whatsappPhone, storeName, items, finalTotal, effectiveMethod, customerEmail, shippingAddress, orderNotes)}
-                            onClick={() => trackWhatsappClick(storeId)}
-                            className="flex w-full items-center justify-center rounded-full bg-green-500 py-3 text-sm font-semibold text-white transition hover:bg-green-600"
+                        <button
+                            type="button"
+                            disabled={items.length === 0}
+                            onClick={() => {
+                                setWhatsappError(null)
+                                if (effectiveMethod === 'delivery' && !shippingAddress.trim()) {
+                                    setWhatsappError('Ingresa tu dirección de envío para continuar.')
+                                    return
+                                }
+                                trackWhatsappClick(storeId)
+                                window.open(
+                                    buildWhatsAppMessage(whatsappPhone, storeName, items, finalTotal, effectiveMethod, customerEmail, shippingAddress, orderNotes, shippingCost),
+                                    '_blank'
+                                )
+                            }}
+                            className="flex w-full items-center justify-center rounded-full bg-green-500 py-3 text-sm font-semibold text-white transition hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             Pedir por WhatsApp
-                        </a>
+                        </button>
                     )}
                 </div>
             </div>

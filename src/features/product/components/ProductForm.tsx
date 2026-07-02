@@ -25,6 +25,7 @@ type ProductFormProps = {
     price: number
     description: string | null
     categoryIds?: string[]
+    slug?: string
   }
   initialImageUrl?: string | null
   categories?: CategoryOption[]
@@ -123,6 +124,7 @@ export function ProductForm({ mode = 'create', initialValues, initialImageUrl, c
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [name, setName] = useState(initialValues?.name ?? '')
+  const [slug, setSlug] = useState(initialValues?.slug ?? '')
   const [price, setPrice] = useState(String(initialValues?.price ?? ''))
   const [description, setDescription] = useState(initialValues?.description ?? '')
   const [imageUrl, setImageUrl] = useState(initialImageUrl ?? null)
@@ -178,6 +180,7 @@ export function ProductForm({ mode = 'create', initialValues, initialImageUrl, c
           price: Math.round(Number(price)),
           description: description.trim() || null,
           categoryIds,
+          ...(slug.trim() && { slug: slug.trim() }),
         }
         result = await updateProduct(productId, formData)
       } else {
@@ -346,6 +349,31 @@ export function ProductForm({ mode = 'create', initialValues, initialImageUrl, c
           onChange={setDescription}
           required={false}
         />
+
+        {isEditMode && (
+          <div>
+            <label htmlFor="slug" className="mb-1 block text-xs font-semibold tracking-widest text-gray-500">
+              SLUG (URL del producto)
+            </label>
+            <div className="flex items-center gap-2 rounded-xl border border-transparent bg-gray-100 px-4 py-3 focus-within:border-green-500 focus-within:bg-white">
+              <span className="shrink-0 text-sm text-gray-400">tu-tienda/</span>
+              <input
+                id="slug"
+                type="text"
+                value={slug}
+                onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                placeholder="nombre-del-producto"
+                className="min-w-0 flex-1 bg-transparent text-sm text-gray-900 focus:outline-none"
+              />
+            </div>
+            <p className="mt-1 text-xs text-gray-400">
+              Solo letras minúsculas, números y guiones. Cambiar el slug rompe links compartidos.
+            </p>
+            {validationErrors.slug && (
+              <p className="mt-1 text-xs text-red-600">{validationErrors.slug}</p>
+            )}
+          </div>
+        )}
 
         {isEditMode ? (
           <div data-tour="product-image-section" className="rounded-2xl border border-gray-200 bg-white p-4">
